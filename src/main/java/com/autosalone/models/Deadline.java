@@ -4,17 +4,36 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.UUID;
 
+import com.autosalone.utils.PeriodStringConverter;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "deadlines")
 public class Deadline {
-    private final UUID id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
+
+    @Column(name = "reason", nullable = false)
     private String reason;
+
+    @Column(name = "recurrence")
+    @Convert(converter = PeriodStringConverter.class)
     private Period recurrence;
+
+    @Column(name = "end_date")
     private LocalDate endDate;
+
+    protected Deadline(){}
 
     Deadline(LocalDate startDate, String reason, Period recurrence, LocalDate endDate) {
         validateDates(startDate, endDate);
         
-        this.id = UUID.randomUUID();
         this.startDate = startDate;
         this.reason = reason;
         this.recurrence = recurrence;

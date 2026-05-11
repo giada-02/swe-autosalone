@@ -6,18 +6,35 @@ import java.util.UUID;
 
 import com.autosalone.enums.TransactionType;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "transactions")
 public class Transaction {
-    private final UUID id;
-    private final String reason;
-    private final BigDecimal amount; // importo
-    private final LocalDate date;
-    private final TransactionType type;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(name = "reason", nullable = false)
+    private String reason;
+
+    @Column(name = "amount", nullable = false)
+    private BigDecimal amount; // importo
+
+    @Column(name = "date", nullable = false)
+    private LocalDate date;
+
+    @Column(name = "type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
+
+    protected Transaction(){}
 
     Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("The amount of the transaction must be > 0");
         }
-        this.id = UUID.randomUUID();
         this.reason = reason;
         this.amount = amount;
         this.date = date;

@@ -1,8 +1,20 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
+
+@Entity
+@DiscriminatorValue(value = "CUSTOMER")
 public class Customer extends User {
+
+    @Column(name = "hometown")
     private String hometown; // città di residenza
+
+    @Column(name = "is_active")
     private boolean isActive;
+
+    protected Customer() {
+        super();
+    }
 
     private Customer(CustomerBuilder builder) {
         super(builder);

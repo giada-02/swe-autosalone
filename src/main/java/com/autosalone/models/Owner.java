@@ -1,6 +1,14 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
+
+@Entity
+@DiscriminatorValue(value = "OWNER")
 public class Owner extends User {
+
+    protected Owner() {
+        super();
+    }
 
     private Owner(OwnerBuilder builder) {
         super(builder);

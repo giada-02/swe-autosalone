@@ -2,16 +2,36 @@ package com.autosalone.models;
 
 import java.util.UUID;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "role")
 public abstract class User {
-    private final UUID id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(name = "first_name", nullable = false)
     private String firstName;
+    
+    @Column(name = "last_name", nullable = false)
     private String lastName;
+    
+    @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
+    
+    @Column(name = "email")
     private String email;
+
+    @Column(name = "password", nullable = false)
     private String password;
 
+    protected User(){}
+
     protected User(UserBuilder<?, ?> builder) {
-        this.id = UUID.randomUUID();
         this.firstName = builder.firstName;
         this.lastName = builder.lastName;
         this.phoneNumber = builder.phoneNumber;
