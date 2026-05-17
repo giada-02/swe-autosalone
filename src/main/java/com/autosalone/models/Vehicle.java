@@ -3,7 +3,6 @@ package com.autosalone.models;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
-import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,6 @@ public class Vehicle {
 
     private String licensePlate; // targa
     private LocalDate registrationDate; // data di immatricolazione
-    private Year year;
     private double kilometers;
 
     private boolean isInShowroom;
@@ -50,7 +48,6 @@ public class Vehicle {
 
         this.licensePlate = builder.licencePlate;
         this.registrationDate = builder.registrationDate;
-        this.year = builder.year;
         this.kilometers = builder.kilometers;
 
         this.isInShowroom = builder.isInShowroom;
@@ -96,10 +93,6 @@ public class Vehicle {
 
     public LocalDate getRegistrationDate() {
         return registrationDate;
-    }
-
-    public Year getYear() {
-        return year;
     }
 
     public double getKilometers() {
@@ -160,10 +153,6 @@ public class Vehicle {
         this.registrationDate = registrationDate;
     }
 
-    public void setYear(Year year) {
-        this.year = year;
-    }
-
     public void setKilometers(double kilometers) {
         this.kilometers = kilometers;
     }
@@ -219,7 +208,6 @@ public class Vehicle {
 
         private String licencePlate;
         private LocalDate registrationDate;
-        private Year year;
         private double kilometers;
 
         private boolean isInShowroom;
@@ -268,11 +256,6 @@ public class Vehicle {
             this.registrationDate = registrationDate;
             return this;
 
-        }
-
-        public VehicleBuilder setYear(Year year) {
-            this.year = year;
-            return this;
         }
 
         public VehicleBuilder setKilometers(double kilometers) {
