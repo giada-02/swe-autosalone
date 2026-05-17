@@ -11,6 +11,14 @@
         <class>com.autosalone.models.Customer</class>
         <class>com.autosalone.models.Deadline</class>
         <class>com.autosalone.models.Transaction</class>
+        <class>com.autosalone.models.Vehicle</class>
+        <class>com.autosalone.models.SalesDocument</class>
+        <class>com.autosalone.models.Quotation</class>
+        <class>com.autosalone.models.Contract</class>
+        <class>com.autosalone.models.catalog.AppliedItem</class>
+        <class>com.autosalone.models.catalog.PurchasableItem</class>
+        <class>com.autosalone.models.catalog.Accessory</class>
+        <class>com.autosalone.models.catalog.AccessoryPackage</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/autosalone"/>

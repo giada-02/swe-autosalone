@@ -25,7 +25,7 @@ public class Vehicle {
     private List<Transaction> expenses;
     private List<Deadline> deadlines;
 
-    private String licencePlate; // targa
+    private String licensePlate; // targa
     private LocalDate registrationDate; // data di immatricolazione
     private Year year;
     private double kilometers;
@@ -48,7 +48,7 @@ public class Vehicle {
         this.expenses = builder.expenses;
         this.deadlines = builder.deadlines;
 
-        this.licencePlate = builder.licencePlate;
+        this.licensePlate = builder.licencePlate;
         this.registrationDate = builder.registrationDate;
         this.year = builder.year;
         this.kilometers = builder.kilometers;
@@ -90,8 +90,8 @@ public class Vehicle {
         return handoverDate;
     }
 
-    public String getLicencePlate() {
-        return licencePlate;
+    public String getLicensePlate() {
+        return licensePlate;
     }
 
     public LocalDate getRegistrationDate() {
@@ -152,8 +152,8 @@ public class Vehicle {
         this.handoverDate = handoverDate;
     }
 
-    public void setLicencePlate(String licencePlate) {
-        this.licencePlate = licencePlate;
+    public void setLicensePlate(String licencePlate) {
+        this.licensePlate = licencePlate;
     }
 
     public void setRegistrationDate(LocalDate registrationDate) {

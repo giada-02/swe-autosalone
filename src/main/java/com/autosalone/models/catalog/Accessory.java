@@ -1,50 +1,29 @@
 package com.autosalone.models.catalog;
 
-import java.util.UUID;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-public class Accessory implements PurchasableItem {
-    private final UUID id;
-    private String name;
-    private String description;
-    private BigDecimal price;
+@Entity
+@Table(name = "accessories")
+public class Accessory extends PurchasableItem {
 
-    public Accessory(String name, String description, BigDecimal price) {
-        this.id = UUID.randomUUID();
-        this.name = name;
-        this.description = description;
-        this.price = price;
+    @Column(name = "base_price", nullable = false)
+    private BigDecimal basePrice;
+
+    protected Accessory() {
     }
 
-    // getters
-    public UUID getId() {
-        return id;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
+    public Accessory(String name, String description, BigDecimal basePrice) {
+        super(name, description);
+        this.basePrice = basePrice;
     }
 
     @Override
     public BigDecimal getPrice() {
-        return price;
+        return basePrice;
     }
 
-    // setters
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setBasePrice(BigDecimal basePrice) {
+        this.basePrice = basePrice;
     }
 }

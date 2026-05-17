@@ -6,20 +6,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.models.discounts.DiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
 
 public abstract class SalesDocument {
-    private final UUID id;
+    private UUID id;
     private LocalDate date;
     private Vehicle vehicle;
     private Customer customer;
-    private List<PurchasableItem> items;
-    private BigDecimal fees;
+    private List<AppliedItem> items = new ArrayList<>();
+    private BigDecimal additionalFees;
     private DiscountStrategy discountStrategy;
     private boolean isVisibleToCustomer = false;
     private boolean isArchived = false;
+    private String publicNotes;
+    private String internalNotes;
 
     private BigDecimal vehicleSellingPriceSnapshot;
 
@@ -29,7 +32,7 @@ public abstract class SalesDocument {
         this.vehicle = vehicle;
         this.customer = customer;
         this.items = new ArrayList<>();
-        this.fees = BigDecimal.ZERO;
+        this.additionalFees = BigDecimal.ZERO;
         this.discountStrategy = new NoDiscountStrategy();
         this.isVisibleToCustomer = false;
         this.isArchived = false;
@@ -43,10 +46,12 @@ public abstract class SalesDocument {
         this.vehicle = original.getVehicle();
         this.customer = original.getCustomer();
         this.items = new ArrayList<>(original.getItems());
-        this.fees = original.fees;
+        this.additionalFees = original.additionalFees;
         this.discountStrategy = original.discountStrategy;
         this.isVisibleToCustomer = false;
         this.isArchived = false;
+        this.publicNotes = original.publicNotes;
+        this.internalNotes = original.internalNotes;
         this.vehicleSellingPriceSnapshot = original.vehicleSellingPriceSnapshot;
     }
 
@@ -67,12 +72,12 @@ public abstract class SalesDocument {
         return customer;
     }
 
-    public List<PurchasableItem> getItems() {
+    public List<AppliedItem> getItems() {
         return items;
     }
 
-    public BigDecimal getFees() {
-        return fees;
+    public BigDecimal getAdditionalFees() {
+        return additionalFees;
     }
 
     public DiscountStrategy getDiscountStrategy() {
@@ -85,6 +90,14 @@ public abstract class SalesDocument {
 
     public boolean isArchived() {
         return isArchived;
+    }
+
+    public String getPublicNotes() {
+        return publicNotes;
+    }
+
+    public String getInternalNotes() {
+        return internalNotes;
     }
 
     public BigDecimal getVehicleSellingPriceSnapshot() {
@@ -109,12 +122,12 @@ public abstract class SalesDocument {
 
     public void addItem(PurchasableItem item) {
         validateIsEditable();
-        this.items.add(item);
+        this.items.add(new AppliedItem(item));
     }
 
-    public void setFees(BigDecimal fees) {
+    public void setAdditionalFees(BigDecimal additionalFees) {
         validateIsEditable();
-        this.fees = (fees == null) ? BigDecimal.ZERO : fees;
+        this.additionalFees = (additionalFees == null) ? BigDecimal.ZERO : additionalFees;
     }
 
     public void setDiscountStrategy(DiscountStrategy discountStrategy) {
@@ -144,6 +157,15 @@ public abstract class SalesDocument {
         this.isArchived = false;
     }
 
+    public void setPublicNotes(String publicNotes) {
+        validateIsEditable();
+        this.publicNotes = publicNotes;
+    }
+
+    public void setInternalNotes(String internalNotes) {
+        this.internalNotes = internalNotes;
+    }
+
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
         validateIsEditable();
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
@@ -151,8 +173,8 @@ public abstract class SalesDocument {
 
     public BigDecimal getSubtotal() {
         BigDecimal total = this.vehicle.getSellingPrice();
-        for (PurchasableItem item : items) {
-            total = total.add(item.getPrice());
+        for (AppliedItem item : items) {
+            total = total.add(item.getAppliedPrice());
         }
         return total;
     }
@@ -161,7 +183,7 @@ public abstract class SalesDocument {
         BigDecimal subtotal = getSubtotal();
         BigDecimal discount = this.discountStrategy.calculateDiscountAmount(subtotal);
         BigDecimal discountedTotal = subtotal.subtract(discount);
-        return discountedTotal.add(this.fees);
+        return discountedTotal.add(this.additionalFees);
     }
 
     protected abstract void validateIsEditable();

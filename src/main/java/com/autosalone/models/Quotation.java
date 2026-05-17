@@ -9,8 +9,6 @@ public class Quotation extends SalesDocument {
     private QuotationStatus status;
     private LocalDate expirationDate;
     private ExpirationPolicy expirationPolicy;
-    private String publicNotes;
-    private String internalNotes;
 
     public Quotation(Vehicle vehicle, Customer customer) {
         super(vehicle, customer);
@@ -22,8 +20,6 @@ public class Quotation extends SalesDocument {
         super(original);
         this.status = QuotationStatus.DRAFT;
         this.expirationDate = null;
-        this.publicNotes = original.publicNotes;
-        this.internalNotes = original.internalNotes;
     }
 
     // getters
@@ -42,14 +38,6 @@ public class Quotation extends SalesDocument {
             return false;
         }
         return LocalDate.now().isAfter(this.expirationDate);
-    }
-
-    public String getPublicNotes() {
-        return publicNotes;
-    }
-
-    public String getInternalNotes() {
-        return internalNotes;
     }
 
     // setters
@@ -100,15 +88,6 @@ public class Quotation extends SalesDocument {
         validateIsEditable();
         this.expirationPolicy = ExpirationPolicy.END_OF_MONTH;
         recalculateExpiration();
-    }
-
-    public void setPublicNotes(String publicNotes) {
-        validateIsEditable();
-        this.publicNotes = publicNotes;
-    }
-
-    public void setInternalNotes(String internalNotes) {
-        this.internalNotes = internalNotes;
     }
 
     @Override

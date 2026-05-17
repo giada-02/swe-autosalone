@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test;
 public class AccessoryPackageTest {
     @Test
     public void getPrice_WithNestedPackages_CalculatesRecursiveTotalCorrectly() {
-        AccessoryPackage comfortPack = new AccessoryPackage("Pacchetto inverno");
+        AccessoryPackage comfortPack = new AccessoryPackage("Pacchetto inverno", null);
         comfortPack.addItem(new Accessory("Sedili riscaldabili", "Interno", new BigDecimal("400.00")));
         comfortPack.addItem(new Accessory("Volante riscaldabile", "Interno", new BigDecimal("200.00")));
 
-        AccessoryPackage ultimateWinterPack = new AccessoryPackage("Pacchetto inverno completo");
+        AccessoryPackage ultimateWinterPack = new AccessoryPackage("Pacchetto inverno completo", null);
         ultimateWinterPack.addItem(new Accessory("Catene da neve", "Esterno", new BigDecimal("150.00")));
         ultimateWinterPack.addItem(comfortPack);
 
@@ -25,7 +25,7 @@ public class AccessoryPackageTest {
 
     @Test
     public void getPrice_EmptyPackage_ReturnsZero() {
-        AccessoryPackage emptyPack = new AccessoryPackage("Pacchetto vuoto");
+        AccessoryPackage emptyPack = new AccessoryPackage("Pacchetto vuoto", null);
 
         BigDecimal total = emptyPack.getPrice();
 

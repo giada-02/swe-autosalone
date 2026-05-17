@@ -1,22 +1,23 @@
 package com.autosalone.models.catalog;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AccessoryPackage implements PurchasableItem {
-    private String packageName;
-    private List<PurchasableItem> items;
+@Entity
+@Table(name = "accessory_packages")
+public class AccessoryPackage extends PurchasableItem {
 
-    public AccessoryPackage(String packageName) {
-        this.packageName = packageName;
-        this.items = new ArrayList<>();
+    @ManyToMany
+    @JoinTable(name = "package_items", joinColumns = @JoinColumn(name = "package_id"), inverseJoinColumns = @JoinColumn(name = "item_id"))
+    private List<PurchasableItem> items = new ArrayList<>();
+
+    protected AccessoryPackage() {
     }
 
-    // getters
-    @Override
-    public String getName() {
-        return packageName;
+    public AccessoryPackage(String name, String description) {
+        super(name, description);
     }
 
     @Override
@@ -26,11 +27,6 @@ public class AccessoryPackage implements PurchasableItem {
             total = total.add(item.getPrice());
         }
         return total;
-    }
-
-    // setters
-    public void setPackageName(String packageName) {
-        this.packageName = packageName;
     }
 
     public void addItem(PurchasableItem item) {

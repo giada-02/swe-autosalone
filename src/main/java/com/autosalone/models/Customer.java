@@ -6,8 +6,8 @@ import jakarta.persistence.*;
 @DiscriminatorValue(value = "CUSTOMER")
 public class Customer extends User {
 
-    @Column(name = "hometown")
-    private String hometown; // città di residenza
+    @Column(name = "residence_city")
+    private String residenceCity;
 
     @Column(name = "is_active")
     private boolean isActive;
@@ -18,20 +18,20 @@ public class Customer extends User {
 
     private Customer(CustomerBuilder builder) {
         super(builder);
-        this.hometown = builder.hometown;
+        this.residenceCity = builder.residenceCity;
         this.isActive = false;
     }
 
-    public String getHometown() {
-        return hometown;
+    public String getResidenceCity() {
+        return residenceCity;
     }
 
     public boolean isActive() {
         return isActive;
     }
 
-    public void setHometown(String hometown) {
-        this.hometown = hometown;
+    public void setResidenceCity(String residenceCity) {
+        this.residenceCity = residenceCity;
     }
 
     public void activate() {
@@ -43,10 +43,10 @@ public class Customer extends User {
     }
 
     public static class CustomerBuilder extends UserBuilder<Customer, CustomerBuilder> {
-        private String hometown;
+        private String residenceCity;
 
-        public CustomerBuilder setHometown(String hometown) {
-            this.hometown = hometown;
+        public CustomerBuilder setResidenceCity(String residenceCity) {
+            this.residenceCity = residenceCity;
             return self();
         }
 
