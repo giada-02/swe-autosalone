@@ -9,6 +9,10 @@ public class FixedAmountDiscountStrategy implements DiscountStrategy {
         this.discountAmount = discountAmount;
     }
 
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
     @Override
     public BigDecimal calculateDiscountAmount(BigDecimal subtotal) {
         if (discountAmount.compareTo(subtotal) > 0) { // the discount is higher than the subtotal

@@ -1,5 +1,6 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,16 +9,28 @@ import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.TransactionType;
 
+@Entity
+@Table(name = "contracts")
 public class Contract extends SalesDocument {
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ContractStatus status;
+
+    @OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinColumn(name = "deposit_transaction_id", referencedColumnName = "id")
     private Transaction deposit; // caparra
-    private List<Transaction> payments; // acconti
+
+    @OneToMany(mappedBy = "contract", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    private List<Transaction> payments = new ArrayList<>(); // acconti
+
+    @OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinColumn(name = "source_quotation_id", referencedColumnName = "id")
     private Quotation quotationReference;
 
     public Contract(Vehicle vehicle, Customer customer) {
         super(vehicle, customer);
         this.status = ContractStatus.DRAFT;
-        this.payments = new ArrayList<>();
     }
 
     /// Conversion Constructor: Turns a quotation into a contract
@@ -31,7 +44,6 @@ public class Contract extends SalesDocument {
             throw new IllegalStateException("Cannot create a contract from quotation with status " + sourceStatus);
         }
         this.status = ContractStatus.DRAFT;
-        this.payments = new ArrayList<>();
         this.quotationReference = source;
     }
 

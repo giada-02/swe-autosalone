@@ -1,13 +1,24 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
 
+@Entity
+@Table(name = "quotations")
 public class Quotation extends SalesDocument {
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private QuotationStatus status;
+
+    @Column(name = "expiration_date")
     private LocalDate expirationDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "expiration_policy")
     private ExpirationPolicy expirationPolicy;
 
     public Quotation(Vehicle vehicle, Customer customer) {

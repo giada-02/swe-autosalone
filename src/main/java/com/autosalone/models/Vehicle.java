@@ -33,7 +33,7 @@ public class Vehicle {
     @Column(nullable = false)
     private VehicleCondition condition;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "purchase_transaction_id", referencedColumnName = "id", unique = true)
     private Transaction purchaseTransaction;
 

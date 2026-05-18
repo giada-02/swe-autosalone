@@ -49,7 +49,7 @@ public class QuotationTest {
         Accessory accessory = new Accessory("Cerchi in lega", "Estetica", new BigDecimal("1000.00"));
         quote.addItem(accessory);
         quote.setAdditionalFees(new BigDecimal("500.00"));
-        quote.setDiscountStrategy(new PercentageDiscountStrategy(10));
+        quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal(10)));
 
         BigDecimal finalPrice = quote.getFinalPrice();
 
@@ -70,7 +70,7 @@ public class QuotationTest {
         Accessory accessory = new Accessory("Sensori", null, new BigDecimal("501.50"));
         quote.addItem(accessory);
         quote.setAdditionalFees(new BigDecimal("250.00"));
-        quote.setDiscountStrategy(new PercentageDiscountStrategy(15));
+        quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal(15)));
 
         BigDecimal finalPrice = quote.getFinalPrice();
 

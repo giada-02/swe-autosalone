@@ -1,5 +1,6 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -9,29 +10,96 @@ import java.util.UUID;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.models.discounts.DiscountStrategy;
+import com.autosalone.models.discounts.FixedAmountDiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
+import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
+@Entity
+@Table(name = "sales_documents")
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class SalesDocument {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(nullable = false)
     private LocalDate date;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_id", nullable = false)
     private Vehicle vehicle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
+
+    @ElementCollection
+    @CollectionTable(name = "document_items", joinColumns = @JoinColumn(name = "sales_document_id"))
     private List<AppliedItem> items = new ArrayList<>();
+
+    @Column(name = "additional_fees")
     private BigDecimal additionalFees;
-    private DiscountStrategy discountStrategy;
+
+    @Column(name = "is_visible_to_customer", nullable = false)
     private boolean isVisibleToCustomer = false;
+
+    @Column(name = "is_archived", nullable = false)
     private boolean isArchived = false;
+
+    @Column(name = "public_notes", columnDefinition = "TEXT")
     private String publicNotes;
+
+    @Column(name = "internal_notes", columnDefinition = "TEXT")
     private String internalNotes;
 
+    @Column(name = "vehicle_price_snapshot")
     private BigDecimal vehicleSellingPriceSnapshot;
+
+    @Transient
+    private DiscountStrategy discountStrategy;
+
+    @Column(name = "discount_type", nullable = false)
+    private String dbDiscountType = "NONE";
+
+    @Column(name = "discount_value")
+    private BigDecimal dbDiscountValue;
+
+    @PrePersist
+    @PreUpdate
+    private void serializeDiscountStrategy() { // from Java to Database
+        if (this.discountStrategy instanceof FixedAmountDiscountStrategy) {
+            this.dbDiscountType = "FIXED";
+            this.dbDiscountValue = ((FixedAmountDiscountStrategy) this.discountStrategy).getDiscountAmount();
+        } else if (this.discountStrategy instanceof PercentageDiscountStrategy) {
+            this.dbDiscountType = "PERCENTAGE";
+            this.dbDiscountValue = ((PercentageDiscountStrategy) this.discountStrategy).getPercentageValue();
+        } else {
+            this.dbDiscountType = "NONE";
+            this.dbDiscountValue = null;
+        }
+    }
+
+    @PostLoad
+    private void deserializeDiscountStrategy() { // from Database to Java
+        switch (this.dbDiscountType) {
+            case "FIXED":
+                this.discountStrategy = new FixedAmountDiscountStrategy(this.dbDiscountValue);
+                break;
+            case "PERCENTAGE":
+                this.discountStrategy = new PercentageDiscountStrategy(this.dbDiscountValue);
+                break;
+            default:
+                this.discountStrategy = new NoDiscountStrategy();
+                break;
+        }
+    }
 
     protected SalesDocument(Vehicle vehicle, Customer customer) {
         this.id = UUID.randomUUID();
         this.date = LocalDate.now();
         this.vehicle = vehicle;
         this.customer = customer;
-        this.items = new ArrayList<>();
         this.additionalFees = BigDecimal.ZERO;
         this.discountStrategy = new NoDiscountStrategy();
         this.isVisibleToCustomer = false;
@@ -80,10 +148,6 @@ public abstract class SalesDocument {
         return additionalFees;
     }
 
-    public DiscountStrategy getDiscountStrategy() {
-        return discountStrategy;
-    }
-
     public boolean isVisibleToCustomer() {
         return isVisibleToCustomer;
     }
@@ -102,6 +166,10 @@ public abstract class SalesDocument {
 
     public BigDecimal getVehicleSellingPriceSnapshot() {
         return vehicleSellingPriceSnapshot;
+    }
+
+    public DiscountStrategy getDiscountStrategy() {
+        return discountStrategy;
     }
 
     // setters
@@ -128,11 +196,6 @@ public abstract class SalesDocument {
     public void setAdditionalFees(BigDecimal additionalFees) {
         validateIsEditable();
         this.additionalFees = (additionalFees == null) ? BigDecimal.ZERO : additionalFees;
-    }
-
-    public void setDiscountStrategy(DiscountStrategy discountStrategy) {
-        validateIsEditable();
-        this.discountStrategy = discountStrategy;
     }
 
     public void setVisibleToCustomer(boolean isVisibleToCustomer) {
@@ -169,6 +232,11 @@ public abstract class SalesDocument {
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
         validateIsEditable();
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
+    }
+
+    public void setDiscountStrategy(DiscountStrategy discountStrategy) {
+        validateIsEditable();
+        this.discountStrategy = discountStrategy;
     }
 
     public BigDecimal getSubtotal() {
