@@ -1,5 +1,6 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
@@ -11,27 +12,63 @@ import java.util.UUID;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
 
+@Entity
+@Table(name = "vehicles")
 public class Vehicle {
-    private final UUID id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false)
     private String brand;
+
+    @Column(nullable = false)
     private String model;
+
+    @Column(nullable = false)
     private String color;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private VehicleCondition condition;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "purchase_transaction_id", referencedColumnName = "id", unique = true)
     private Transaction purchaseTransaction;
+
+    @Column(name = "selling_price")
     private BigDecimal sellingPrice;
+
+    @Column(name = "handover_date")
     private LocalDate handoverDate; // data di consegna
 
-    private List<Transaction> expenses;
-    private List<Deadline> deadlines;
+    @OneToMany(mappedBy = "vehicle", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    private List<Transaction> expenses = new ArrayList<>();
 
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
+    private List<Deadline> deadlines = new ArrayList<>();
+
+    @Column(name = "license_plate", unique = true)
     private String licensePlate; // targa
+
+    @Column(name = "registration_date")
     private LocalDate registrationDate; // data di immatricolazione
+
+    @Column
     private double kilometers;
 
+    @Column(name = "is_in_showroom", nullable = false)
     private boolean isInShowroom;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private VehicleStatus status;
 
     private static final String VEHICLE_INSPECTION_DEADLINE_REASON = "Revisione Veicolo";
+
+    protected Vehicle() {
+    }
 
     private Vehicle(VehicleBuilder builder) {
         this.id = UUID.randomUUID();
@@ -42,14 +79,9 @@ public class Vehicle {
         this.purchaseTransaction = builder.purchaseTransaction;
         this.sellingPrice = builder.sellingPrice;
         this.handoverDate = builder.handoverDate;
-
-        this.expenses = builder.expenses;
-        this.deadlines = builder.deadlines;
-
         this.licensePlate = builder.licencePlate;
         this.registrationDate = builder.registrationDate;
         this.kilometers = builder.kilometers;
-
         this.isInShowroom = builder.isInShowroom;
         this.status = VehicleStatus.AVAILABLE;
     }
@@ -162,7 +194,7 @@ public class Vehicle {
     }
 
     public void addDeadline(LocalDate startDate, String reason, Period recurrence, LocalDate enDate) {
-        Deadline deadline = new Deadline(startDate, reason, recurrence, enDate);
+        Deadline deadline = new Deadline(startDate, reason, recurrence, enDate, this);
         this.deadlines.add(deadline);
     }
 
@@ -202,10 +234,6 @@ public class Vehicle {
         private Transaction purchaseTransaction;
         private BigDecimal sellingPrice;
         private LocalDate handoverDate;
-
-        private List<Transaction> expenses = new ArrayList<>();
-        private List<Deadline> deadlines = new ArrayList<>();
-
         private String licencePlate;
         private LocalDate registrationDate;
         private double kilometers;
@@ -255,23 +283,10 @@ public class Vehicle {
         public VehicleBuilder setRegistrationDate(LocalDate registrationDate) {
             this.registrationDate = registrationDate;
             return this;
-
         }
 
         public VehicleBuilder setKilometers(double kilometers) {
             this.kilometers = kilometers;
-            return this;
-        }
-
-        public VehicleBuilder addExpense(String reason, BigDecimal amount, LocalDate date) {
-            Transaction expense = TransactionFactory.createVehicleExpense(reason, amount, date);
-            this.expenses.add(expense);
-            return this;
-        }
-
-        public VehicleBuilder addDeadline(LocalDate startDate, String reason, Period recurrence, LocalDate enDate) {
-            Deadline deadline = new Deadline(startDate, reason, recurrence, enDate);
-            this.deadlines.add(deadline);
             return this;
         }
 

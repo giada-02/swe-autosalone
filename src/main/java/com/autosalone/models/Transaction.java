@@ -1,12 +1,11 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
 import com.autosalone.enums.TransactionType;
-
-import jakarta.persistence.*;
 
 @Entity
 @Table(name = "transactions")
@@ -29,16 +28,39 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    protected Transaction(){}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "expense_vehicle_id")
+    private Vehicle vehicle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_contract_id")
+    private Contract contract;
+
+    protected Transaction() {
+    }
 
     Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("The amount of the transaction must be > 0");
-        }
+        validateAmount(amount);
         this.reason = reason;
         this.amount = amount;
         this.date = date;
         this.type = type;
+    }
+
+    Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type, Vehicle vehicle) {
+        this(reason, amount, date, type);
+        this.vehicle = vehicle;
+    }
+
+    Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type, Contract contract) {
+        this(reason, amount, date, type);
+        this.contract = contract;
+    }
+
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("The amount of the transaction must be > 0");
+        }
     }
 
     // getters
@@ -60,5 +82,13 @@ public class Transaction {
 
     public TransactionType getType() {
         return type;
+    }
+
+    public Vehicle getVehicle() {
+        return vehicle;
+    }
+
+    public Contract getContract() {
+        return contract;
     }
 }

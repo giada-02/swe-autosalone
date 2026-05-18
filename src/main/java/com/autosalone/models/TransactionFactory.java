@@ -11,12 +11,16 @@ public class TransactionFactory {
     }
 
     public static Transaction createVehiclePurchase(String brand, String model, BigDecimal amount, LocalDate date) {
-        String reason = String.format("Acquisto veicolo: %s %s", brand, model);
+        String reason = String.format("Acquisto - %s %s", brand, model);
         return new Transaction(reason, amount, date, TransactionType.OUT);
     }
 
-    public static Transaction createVehicleExpense(String description, BigDecimal amount, LocalDate date) {
-        return new Transaction(description, amount, date, TransactionType.OUT);
+    public static Transaction createVehicleExpense(Vehicle vehicle, String description, BigDecimal amount,
+            LocalDate date) {
+        String reason = String.format("Spesa - %s %s", vehicle.getBrand(), vehicle.getModel());
+        if (description != null)
+            reason = reason + ": " + description;
+        return new Transaction(reason, amount, date, TransactionType.OUT, vehicle);
     }
 
     public static Transaction createContractIncome(Contract contract, BigDecimal amount, LocalDate date) {
@@ -40,7 +44,7 @@ public class TransactionFactory {
                 contract.getVehicle().getModel());
         if (description != null)
             reason = reason + ": " + description;
-        return new Transaction(reason, amount, date, TransactionType.IN);
+        return new Transaction(reason, amount, date, TransactionType.IN, contract);
     }
 
     public static Transaction createContractRefund(Contract contract, BigDecimal amount, LocalDate date) {

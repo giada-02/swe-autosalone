@@ -1,8 +1,7 @@
 package com.autosalone.models;
 
-import java.util.UUID;
-
 import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -16,20 +15,21 @@ public abstract class User {
 
     @Column(name = "first_name", nullable = false)
     private String firstName;
-    
+
     @Column(name = "last_name", nullable = false)
     private String lastName;
-    
+
     @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
-    
-    @Column(name = "email")
+
+    @Column(name = "email", unique = true)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password")
     private String password;
 
-    protected User(){}
+    protected User() {
+    }
 
     protected User(UserBuilder<?, ?> builder) {
         this.firstName = builder.firstName;

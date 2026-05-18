@@ -1,12 +1,11 @@
 package com.autosalone.models;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.UUID;
 
 import com.autosalone.utils.PeriodStringConverter;
-
-import jakarta.persistence.*;
 
 @Entity
 @Table(name = "deadlines")
@@ -29,15 +28,25 @@ public class Deadline {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    protected Deadline(){}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_vehicle_id")
+    private Vehicle vehicle;
+
+    protected Deadline() {
+    }
 
     Deadline(LocalDate startDate, String reason, Period recurrence, LocalDate endDate) {
         validateDates(startDate, endDate);
-        
+
         this.startDate = startDate;
         this.reason = reason;
         this.recurrence = recurrence;
         this.endDate = endDate;
+    }
+
+    Deadline(LocalDate startDate, String reason, Period recurrence, LocalDate endDate, Vehicle vehicle) {
+        this(startDate, reason, recurrence, endDate);
+        this.vehicle = vehicle;
     }
 
     // getters
