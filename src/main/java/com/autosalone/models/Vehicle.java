@@ -65,6 +65,9 @@ public class Vehicle {
     @Column(nullable = false)
     private VehicleStatus status;
 
+    @Column(name = "is_archived", nullable = false)
+    private boolean isArchived = false;
+
     private static final String VEHICLE_INSPECTION_DEADLINE_REASON = "Revisione Veicolo";
 
     protected Vehicle() {
@@ -84,6 +87,7 @@ public class Vehicle {
         this.kilometers = builder.kilometers;
         this.isInShowroom = builder.isInShowroom;
         this.status = VehicleStatus.AVAILABLE;
+        this.isArchived = false;
     }
 
     // getters
@@ -147,63 +151,97 @@ public class Vehicle {
         return status;
     }
 
+    public boolean isArchived() {
+        return isArchived;
+    }
+
     // setters
     public void setBrand(String brand) {
+        validateIsEditable();
         this.brand = brand;
     }
 
     public void setModel(String model) {
+        validateIsEditable();
         this.model = model;
     }
 
     public void setColor(String color) {
+        validateIsEditable();
         this.color = color;
     }
 
     public void setCondition(VehicleCondition condition) {
+        validateIsEditable();
         this.condition = condition;
     }
 
     public void setPurchaseTransaction(BigDecimal amount, LocalDate date) {
+        assertNotArchived();
         this.purchaseTransaction = TransactionFactory.createVehiclePurchase(this.brand, this.model, amount, date);
-
     }
 
     public void setSellingPrice(BigDecimal sellingPrice) {
+        assertNotArchived();
         this.sellingPrice = sellingPrice;
     }
 
     public void setHandoverDate(LocalDate handoverDate) {
+        validateIsEditable();
         this.handoverDate = handoverDate;
     }
 
     public void setLicensePlate(String licencePlate) {
+        validateIsEditable();
         this.licensePlate = licencePlate;
     }
 
     public void setRegistrationDate(LocalDate registrationDate) {
+        validateIsEditable();
         this.registrationDate = registrationDate;
     }
 
     public void setKilometers(double kilometers) {
+        validateIsEditable();
         this.kilometers = kilometers;
     }
 
     public void addExpense(Transaction expense) {
+        validateIsEditable();
         this.expenses.add(expense);
     }
 
     public void addDeadline(LocalDate startDate, String reason, Period recurrence, LocalDate enDate) {
+        assertNotArchived();
         Deadline deadline = new Deadline(startDate, reason, recurrence, enDate, this);
         this.deadlines.add(deadline);
     }
 
     public void setInShowroom(boolean isInShowroom) {
+        assertNotArchived();
         this.isInShowroom = isInShowroom;
     }
 
     public void setStatus(VehicleStatus status) {
+        assertNotArchived();
+        if (this.status == status)
+            return;
+        if (status == VehicleStatus.SOLD) {
+            this.isInShowroom = false;
+        }
         this.status = status;
+    }
+
+    public void archive() {
+        if (this.isArchived)
+            return;
+        this.isArchived = true;
+    }
+
+    public void unarchive() {
+        if (!this.isArchived)
+            return;
+        this.isArchived = false;
     }
 
     /**
@@ -223,6 +261,17 @@ public class Vehicle {
         Period standardRecurrence = Period.ofYears(2);
 
         this.addDeadline(firstInspectionDate, VEHICLE_INSPECTION_DEADLINE_REASON, standardRecurrence, null);
+    }
+
+    private void assertNotArchived() {
+        if (this.isArchived)
+            throw new IllegalStateException("Cannot edit an archived vehicle");
+    }
+
+    private void validateIsEditable() {
+        assertNotArchived();
+        if (this.status == VehicleStatus.SOLD)
+            throw new IllegalStateException("Cannot edit a vehicle with status " + this.status);
     }
 
     // builder
