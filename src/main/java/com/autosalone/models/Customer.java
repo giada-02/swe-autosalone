@@ -3,7 +3,7 @@ package com.autosalone.models;
 import jakarta.persistence.*;
 
 @Entity
-@DiscriminatorValue(value = "CUSTOMER")
+@Table(name = "customers")
 public class Customer extends User {
 
     @Column(name = "residence_city")

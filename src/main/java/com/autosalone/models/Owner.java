@@ -3,7 +3,7 @@ package com.autosalone.models;
 import jakarta.persistence.*;
 
 @Entity
-@DiscriminatorValue(value = "OWNER")
+@Table(name = "owners")
 public class Owner extends User {
 
     protected Owner() {
