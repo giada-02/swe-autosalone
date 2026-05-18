@@ -54,7 +54,7 @@ public class TransactionFactory {
         return new Transaction(reason, amount, date, TransactionType.OUT);
     }
 
-    public static Transaction createGeneralExpense(String description, BigDecimal amount, LocalDate date) {
-        return new Transaction(description, amount, date, TransactionType.OUT);
+    public static Transaction createGeneralExpense(String reason, BigDecimal amount, LocalDate date) {
+        return new Transaction(reason, amount, date, TransactionType.OUT);
     }
 }
