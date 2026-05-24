@@ -96,7 +96,6 @@ public abstract class SalesDocument {
     }
 
     protected SalesDocument(Vehicle vehicle, Customer customer) {
-        this.id = UUID.randomUUID();
         this.date = LocalDate.now();
         this.vehicle = vehicle;
         this.customer = customer;
@@ -109,7 +108,6 @@ public abstract class SalesDocument {
 
     // copy constructor
     protected SalesDocument(SalesDocument original) {
-        this.id = UUID.randomUUID();
         this.date = LocalDate.now(); // current date
         this.vehicle = original.getVehicle();
         this.customer = original.getCustomer();

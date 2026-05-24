@@ -1,5 +1,9 @@
 package com.autosalone.enums;
 
 public enum VehicleStatus {
-    AVAILABLE, RESERVED, SOLD
+    AVAILABLE,
+    QUOTED,
+    RESERVED,
+    SOLD,
+    WITHDRAWN
 }

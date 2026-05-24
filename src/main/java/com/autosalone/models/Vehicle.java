@@ -41,7 +41,7 @@ public class Vehicle {
     private BigDecimal sellingPrice;
 
     @Column(name = "handover_date")
-    private LocalDate handoverDate; // data di consegna
+    private LocalDate handoverDate; // data di consegna effettiva
 
     @OneToMany(mappedBy = "vehicle", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     private List<Transaction> expenses = new ArrayList<>();
@@ -49,7 +49,7 @@ public class Vehicle {
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
     private List<Deadline> deadlines = new ArrayList<>();
 
-    @Column(name = "license_plate", unique = true)
+    @Column(name = "license_plate")
     private String licensePlate; // targa
 
     @Column(name = "registration_date")
@@ -65,16 +65,12 @@ public class Vehicle {
     @Column(nullable = false)
     private VehicleStatus status;
 
-    @Column(name = "is_archived", nullable = false)
-    private boolean isArchived = false;
-
     private static final String VEHICLE_INSPECTION_DEADLINE_REASON = "Revisione Veicolo";
 
     protected Vehicle() {
     }
 
     private Vehicle(VehicleBuilder builder) {
-        this.id = UUID.randomUUID();
         this.brand = builder.brand;
         this.model = builder.model;
         this.color = builder.color;
@@ -82,12 +78,11 @@ public class Vehicle {
         this.purchaseTransaction = builder.purchaseTransaction;
         this.sellingPrice = builder.sellingPrice;
         this.handoverDate = builder.handoverDate;
-        this.licensePlate = builder.licencePlate;
+        this.licensePlate = builder.licensePlate;
         this.registrationDate = builder.registrationDate;
         this.kilometers = builder.kilometers;
         this.isInShowroom = builder.isInShowroom;
         this.status = VehicleStatus.AVAILABLE;
-        this.isArchived = false;
     }
 
     // getters
@@ -151,97 +146,109 @@ public class Vehicle {
         return status;
     }
 
-    public boolean isArchived() {
-        return isArchived;
-    }
-
     // setters
     public void setBrand(String brand) {
-        validateIsEditable();
+        assertCoreEditable();
         this.brand = brand;
     }
 
     public void setModel(String model) {
-        validateIsEditable();
+        assertCoreEditable();
         this.model = model;
     }
 
     public void setColor(String color) {
-        validateIsEditable();
+        assertCoreEditable();
         this.color = color;
     }
 
-    public void setCondition(VehicleCondition condition) {
-        validateIsEditable();
-        this.condition = condition;
-    }
-
-    public void setPurchaseTransaction(BigDecimal amount, LocalDate date) {
-        assertNotArchived();
-        this.purchaseTransaction = TransactionFactory.createVehiclePurchase(this.brand, this.model, amount, date);
+    public void setPurchaseTransaction(Transaction purchaseTransaction) {
+        assertNotTerminal();
+        this.purchaseTransaction = purchaseTransaction;
     }
 
     public void setSellingPrice(BigDecimal sellingPrice) {
-        assertNotArchived();
+        assertNotTerminal();
         this.sellingPrice = sellingPrice;
     }
 
     public void setHandoverDate(LocalDate handoverDate) {
-        validateIsEditable();
+        assertNotTerminal();
         this.handoverDate = handoverDate;
     }
 
-    public void setLicensePlate(String licencePlate) {
-        validateIsEditable();
-        this.licensePlate = licencePlate;
+    public void setLicensePlate(String licensePlate) {
+        assertAnagraphicEditable();
+        this.licensePlate = licensePlate;
     }
 
     public void setRegistrationDate(LocalDate registrationDate) {
-        validateIsEditable();
+        assertAnagraphicEditable();
         this.registrationDate = registrationDate;
     }
 
     public void setKilometers(double kilometers) {
-        validateIsEditable();
+        assertCoreEditable();
         this.kilometers = kilometers;
     }
 
     public void addExpense(Transaction expense) {
-        validateIsEditable();
+        assertNotTerminal();
         this.expenses.add(expense);
     }
 
     public void addDeadline(LocalDate startDate, String reason, Period recurrence, LocalDate enDate) {
-        assertNotArchived();
+        if (this.status == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException("Cannot edit an inactive vehicle (Status: " + this.status + ")");
+        }
         Deadline deadline = new Deadline(startDate, reason, recurrence, enDate, this);
         this.deadlines.add(deadline);
     }
 
     public void setInShowroom(boolean isInShowroom) {
-        assertNotArchived();
+        assertNotTerminal();
         this.isInShowroom = isInShowroom;
     }
 
     public void setStatus(VehicleStatus status) {
-        assertNotArchived();
         if (this.status == status)
             return;
-        if (status == VehicleStatus.SOLD) {
+        if (this.status == VehicleStatus.SOLD || this.status == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException("Cannot transition out of a terminal state (" + this.status + ")");
+        }
+        if (status == VehicleStatus.SOLD || status == VehicleStatus.WITHDRAWN) {
             this.isInShowroom = false;
         }
         this.status = status;
     }
 
-    public void archive() {
-        if (this.isArchived)
-            return;
-        this.isArchived = true;
+    // validation helper methods
+    private void assertNotTerminal() {
+        if (this.status == VehicleStatus.SOLD || this.status == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException("Cannot edit an inactive vehicle (Status: " + this.status + ")");
+        }
     }
 
-    public void unarchive() {
-        if (!this.isArchived)
-            return;
-        this.isArchived = false;
+    private void assertNotInNegotiation() {
+        if (this.status == VehicleStatus.QUOTED || this.status == VehicleStatus.RESERVED) {
+            throw new IllegalStateException(
+                    "Cannot edit core vehicle data: it is currently locked in a commercial negotiation (Status: "
+                            + this.status + ")");
+        }
+    }
+
+    private void assertCoreEditable() {
+        assertNotTerminal();
+        assertNotInNegotiation();
+    }
+
+    private void assertAnagraphicEditable() {
+        assertNotTerminal();
+        if (this.condition == VehicleCondition.SECONDHAND && this.status != VehicleStatus.AVAILABLE) {
+            throw new IllegalStateException(
+                    "Registration data for second-hand vehicles is locked during commercial negotiations (Status "
+                            + this.status + ")");
+        }
     }
 
     /**
@@ -251,7 +258,7 @@ public class Vehicle {
     public void generateStandardInspectionDeadline() {
         if (this.registrationDate == null) {
             throw new IllegalStateException(
-                    "Impossibile calcolare le scadenze di revisione standard senza una data di immatricolazione.");
+                    "Cannot generate standard inspection deadlines without a registration date");
         }
 
         LocalDate firstInspectionDate = this.registrationDate
@@ -263,17 +270,6 @@ public class Vehicle {
         this.addDeadline(firstInspectionDate, VEHICLE_INSPECTION_DEADLINE_REASON, standardRecurrence, null);
     }
 
-    private void assertNotArchived() {
-        if (this.isArchived)
-            throw new IllegalStateException("Cannot edit an archived vehicle");
-    }
-
-    private void validateIsEditable() {
-        assertNotArchived();
-        if (this.status == VehicleStatus.SOLD)
-            throw new IllegalStateException("Cannot edit a vehicle with status " + this.status);
-    }
-
     // builder
     public static class VehicleBuilder {
         private String brand;
@@ -283,10 +279,9 @@ public class Vehicle {
         private Transaction purchaseTransaction;
         private BigDecimal sellingPrice;
         private LocalDate handoverDate;
-        private String licencePlate;
+        private String licensePlate;
         private LocalDate registrationDate;
         private double kilometers;
-
         private boolean isInShowroom;
 
         public VehicleBuilder setBrand(String brand) {
@@ -309,8 +304,8 @@ public class Vehicle {
             return this;
         }
 
-        public VehicleBuilder setPurchaseTransaction(BigDecimal amount, LocalDate date) {
-            this.purchaseTransaction = TransactionFactory.createVehiclePurchase(this.brand, this.model, amount, date);
+        public VehicleBuilder setPurchaseTransaction(Transaction purchaseTransaction) {
+            this.purchaseTransaction = purchaseTransaction;
             return this;
         }
 
@@ -324,8 +319,8 @@ public class Vehicle {
             return this;
         }
 
-        public VehicleBuilder setLicencePlate(String licencePlate) {
-            this.licencePlate = licencePlate;
+        public VehicleBuilder setLicensePlate(String licensePlate) {
+            this.licensePlate = licensePlate;
             return this;
         }
 
@@ -345,6 +340,11 @@ public class Vehicle {
         }
 
         public Vehicle build() {
+            java.util.Objects.requireNonNull(this.brand, "Brand is required");
+            java.util.Objects.requireNonNull(this.model, "Model is required");
+            java.util.Objects.requireNonNull(this.color, "Color is required");
+            java.util.Objects.requireNonNull(this.condition, "Condition is required");
+            java.util.Objects.requireNonNull(this.isInShowroom, "Is in showroom is required");
             return new Vehicle(this);
         }
     }

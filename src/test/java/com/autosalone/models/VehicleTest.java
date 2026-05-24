@@ -1,17 +1,40 @@
 package com.autosalone.models;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 
+import com.autosalone.enums.VehicleCondition;
+import com.autosalone.enums.VehicleStatus;
+
 public class VehicleTest {
+
+    private Vehicle.VehicleBuilder baseBuilder;
+
+    @BeforeEach
+    public void setUp() {
+        baseBuilder = new Vehicle.VehicleBuilder()
+                .setBrand("Fiat")
+                .setModel("Panda")
+                .setColor("Rosso")
+                .setInShowroom(true);
+    }
+
+    @Test
+    public void vehicleBuilder_CreatesVehicleInAvailableStatus() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+
+        assertEquals(VehicleStatus.AVAILABLE, car.getStatus());
+        assertTrue(car.isInShowroom());
+    }
 
     @Test
     public void generateStandardInspectionDeadline_SetsInspectionTo4YearsEndOfMonth() {
         LocalDate registrationDate = LocalDate.of(2022, 4, 15); // Data di immatricolazione: 15 Aprile 2022
 
-        Vehicle car = new Vehicle.VehicleBuilder()
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
                 .setRegistrationDate(registrationDate)
                 .build();
 
@@ -25,21 +48,121 @@ public class VehicleTest {
         // Expected: 2022-04-15 + 4 years = 2026-04-15 -> End of month = 2026-04-30
         LocalDate expectedDate = LocalDate.of(2026, 4, 30);
 
-        assertEquals(inspectionDeadline.getReason(), "Revisione Veicolo");
-        assertEquals(expectedDate,
-                inspectionDeadline.getStartDate(),
+        assertEquals("Revisione Veicolo", inspectionDeadline.getReason());
+        assertEquals(expectedDate, inspectionDeadline.getStartDate(),
                 "The first inspection for a vehicle must be 4 years later at the end of the month");
         assertEquals(2, inspectionDeadline.getRecurrence().getYears(), "The subsequent recurrence must be 2 years");
     }
 
     @Test
     public void generateStandardInspectionDeadline_WithoutRegistrationDate_ThrowsException() {
-        // Vehicle without a registration date
-        Vehicle car = new Vehicle.VehicleBuilder()
-                .build();
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build(); // Vehicle without a registration date
 
-        assertThrows(IllegalStateException.class, () -> {
-            car.generateStandardInspectionDeadline();
+        assertThrows(IllegalStateException.class, () -> car.generateStandardInspectionDeadline(),
+                "Cannot generate standard inspection deadlines without registration date");
+    }
+
+    @Test
+    public void editCoreData_WhenAvailable_Success() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND).build();
+
+        assertDoesNotThrow(() -> {
+            car.setBrand("Toyota");
+            car.setModel("Yaris");
+            car.setColor("Blu");
+            car.setKilometers(6800);
         });
+        assertEquals("Toyota", car.getBrand());
+        assertEquals("Yaris", car.getModel());
+        assertEquals("Blu", car.getColor());
+        assertEquals(6800, car.getKilometers());
+    }
+
+    @Test
+    public void editCoreData_WhenQuoted_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND).build();
+        car.setStatus(VehicleStatus.QUOTED);
+
+        assertThrows(IllegalStateException.class, () -> car.setBrand("Toyota"));
+        assertThrows(IllegalStateException.class, () -> car.setModel("Yaris"));
+        assertThrows(IllegalStateException.class, () -> car.setColor("Blu"));
+        assertThrows(IllegalStateException.class, () -> car.setKilometers(6800));
+    }
+
+    @Test
+    public void editAnagraphicData_SecondHand_WhenQuoted_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND).build();
+        car.setStatus(VehicleStatus.QUOTED);
+
+        assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"),
+                "Cannot edit license plate of a second-hand vehicle with status QUOTED");
+        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(LocalDate.now()),
+                "Cannot edit registration date of a second-hand vehicle with status QUOTED");
+    }
+
+    @Test
+    public void editAnagraphicData_SecondHand_WhenReserved_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND).build();
+        car.setStatus(VehicleStatus.RESERVED);
+
+        assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"),
+                "Cannot edit license plate of a second-hand vehicle with status RESERVED");
+        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(LocalDate.now()),
+                "Cannot edit registration date of a second-hand vehicle with status RESERVED");
+    }
+
+    @Test
+    public void editAnagraphicData_New_WhenReserved_Success() {
+        LocalDate today = LocalDate.now();
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+        car.setStatus(VehicleStatus.RESERVED); // Auto nuova prenotata in attesa di immatricolazione
+
+        assertDoesNotThrow(() -> {
+            car.setLicensePlate("XX999YY");
+            car.setRegistrationDate(today);
+        });
+
+        assertEquals("XX999YY", car.getLicensePlate());
+        assertTrue(today.isEqual(car.getRegistrationDate()));
+    }
+
+    @Test
+    public void editAnyData_WhenSold_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+        car.setStatus(VehicleStatus.SOLD);
+
+        assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
+        assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
+        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(LocalDate.now()));
+    }
+
+    @Test
+    public void editAnyData_WhenWithdrawn_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND).build();
+        car.setStatus(VehicleStatus.WITHDRAWN);
+
+        assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
+        assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
+        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(LocalDate.now()));
+    }
+
+    @Test
+    public void setStatus_ToTerminal_RemovesFromShowroom() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).setInShowroom(true).build();
+
+        assertTrue(car.isInShowroom());
+
+        car.setStatus(VehicleStatus.SOLD);
+
+        assertFalse(car.isInShowroom(), "When the vehicle is SOLD (handed over) it must be removed from the showroom");
+    }
+
+    @Test
+    public void setStatus_ToWithdrawn_RemovesFromShowroom() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).setInShowroom(true).build();
+
+        car.setStatus(VehicleStatus.WITHDRAWN);
+
+        assertFalse(car.isInShowroom(), "When the vehicle is WITHDRAWN it must be removed from the showroom");
     }
 }
