@@ -41,9 +41,6 @@ public abstract class SalesDocument {
     @Column(name = "additional_fees")
     private BigDecimal additionalFees;
 
-    @Column(name = "is_visible_to_customer", nullable = false)
-    private boolean isVisibleToCustomer = false;
-
     @Column(name = "is_archived", nullable = false)
     private boolean isArchived = false;
 
@@ -95,13 +92,15 @@ public abstract class SalesDocument {
         }
     }
 
+    protected SalesDocument() {
+    };
+
     protected SalesDocument(Vehicle vehicle, Customer customer) {
-        this.date = LocalDate.now();
+        this.date = LocalDate.now(); // current date
         this.vehicle = vehicle;
         this.customer = customer;
         this.additionalFees = BigDecimal.ZERO;
         this.discountStrategy = new NoDiscountStrategy();
-        this.isVisibleToCustomer = false;
         this.isArchived = false;
         this.vehicleSellingPriceSnapshot = vehicle.getSellingPrice();
     }
@@ -114,7 +113,6 @@ public abstract class SalesDocument {
         this.items = new ArrayList<>(original.getItems());
         this.additionalFees = original.additionalFees;
         this.discountStrategy = original.discountStrategy;
-        this.isVisibleToCustomer = false;
         this.isArchived = false;
         this.publicNotes = original.publicNotes;
         this.internalNotes = original.internalNotes;
@@ -147,7 +145,7 @@ public abstract class SalesDocument {
     }
 
     public boolean isVisibleToCustomer() {
-        return isVisibleToCustomer;
+        return !isDraft();
     }
 
     public boolean isArchived() {
@@ -196,18 +194,9 @@ public abstract class SalesDocument {
         this.additionalFees = (additionalFees == null) ? BigDecimal.ZERO : additionalFees;
     }
 
-    public void setVisibleToCustomer(boolean isVisibleToCustomer) {
-        if (this.isVisibleToCustomer == isVisibleToCustomer)
-            return;
-        validateVisibilityChange(isVisibleToCustomer);
-        this.isVisibleToCustomer = isVisibleToCustomer;
-    }
-
     public void archive() {
         if (this.isArchived)
             return;
-        if (this.isVisibleToCustomer)
-            throw new IllegalStateException("Cannot archive document while visible to the customer");
         validateIsArchivable();
         this.isArchived = true;
     }
@@ -256,6 +245,5 @@ public abstract class SalesDocument {
 
     protected abstract void validateIsArchivable();
 
-    protected abstract void validateVisibilityChange(boolean isVisibleToCustomer);
-
+    protected abstract boolean isDraft();
 }

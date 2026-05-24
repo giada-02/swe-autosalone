@@ -2,6 +2,7 @@ package com.autosalone.models;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,13 @@ public class Contract extends SalesDocument {
     @JoinColumn(name = "source_quotation_id", referencedColumnName = "id")
     private Quotation quotationReference;
 
+    @Column(name = "estimated_handover_date")
+    private LocalDate estimatedHandoverDate;
+
+    protected Contract() {
+        super();
+    }
+
     public Contract(Vehicle vehicle, Customer customer) {
         super(vehicle, customer);
         this.status = ContractStatus.DRAFT;
@@ -37,12 +45,13 @@ public class Contract extends SalesDocument {
     public Contract(Quotation source) {
         super(source);
         if (source.isArchived()) {
-            throw new IllegalStateException("Cannot create a contract from an ARCHIVED quotation");
+            throw new IllegalStateException("Cannot create a contract from an ARCHIVED quotation.");
         }
-        QuotationStatus sourceStatus = source.getStatus();
-        if (sourceStatus == QuotationStatus.EXPIRED || sourceStatus == QuotationStatus.DRAFT) {
-            throw new IllegalStateException("Cannot create a contract from quotation with status " + sourceStatus);
+        if (source.getStatus() != QuotationStatus.ISSUED) {
+            throw new IllegalStateException("A contract can only be created from an ISSUED quotation (Current status: "
+                    + source.getStatus() + ")");
         }
+
         this.status = ContractStatus.DRAFT;
         this.quotationReference = source;
     }
@@ -64,30 +73,63 @@ public class Contract extends SalesDocument {
         return quotationReference;
     }
 
+    public LocalDate getEstimatedHandoverDate() {
+        return estimatedHandoverDate;
+    }
+
     public BigDecimal getTotalPayment() {
         BigDecimal total = BigDecimal.ZERO;
+        if (this.deposit != null) {
+            total = total.add(this.deposit.getAmount());
+        }
         for (Transaction payment : this.payments) {
-            total = payment.getType() == TransactionType.IN ? total.add(payment.getAmount())
+            total = payment.getType() == TransactionType.IN
+                    ? total.add(payment.getAmount())
                     : total.subtract(payment.getAmount());
         }
         return total;
     }
 
-    public BigDecimal getRemainingBalance() {
+    public BigDecimal getRemainingBalance() { // prezzo finale - (caparra + acconti)
         return this.getFinalPrice().subtract(getTotalPayment());
     }
 
     // setters
-    public void setStatus(ContractStatus status) {
-        if (this.status == status)
-            return;
-        if (!this.status.canTransitionTo(status))
-            throw new IllegalStateException("Cannot transition contract from status " + this.status + " to " + status);
-        this.status = status;
-        if (status == ContractStatus.CONFIRMED)
-            this.setVisibleToCustomer(true);
-        if (status == ContractStatus.CANCELLED)
-            this.setVisibleToCustomer(false);
+    public void confirm(Transaction depositTransaction) {
+        if (this.status != ContractStatus.DRAFT) {
+            throw new IllegalStateException("Only a DRAFT contract can be confirmed.");
+        }
+
+        if (depositTransaction == null) {
+            throw new IllegalStateException("Cannot confirm a contract without providing a deposit transaction.");
+        }
+
+        if (depositTransaction.getType() != TransactionType.IN) {
+            throw new IllegalArgumentException("Deposit must be an IN transaction.");
+        }
+
+        this.deposit = depositTransaction;
+        this.status = ContractStatus.CONFIRMED;
+    }
+
+    public void complete() {
+        if (this.status != ContractStatus.CONFIRMED) {
+            throw new IllegalStateException("Only a CONFIRMED contract can be completed");
+        }
+
+        if (this.getRemainingBalance().compareTo(BigDecimal.ZERO) != 0) {
+            throw new IllegalStateException(
+                    "Cannot complete contract: balance is not zero. Remaining to pay: " + this.getRemainingBalance());
+        }
+
+        this.status = ContractStatus.COMPLETED;
+    }
+
+    public void cancel() {
+        if (this.status != ContractStatus.CONFIRMED) {
+            throw new IllegalStateException("Only a CONFIRMED contract can be cancelled");
+        }
+        this.status = ContractStatus.CANCELLED;
     }
 
     public void registerPayment(Transaction payment) {
@@ -118,20 +160,18 @@ public class Contract extends SalesDocument {
 
     @Override
     protected void validateIsEditable() {
-        if (!this.status.isEditable())
+        if (this.status != ContractStatus.DRAFT)
             throw new IllegalStateException("Cannot edit contract with status " + this.status);
     }
 
     @Override
     protected void validateIsArchivable() {
-        if (!this.status.isArchivable())
-            throw new IllegalStateException("Cannot archive contract with status " + this.status);
+        if (this.status == ContractStatus.CONFIRMED)
+            throw new IllegalStateException("Cannot archive a CONFIRMED contract");
     }
 
     @Override
-    protected void validateVisibilityChange(boolean isVisibleToCustomer) {
-        if (isVisibleToCustomer && !this.status.canBeVisibleToCustomer())
-            throw new IllegalStateException(
-                    "Cannot set contract with status " + this.status + " as visible to the customer");
+    protected boolean isDraft() {
+        return this.status == ContractStatus.DRAFT;
     }
 }
