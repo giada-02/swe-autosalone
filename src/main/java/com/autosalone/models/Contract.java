@@ -142,9 +142,24 @@ public class Contract extends SalesDocument {
             throw new IllegalStateException("Only a CONFIRMED contract can be completed");
         }
 
+        if (this.getVehicle().getHandoverDate() == null) {
+            throw new IllegalStateException("The actual handover date must be set before completing the contract");
+        }
+
+        if (this.getVehicle().getLicensePlate() == null || this.getVehicle().getLicensePlate().trim().isEmpty()) {
+            throw new IllegalStateException(
+                    "The licence plate of the associated vehicle must be set before completing the contract");
+        }
+
+        if (this.getVehicle().getRegistrationDate() == null) {
+            throw new IllegalStateException(
+                    "The registration date of the associated vehicle must be set before completing the contract");
+        }
+
         if (this.getRemainingBalance().compareTo(BigDecimal.ZERO) != 0) {
             throw new IllegalStateException(
-                    "Cannot complete contract: balance is not zero. Remaining to pay: " + this.getRemainingBalance());
+                    "Cannot complete contract: balance is not zero. Remaining to pay: "
+                            + this.getRemainingBalance());
         }
 
         this.status = ContractStatus.COMPLETED;

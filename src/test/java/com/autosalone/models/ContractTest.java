@@ -512,6 +512,9 @@ public class ContractTest {
                 new BigDecimal("9500.00"),
                 LocalDate.now());
         contract.registerPayment(remainingAmout);
+        defaultCar.setHandoverDate(LocalDate.now());
+        defaultCar.setLicensePlate("AB123CD");
+        defaultCar.setRegistrationDate(LocalDate.now());
         contract.complete();
         return contract;
     }

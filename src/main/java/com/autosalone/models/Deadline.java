@@ -91,8 +91,7 @@ public class Deadline {
 
     private void validateDates(LocalDate start, LocalDate end) {
         if (end != null && !end.isAfter(start)) {
-            throw new IllegalArgumentException(
-                    "La data di fine deve essere strettamente successiva alla data di inizio.");
+            throw new IllegalArgumentException("The end date must be stricly after the start date");
         }
     }
 
