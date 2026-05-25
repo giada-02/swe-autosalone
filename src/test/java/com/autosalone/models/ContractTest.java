@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
+import com.autosalone.enums.VehicleStatus;
 import com.autosalone.models.Customer.CustomerBuilder;
 import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
@@ -104,6 +105,55 @@ public class ContractTest {
 
         assertNotNull(contract);
         assertEquals(ContractStatus.DRAFT, contract.getStatus(), "The new contract must be in status DRAFT");
+    }
+
+    @Test
+    public void constructor_FromIssuedQuotation_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+
+        assertEquals(QuotationStatus.ISSUED, quote.getStatus());
+        assertDoesNotThrow(() -> {
+            new Contract(quote);
+        }, "Should be able to create a contract from an ISSUED quotation");
+    }
+
+    @Test
+    public void constructor_FromIssuedQuotation_WhenVehicleIsSold_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        defaultCar.setStatus(VehicleStatus.SOLD);
+
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from a quotation with SOLD vehicle");
+    }
+
+    @Test
+    public void constructor_WhenVehicleIsReserved_ThrowsException() {
+        defaultCar.setStatus(VehicleStatus.RESERVED);
+
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(defaultCar, defaultCustomer);
+        }, "Cannot create a contract from a RESERVED vehicle");
+    }
+
+    @Test
+    public void constructor_WhenVehicleIsWithdrawn_ThrowsException() {
+        defaultCar.setStatus(VehicleStatus.WITHDRAWN);
+
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(defaultCar, defaultCustomer);
+        }, "Cannot create a contract from a WITHDRAWN vehicle");
+    }
+
+    @Test
+    public void constructor_WhenVehicleIsQuoted_Success() {
+        defaultCar.setStatus(VehicleStatus.QUOTED);
+
+        assertDoesNotThrow(() -> new Contract(defaultCar, defaultCustomer));
     }
 
     @Test
@@ -379,6 +429,41 @@ public class ContractTest {
         assertTrue(new BigDecimal("6000.00").equals(contract.getTotalPayment()));
         assertTrue(new BigDecimal("10000.00").equals(contract.getFinalPrice()));
         assertTrue(new BigDecimal("4000.00").equals(contract.getRemainingBalance()));
+    }
+
+    // archive
+    @Test
+    public void archive_WhenContractIsDraft_Success() {
+        Contract contract = new Contract(defaultCar, defaultCustomer);
+
+        contract.archive();
+        assertTrue(contract.isArchived(), "Should be able to archive a DRAFT contract");
+    }
+
+    @Test
+    public void archive_WhenContractIsConfirmed_ThrowsException() {
+        Contract contract = getConfirmedContract("1000.00");
+
+        assertThrows(IllegalStateException.class, () -> contract.archive(), "Cannot archive a CONFIRMED contract");
+    }
+
+    @Test
+    public void archive_WhenContractIsCompleted_Success() {
+        Contract contract = getCompletedContract();
+
+        contract.archive();
+
+        assertTrue(contract.isArchived(), "Should be able to archive a COMPLETED contract");
+    }
+
+    @Test
+    public void archive_WhenContractIsCanceled_Success() {
+        Contract contract = getConfirmedContract("1000.00");
+        contract.cancel("Finanziamento Rifiutato");
+
+        contract.archive();
+
+        assertTrue(contract.isArchived(), "Should be able to archive a CANCELED contract");
     }
 
     // helper methods

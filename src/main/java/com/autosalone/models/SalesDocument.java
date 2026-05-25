@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.autosalone.enums.VehicleStatus;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.models.discounts.DiscountStrategy;
@@ -96,6 +97,12 @@ public abstract class SalesDocument {
     };
 
     protected SalesDocument(Vehicle vehicle, Customer customer) {
+        VehicleStatus vs = vehicle.getStatus();
+        if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException(
+                    "Cannot create sales document: the vehicle is unavailable (Status: " + vs + ")");
+        }
+
         this.date = LocalDate.now(); // current date
         this.vehicle = vehicle;
         this.customer = customer;
@@ -107,6 +114,12 @@ public abstract class SalesDocument {
 
     // copy constructor
     protected SalesDocument(SalesDocument original) {
+        VehicleStatus vs = original.getVehicle().getStatus();
+        if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException(
+                    "Cannot create sales document: the vehicle is unavailable (Status: " + vs + ")");
+        }
+
         this.date = LocalDate.now(); // current date
         this.vehicle = original.getVehicle();
         this.customer = original.getCustomer();
@@ -168,6 +181,26 @@ public abstract class SalesDocument {
         return discountStrategy;
     }
 
+    public BigDecimal getDiscountAmount() {
+        BigDecimal subtotal = getSubtotal();
+        return this.discountStrategy.calculateDiscountAmount(subtotal);
+    }
+
+    public BigDecimal getSubtotal() {
+        BigDecimal total = this.vehicle.getSellingPrice();
+        for (AppliedItem item : items) {
+            total = total.add(item.getAppliedPrice());
+        }
+        return total;
+    }
+
+    public BigDecimal getFinalPrice() {
+        BigDecimal subtotal = getSubtotal();
+        BigDecimal discount = this.discountStrategy.calculateDiscountAmount(subtotal);
+        BigDecimal discountedTotal = subtotal.subtract(discount);
+        return discountedTotal.add(this.additionalFees);
+    }
+
     // setters
     public void setDate(LocalDate date) {
         validateIsEditable();
@@ -224,21 +257,6 @@ public abstract class SalesDocument {
     public void setDiscountStrategy(DiscountStrategy discountStrategy) {
         validateIsEditable();
         this.discountStrategy = discountStrategy;
-    }
-
-    public BigDecimal getSubtotal() {
-        BigDecimal total = this.vehicle.getSellingPrice();
-        for (AppliedItem item : items) {
-            total = total.add(item.getAppliedPrice());
-        }
-        return total;
-    }
-
-    public BigDecimal getFinalPrice() {
-        BigDecimal subtotal = getSubtotal();
-        BigDecimal discount = this.discountStrategy.calculateDiscountAmount(subtotal);
-        BigDecimal discountedTotal = subtotal.subtract(discount);
-        return discountedTotal.add(this.additionalFees);
     }
 
     protected abstract void validateIsEditable();

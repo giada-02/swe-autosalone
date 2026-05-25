@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
+import com.autosalone.enums.VehicleStatus;
 
 @Entity
 @Table(name = "quotations")
@@ -73,6 +74,12 @@ public class Quotation extends SalesDocument {
                     "Only a DRAFT quotation can be issued (Current status: " + this.status + ")");
         }
 
+        VehicleStatus vs = this.getVehicle().getStatus();
+        if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException(
+                    "Cannot issue the quotation: the vehicle is unavailable (Status: " + vs + ")");
+        }
+
         if (this.expirationDate == null) {
             throw new IllegalStateException("Cannot issue a quotation without an expiration date");
         }
@@ -98,8 +105,8 @@ public class Quotation extends SalesDocument {
     }
 
     public void voidDocument() {
-        if (this.status != QuotationStatus.ISSUED) {
-            throw new IllegalStateException("Only an ISSUED quotation can be voided");
+        if (this.status != QuotationStatus.ISSUED && this.status != QuotationStatus.DRAFT) {
+            throw new IllegalStateException("Only an ISSUED or DRAFT quotation can be voided");
         }
         this.status = QuotationStatus.VOIDED;
     }
