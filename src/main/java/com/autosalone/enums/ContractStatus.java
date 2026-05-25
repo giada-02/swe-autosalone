@@ -4,5 +4,5 @@ public enum ContractStatus {
     DRAFT,
     CONFIRMED,
     COMPLETED,
-    CANCELLED
+    CANCELED
 }

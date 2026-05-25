@@ -32,6 +32,9 @@ public class Contract extends SalesDocument {
     @Column(name = "estimated_handover_date")
     private LocalDate estimatedHandoverDate;
 
+    @Column(name = "cancelation_reason", columnDefinition = "TEXT")
+    private String cancelationReason;
+
     protected Contract() {
         super();
     }
@@ -77,6 +80,10 @@ public class Contract extends SalesDocument {
         return estimatedHandoverDate;
     }
 
+    public String getCancelationReason() {
+        return cancelationReason;
+    }
+
     public BigDecimal getTotalPayment() {
         BigDecimal total = BigDecimal.ZERO;
         if (this.deposit != null) {
@@ -95,17 +102,35 @@ public class Contract extends SalesDocument {
     }
 
     // setters
+    @Override
+    public void setVehicle(Vehicle vehicle) {
+        if (this.quotationReference != null) {
+            throw new IllegalStateException(
+                    "Cannot change vehicle: this contract is tied to a pre-existing quotation");
+        }
+        super.setVehicle(vehicle);
+    }
+
+    @Override
+    public void setCustomer(Customer customer) {
+        if (this.quotationReference != null) {
+            throw new IllegalStateException(
+                    "Cannot change customer: this contract is tied to a pre-existing quotation");
+        }
+        super.setCustomer(customer);
+    }
+
     public void confirm(Transaction depositTransaction) {
         if (this.status != ContractStatus.DRAFT) {
-            throw new IllegalStateException("Only a DRAFT contract can be confirmed.");
+            throw new IllegalStateException("Only a DRAFT contract can be confirmed");
         }
 
         if (depositTransaction == null) {
-            throw new IllegalStateException("Cannot confirm a contract without providing a deposit transaction.");
+            throw new IllegalStateException("Cannot confirm a contract without providing a deposit transaction");
         }
 
         if (depositTransaction.getType() != TransactionType.IN) {
-            throw new IllegalArgumentException("Deposit must be an IN transaction.");
+            throw new IllegalArgumentException("Deposit must be an IN transaction");
         }
 
         this.deposit = depositTransaction;
@@ -125,11 +150,16 @@ public class Contract extends SalesDocument {
         this.status = ContractStatus.COMPLETED;
     }
 
-    public void cancel() {
+    public void cancel(String reason) {
         if (this.status != ContractStatus.CONFIRMED) {
-            throw new IllegalStateException("Only a CONFIRMED contract can be cancelled");
+            throw new IllegalStateException("Only a CONFIRMED contract can be canceled");
         }
-        this.status = ContractStatus.CANCELLED;
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("A cancelation reason must be provided");
+        }
+
+        this.cancelationReason = reason;
+        this.status = ContractStatus.CANCELED;
     }
 
     public void registerPayment(Transaction payment) {
@@ -146,15 +176,18 @@ public class Contract extends SalesDocument {
     }
 
     public void registerRefund(Transaction refund) {
-        if (this.status != ContractStatus.CONFIRMED) {
+        if (this.status != ContractStatus.CONFIRMED && this.status != ContractStatus.CANCELED) {
             throw new IllegalStateException("Cannot process refunds for a contract in status " + this.status);
         }
+
         if (refund.getType() != TransactionType.OUT) {
             throw new IllegalArgumentException("Refund must be a transaction of type OUT");
         }
+
         if (refund.getAmount().compareTo(getTotalPayment()) > 0) {
             throw new IllegalArgumentException("Cannot refund more than what has been paid");
         }
+
         this.payments.add(refund);
     }
 
