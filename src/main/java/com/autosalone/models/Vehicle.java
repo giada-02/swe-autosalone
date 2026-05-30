@@ -46,7 +46,7 @@ public class Vehicle {
     @OneToMany(mappedBy = "vehicle", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     private List<Transaction> expenses = new ArrayList<>();
 
-    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Deadline> deadlines = new ArrayList<>();
 
     @Column(name = "license_plate")
@@ -197,11 +197,12 @@ public class Vehicle {
         this.expenses.add(expense);
     }
 
-    public void addDeadline(LocalDate startDate, String reason, Period recurrence, LocalDate enDate) {
+    public void addDeadline(String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion) {
         if (this.status == VehicleStatus.WITHDRAWN) {
             throw new IllegalStateException("Cannot edit an inactive vehicle (Status: " + this.status + ")");
         }
-        Deadline deadline = new Deadline(startDate, reason, recurrence, enDate, this);
+
+        Deadline deadline = new Deadline(reason, dueDate, recurrence, recalculateFromCompletion, this);
         this.deadlines.add(deadline);
     }
 
@@ -267,7 +268,7 @@ public class Vehicle {
 
         Period standardRecurrence = Period.ofYears(2);
 
-        this.addDeadline(firstInspectionDate, VEHICLE_INSPECTION_DEADLINE_REASON, standardRecurrence, null);
+        this.addDeadline(VEHICLE_INSPECTION_DEADLINE_REASON, firstInspectionDate, standardRecurrence, true);
     }
 
     // builder
