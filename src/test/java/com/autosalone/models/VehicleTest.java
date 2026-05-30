@@ -32,26 +32,23 @@ public class VehicleTest {
 
     @Test
     public void generateStandardInspectionDeadline_SetsInspectionTo4YearsEndOfMonth() {
-        LocalDate registrationDate = LocalDate.of(2022, 4, 15); // Data di immatricolazione: 15 Aprile 2022
-
+        LocalDate registrationDate = LocalDate.of(2021, 4, 15); // Data di immatricolazione: 15 Aprile 2022
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
                 .setRegistrationDate(registrationDate)
                 .build();
 
         car.generateStandardInspectionDeadline();
 
-        assertNotNull(car.getDeadlines(), "Deadlines list must not be null");
-        assertEquals(1, car.getDeadlines().size(), "Exactly one deadline should have been generated");
-
+        assertEquals(1, car.getDeadlines().size());
         Deadline inspectionDeadline = car.getDeadlines().get(0);
 
-        // Expected: 2022-04-15 + 4 years = 2026-04-15 -> End of month = 2026-04-30
-        LocalDate expectedDate = LocalDate.of(2026, 4, 30);
+        LocalDate expectedDate = LocalDate.of(2025, 4, 30); // 2021 + 4 anni a fine mese
 
         assertEquals("Revisione Veicolo", inspectionDeadline.getReason());
-        assertEquals(expectedDate, inspectionDeadline.getStartDate(),
-                "The first inspection for a vehicle must be 4 years later at the end of the month");
-        assertEquals(2, inspectionDeadline.getRecurrence().getYears(), "The subsequent recurrence must be 2 years");
+        assertTrue(expectedDate.isEqual(inspectionDeadline.getDueDate()));
+        assertEquals(2, inspectionDeadline.getRecurrence().getYears());
+        assertTrue(inspectionDeadline.isRecalculatedFromCompletion(), "La revisione deve ricalcolare in base all'esecuzione effettiva");
+        assertFalse(inspectionDeadline.isCompleted());
     }
 
     @Test
