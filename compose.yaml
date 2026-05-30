@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
 
 # database per i test
   db-test:
@@ -22,7 +22,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - pgdata-test:/var/lib/postgresql/data
+      - pgdata-test:/var/lib/postgresql
 
 volumes:
   pgdata:
