@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
@@ -32,9 +33,9 @@ public class VehicleTest {
 
     @Test
     public void generateStandardInspectionDeadline_SetsInspectionTo4YearsEndOfMonth() {
-        LocalDate registrationDate = LocalDate.of(2021, 4, 15); // Data di immatricolazione: 15 Aprile 2022
+        LocalDate today = LocalDate.now();
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
-                .setRegistrationDate(registrationDate)
+                .setRegistrationDate(today)
                 .build();
 
         car.generateStandardInspectionDeadline();
@@ -42,12 +43,14 @@ public class VehicleTest {
         assertEquals(1, car.getDeadlines().size());
         Deadline inspectionDeadline = car.getDeadlines().get(0);
 
-        LocalDate expectedDate = LocalDate.of(2025, 4, 30); // 2021 + 4 anni a fine mese
+        LocalDate expectedDate = today.plusYears(4)
+                .with(TemporalAdjusters.lastDayOfMonth());
 
         assertEquals("Revisione Veicolo", inspectionDeadline.getReason());
         assertTrue(expectedDate.isEqual(inspectionDeadline.getDueDate()));
         assertEquals(2, inspectionDeadline.getRecurrence().getYears());
-        assertTrue(inspectionDeadline.isRecalculatedFromCompletion(), "La revisione deve ricalcolare in base all'esecuzione effettiva");
+        assertTrue(inspectionDeadline.isRecalculatedFromCompletion(),
+                "La revisione deve ricalcolare in base all'esecuzione effettiva");
         assertFalse(inspectionDeadline.isCompleted());
     }
 

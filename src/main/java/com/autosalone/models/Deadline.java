@@ -134,8 +134,7 @@ public class Deadline {
 
     /**
      * Segna la scadenza come completata e restituisce la PROSSIMA scadenza
-     * generata.
-     * Restituisce null se la scadenza non è ricorrente.
+     * generata. Restituisce null se la scadenza non è ricorrente.
      */
     public Deadline complete(LocalDate actualCompletionDate, String notes) {
         if (this.isCompleted) {

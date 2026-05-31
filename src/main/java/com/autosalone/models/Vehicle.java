@@ -251,22 +251,45 @@ public class Vehicle {
     }
 
     /**
-     * Genera scadenze per revisione standard: prima revisione dopo 4 anni e ogni 2
-     * anni le revisioni successive (entro l'ultimo giorno del mese)
+     * Genera la prima scadenza per revisione standard: prima revisione dopo 4
+     * anni e ogni 2 anni le revisioni successive (entro l'ultimo giorno del mese)
      */
     public void generateStandardInspectionDeadline() {
         if (this.registrationDate == null) {
             throw new IllegalStateException(
-                    "Cannot generate standard inspection deadlines without a registration date");
+                    "Cannot generate the standard inspection deadline without a registration date");
         }
 
         LocalDate firstInspectionDate = this.registrationDate
                 .plusYears(4)
                 .with(TemporalAdjusters.lastDayOfMonth());
 
+        if (firstInspectionDate.isBefore(LocalDate.now())) {
+            throw new IllegalStateException(
+                    "Cannot generate standard inspection deadline: the vehicle registration date is more than 4 years old");
+        }
+
         Period standardRecurrence = Period.ofYears(2);
 
         this.addDeadline(Deadline.VEHICLE_INSPECTION_REASON, firstInspectionDate, standardRecurrence, true);
+    }
+
+    /**
+     * Genera la prossima scadenza per la revisione basandosi sulla data dell'ultima
+     * revisione effettivamente eseguita e annotata sul libretto di circolazione.
+     * * @param lastActualInspection La data esatta in cui è stata superata l'ultima
+     * revisione.
+     */
+    public void generateInspectionFromLastDate(LocalDate lastActualInspection) {
+        java.util.Objects.requireNonNull(lastActualInspection, "The last actual inspection date is required");
+
+        LocalDate nextInspectionDate = lastActualInspection
+                .plusYears(2)
+                .with(TemporalAdjusters.lastDayOfMonth());
+
+        Period standardRecurrence = Period.ofYears(2);
+
+        this.addDeadline(Deadline.VEHICLE_INSPECTION_REASON, nextInspectionDate, standardRecurrence, true);
     }
 
     // builder
