@@ -73,8 +73,8 @@ public abstract class PurchasableItem {
         this.isArchived = false;
     }
 
-    protected void validateIsNotArchived() {
+    public void validateIsNotArchived() {
         if (this.isArchived)
-            throw new IllegalStateException("Cannot edit the archived item");
+            throw new IllegalStateException("Cannot edit nor add an archived item");
     }
 }

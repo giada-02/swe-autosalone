@@ -31,12 +31,26 @@ public class AccessoryPackage extends PurchasableItem {
 
     public void addItem(PurchasableItem item) {
         validateIsNotArchived();
+
+        java.util.Objects.requireNonNull(item, "Item is required");
+        item.validateIsNotArchived();
+        validateItemAlreadyExists(item);
+
         this.items.add(item);
     }
 
     public void removeItem(PurchasableItem item) {
         validateIsNotArchived();
+
+        java.util.Objects.requireNonNull(item, "Item is required");
+
         this.items.remove(item);
     }
 
+    private void validateItemAlreadyExists(PurchasableItem item) {
+        boolean alreadyExists = this.items.stream()
+                .anyMatch(i -> i.getId().equals(item.getId()));
+        if (alreadyExists)
+            throw new IllegalArgumentException("This item is already in the package");
+    }
 }

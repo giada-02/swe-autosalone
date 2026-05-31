@@ -269,8 +269,9 @@ public abstract class SalesDocument {
 
     public void addItem(PurchasableItem item) {
         validateIsEditable();
-        validatePurchasableItemNotNull(item);
-        validatePurchasableItemNotArchived(item);
+
+        java.util.Objects.requireNonNull(item, "Item is required");
+        item.validateIsNotArchived();
         validatePurchasableItemAlreadyExists(item);
 
         this.items.add(new AppliedItem(item));
@@ -278,7 +279,8 @@ public abstract class SalesDocument {
 
     public void removeItem(PurchasableItem item) {
         validateIsEditable();
-        validatePurchasableItemNotNull(item);
+
+        java.util.Objects.requireNonNull(item, "Item is required");
 
         AppliedItem targetItem = findAppliedItem(item);
         this.items.remove(targetItem);
@@ -291,21 +293,11 @@ public abstract class SalesDocument {
                 .orElseThrow(() -> new IllegalArgumentException("Item not found in this document"));
     }
 
-    private void validatePurchasableItemNotNull(PurchasableItem item) {
-        if (item == null)
-            throw new IllegalArgumentException("PurchasableItem cannot be null");
-    }
-
-    private void validatePurchasableItemNotArchived(PurchasableItem item) {
-        if (item.isArchived())
-            throw new IllegalStateException("Cannot add an archived item");
-    }
-
     private void validatePurchasableItemAlreadyExists(PurchasableItem item) {
         boolean alreadyExists = this.items.stream()
                 .anyMatch(applied -> applied.getItem().getId().equals(item.getId()));
         if (alreadyExists)
-            throw new IllegalArgumentException("This accessory is already in the document");
+            throw new IllegalArgumentException("This item is already in the document");
     }
 
     // abstract methods
