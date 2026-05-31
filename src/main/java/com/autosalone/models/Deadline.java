@@ -83,6 +83,10 @@ public class Deadline {
         return dueDate;
     }
 
+    public boolean isExpired() {
+        return !isCompleted && dueDate.isBefore(LocalDate.now());
+    }
+
     public Vehicle getVehicle() {
         return vehicle;
     }
