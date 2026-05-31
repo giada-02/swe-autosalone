@@ -3,8 +3,8 @@ package com.autosalone.models;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.enums.VehicleStatus;
@@ -37,8 +37,7 @@ public abstract class SalesDocument {
 
     @ElementCollection
     @CollectionTable(name = "document_items", joinColumns = @JoinColumn(name = "sales_document_id"))
-    @MapKeyColumn(name = "item_name")
-    private Map<String, AppliedItem> items = new HashMap<>();
+    private List<AppliedItem> items = new ArrayList<>();
 
     @Column(name = "additional_fees")
     private BigDecimal additionalFees;
@@ -131,14 +130,11 @@ public abstract class SalesDocument {
         this.internalNotes = original.internalNotes;
         this.vehicleSellingPriceSnapshot = original.vehicleSellingPriceSnapshot;
 
-        this.items = new HashMap<>(); // items deep copy
-        for (Map.Entry<String, AppliedItem> entry : original.getItems().entrySet()) {
-            AppliedItem originalAppliedItem = entry.getValue();
-
-            AppliedItem newAppliedItem = new AppliedItem(originalAppliedItem.getItem());
-            newAppliedItem.setAppliedPrice(originalAppliedItem.getAppliedPrice());
-
-            this.items.put(entry.getKey(), newAppliedItem);
+        this.items = new ArrayList<>(); // items deep copy
+        for (AppliedItem originalItem : original.getItems()) {
+            AppliedItem newItem = new AppliedItem(originalItem.getItem());
+            newItem.setAppliedPrice(originalItem.getAppliedPrice());
+            this.items.add(newItem);
         }
     }
 
@@ -159,7 +155,7 @@ public abstract class SalesDocument {
         return customer;
     }
 
-    public Map<String, AppliedItem> getItems() {
+    public List<AppliedItem> getItems() {
         return items;
     }
 
@@ -198,7 +194,7 @@ public abstract class SalesDocument {
 
     public BigDecimal getSubtotal() {
         BigDecimal total = this.vehicle.getSellingPrice();
-        for (AppliedItem item : items.values()) {
+        for (AppliedItem item : items) {
             total = total.add(item.getAppliedPrice());
         }
         return total;
@@ -225,23 +221,6 @@ public abstract class SalesDocument {
     public void setCustomer(Customer customer) {
         validateIsEditable();
         this.customer = customer;
-    }
-
-    public void addItem(PurchasableItem item) {
-        validateIsEditable();
-        if (item == null || item.getName() == null) {
-            throw new IllegalArgumentException("PurchasableItem and its name cannot be null");
-        }
-        this.items.put(item.getName(), new AppliedItem(item));
-    }
-
-    public void removeItem(PurchasableItem item) {
-        validateIsEditable();
-        if (item == null || item.getName() == null) {
-            throw new IllegalArgumentException("PurchasableItem and its name cannot be null");
-        }
-        findAppliedItem(item);
-        this.items.remove(item.getName());
     }
 
     public void setAdditionalFees(BigDecimal additionalFees) {
@@ -281,18 +260,49 @@ public abstract class SalesDocument {
         this.discountStrategy = discountStrategy;
     }
 
+    // items
     public void setAppliedItemPrice(PurchasableItem item, BigDecimal newPrice) {
         validateIsEditable();
         AppliedItem targetItem = findAppliedItem(item);
         targetItem.setAppliedPrice(newPrice);
     }
 
-    public AppliedItem findAppliedItem(PurchasableItem item) {
-        if (!this.items.containsKey(item.getName()))
-            throw new IllegalArgumentException("Item not found in this document");
-        return this.items.get(item.getName());
+    public void addItem(PurchasableItem item) {
+        validateIsEditable();
+        validatePurchasableItemNotNull(item);
+        validatePurchasableItemAlreadyExists(item);
+
+        this.items.add(new AppliedItem(item));
     }
 
+    public void removeItem(PurchasableItem item) {
+        validateIsEditable();
+        validatePurchasableItemNotNull(item);
+
+        AppliedItem targetItem = findAppliedItem(item);
+        this.items.remove(targetItem);
+    }
+
+    private AppliedItem findAppliedItem(PurchasableItem item) {
+        return this.items.stream()
+                .filter(applied -> applied.getItem().getId().equals(item.getId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Item not found in this document"));
+    }
+
+    private void validatePurchasableItemNotNull(PurchasableItem item) {
+        if (item == null)
+            throw new IllegalArgumentException("PurchasableItem cannot be null");
+    }
+
+    private void validatePurchasableItemAlreadyExists(PurchasableItem item) {
+        boolean alreadyExists = this.items.stream()
+                .anyMatch(applied -> applied.getItem().getId().equals(item.getId()));
+        if (alreadyExists)
+            throw new IllegalArgumentException("This accessory is already in the document");
+    }
+
+    // abstract methods
     protected abstract void validateIsEditable();
 
     protected abstract void validateIsArchivable();
