@@ -25,6 +25,7 @@ public class Accessory extends PurchasableItem {
     }
 
     public void setBasePrice(BigDecimal basePrice) {
+        validateIsNotArchived();
         validateBasePrice(basePrice);
         this.basePrice = basePrice;
     }

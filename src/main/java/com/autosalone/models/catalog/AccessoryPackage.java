@@ -30,10 +30,12 @@ public class AccessoryPackage extends PurchasableItem {
     }
 
     public void addItem(PurchasableItem item) {
+        validateIsNotArchived();
         this.items.add(item);
     }
 
     public void removeItem(PurchasableItem item) {
+        validateIsNotArchived();
         this.items.remove(item);
     }
 

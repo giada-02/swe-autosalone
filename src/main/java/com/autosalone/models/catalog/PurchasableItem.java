@@ -52,18 +52,29 @@ public abstract class PurchasableItem {
 
     // setters
     public void setName(String name) {
+        validateIsNotArchived();
         this.name = name;
     }
 
     public void setDescription(String description) {
+        validateIsNotArchived();
         this.description = description;
     }
 
     public void archive() {
+        if (this.isArchived)
+            return;
         this.isArchived = true;
     }
 
     public void unarchive() {
+        if (!this.isArchived)
+            return;
         this.isArchived = false;
+    }
+
+    protected void validateIsNotArchived() {
+        if (this.isArchived)
+            throw new IllegalStateException("Cannot edit the archived item");
     }
 }
