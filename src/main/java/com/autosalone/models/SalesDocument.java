@@ -288,14 +288,14 @@ public abstract class SalesDocument {
 
     private AppliedItem findAppliedItem(PurchasableItem item) {
         return this.items.stream()
-                .filter(applied -> applied.getItem().getId().equals(item.getId()))
+                .filter(applied -> applied.getItem().getName().equalsIgnoreCase(item.getName()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Item not found in this document"));
     }
 
     private void validatePurchasableItemAlreadyExists(PurchasableItem item) {
         boolean alreadyExists = this.items.stream()
-                .anyMatch(applied -> applied.getItem().getId().equals(item.getId()));
+                .anyMatch(applied -> applied.getItem().getName().equalsIgnoreCase(item.getName()));
         if (alreadyExists)
             throw new IllegalArgumentException("This item is already in the document");
     }

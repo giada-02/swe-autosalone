@@ -48,6 +48,8 @@ public class Deadline {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    public static final String VEHICLE_INSPECTION_REASON = "Revisione Veicolo";
+
     protected Deadline() {
     }
 
@@ -153,7 +155,7 @@ public class Deadline {
             nextDueDate = actualCompletionDate.plus(this.recurrence);
 
             // regola speciale per la revisione: fine del mese
-            if ("Revisione Veicolo".equals(this.reason)) {
+            if (Deadline.VEHICLE_INSPECTION_REASON.equals(this.reason)) {
                 nextDueDate = nextDueDate.with(TemporalAdjusters.lastDayOfMonth());
             }
         } else {

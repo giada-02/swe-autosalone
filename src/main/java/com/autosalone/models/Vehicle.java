@@ -65,8 +65,6 @@ public class Vehicle {
     @Column(nullable = false)
     private VehicleStatus status;
 
-    private static final String VEHICLE_INSPECTION_DEADLINE_REASON = "Revisione Veicolo";
-
     protected Vehicle() {
     }
 
@@ -268,7 +266,7 @@ public class Vehicle {
 
         Period standardRecurrence = Period.ofYears(2);
 
-        this.addDeadline(VEHICLE_INSPECTION_DEADLINE_REASON, firstInspectionDate, standardRecurrence, true);
+        this.addDeadline(Deadline.VEHICLE_INSPECTION_REASON, firstInspectionDate, standardRecurrence, true);
     }
 
     // builder

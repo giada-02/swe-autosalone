@@ -49,7 +49,7 @@ public class AccessoryPackage extends PurchasableItem {
 
     private void validateItemAlreadyExists(PurchasableItem item) {
         boolean alreadyExists = this.items.stream()
-                .anyMatch(i -> i.getId().equals(item.getId()));
+                .anyMatch(i -> i.getName().equalsIgnoreCase(item.getName()));
         if (alreadyExists)
             throw new IllegalArgumentException("This item is already in the package");
     }
