@@ -19,10 +19,14 @@ public abstract class PurchasableItem {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "is_archived", nullable = false)
+    private boolean isArchived = false;
+
     protected PurchasableItem() {
     }
 
     public PurchasableItem(String name, String description) {
+        java.util.Objects.requireNonNull(name, "Name is required");
         this.name = name;
         this.description = description;
     }
@@ -40,6 +44,10 @@ public abstract class PurchasableItem {
         return description;
     }
 
+    public boolean isArchived() {
+        return isArchived;
+    }
+
     protected abstract BigDecimal getPrice();
 
     // setters
@@ -49,5 +57,13 @@ public abstract class PurchasableItem {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void archive() {
+        this.isArchived = true;
+    }
+
+    public void unarchive() {
+        this.isArchived = false;
     }
 }

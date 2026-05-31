@@ -13,7 +13,7 @@ public class AppliedItem {
     @Column(name = "applied_price", nullable = false)
     private BigDecimal appliedPrice;
 
-    public AppliedItem() {
+    protected AppliedItem() {
     }
 
     public AppliedItem(PurchasableItem item) {

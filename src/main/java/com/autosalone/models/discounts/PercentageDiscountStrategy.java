@@ -24,7 +24,7 @@ public class PercentageDiscountStrategy implements DiscountStrategy {
 
     private void validatePercentageValue(BigDecimal percentageValue) {
         if (percentageValue == null || percentageValue.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("The percentage must be > 0");
+            throw new IllegalArgumentException("The percentage cannot be null or negative");
         }
     }
 

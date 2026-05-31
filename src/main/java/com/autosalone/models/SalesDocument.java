@@ -270,6 +270,7 @@ public abstract class SalesDocument {
     public void addItem(PurchasableItem item) {
         validateIsEditable();
         validatePurchasableItemNotNull(item);
+        validatePurchasableItemNotArchived(item);
         validatePurchasableItemAlreadyExists(item);
 
         this.items.add(new AppliedItem(item));
@@ -293,6 +294,11 @@ public abstract class SalesDocument {
     private void validatePurchasableItemNotNull(PurchasableItem item) {
         if (item == null)
             throw new IllegalArgumentException("PurchasableItem cannot be null");
+    }
+
+    private void validatePurchasableItemNotArchived(PurchasableItem item) {
+        if (item.isArchived())
+            throw new IllegalStateException("Cannot add an archived item");
     }
 
     private void validatePurchasableItemAlreadyExists(PurchasableItem item) {

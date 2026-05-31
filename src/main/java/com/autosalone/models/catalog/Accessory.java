@@ -15,6 +15,7 @@ public class Accessory extends PurchasableItem {
 
     public Accessory(String name, String description, BigDecimal basePrice) {
         super(name, description);
+        validateBasePrice(basePrice);
         this.basePrice = basePrice;
     }
 
@@ -24,6 +25,13 @@ public class Accessory extends PurchasableItem {
     }
 
     public void setBasePrice(BigDecimal basePrice) {
+        validateBasePrice(basePrice);
         this.basePrice = basePrice;
+    }
+
+    private void validateBasePrice(BigDecimal basePrice) {
+        if (basePrice == null || basePrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Base price cannot be null or negative");
+        }
     }
 }
