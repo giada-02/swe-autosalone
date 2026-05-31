@@ -3,8 +3,8 @@ package com.autosalone.models;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import com.autosalone.enums.VehicleStatus;
@@ -37,7 +37,8 @@ public abstract class SalesDocument {
 
     @ElementCollection
     @CollectionTable(name = "document_items", joinColumns = @JoinColumn(name = "sales_document_id"))
-    private List<AppliedItem> items = new ArrayList<>();
+    @MapKeyColumn(name = "item_name")
+    private Map<String, AppliedItem> items = new HashMap<>();
 
     @Column(name = "additional_fees")
     private BigDecimal additionalFees;
@@ -123,13 +124,22 @@ public abstract class SalesDocument {
         this.date = LocalDate.now(); // current date
         this.vehicle = original.getVehicle();
         this.customer = original.getCustomer();
-        this.items = new ArrayList<>(original.getItems());
         this.additionalFees = original.additionalFees;
         this.discountStrategy = original.discountStrategy;
         this.isArchived = false;
         this.publicNotes = original.publicNotes;
         this.internalNotes = original.internalNotes;
         this.vehicleSellingPriceSnapshot = original.vehicleSellingPriceSnapshot;
+
+        this.items = new HashMap<>(); // items deep copy
+        for (Map.Entry<String, AppliedItem> entry : original.getItems().entrySet()) {
+            AppliedItem originalAppliedItem = entry.getValue();
+
+            AppliedItem newAppliedItem = new AppliedItem(originalAppliedItem.getItem());
+            newAppliedItem.setAppliedPrice(originalAppliedItem.getAppliedPrice());
+
+            this.items.put(entry.getKey(), newAppliedItem);
+        }
     }
 
     // getters
@@ -149,7 +159,7 @@ public abstract class SalesDocument {
         return customer;
     }
 
-    public List<AppliedItem> getItems() {
+    public Map<String, AppliedItem> getItems() {
         return items;
     }
 
@@ -188,7 +198,7 @@ public abstract class SalesDocument {
 
     public BigDecimal getSubtotal() {
         BigDecimal total = this.vehicle.getSellingPrice();
-        for (AppliedItem item : items) {
+        for (AppliedItem item : items.values()) {
             total = total.add(item.getAppliedPrice());
         }
         return total;
@@ -219,7 +229,19 @@ public abstract class SalesDocument {
 
     public void addItem(PurchasableItem item) {
         validateIsEditable();
-        this.items.add(new AppliedItem(item));
+        if (item == null || item.getName() == null) {
+            throw new IllegalArgumentException("PurchasableItem and its name cannot be null");
+        }
+        this.items.put(item.getName(), new AppliedItem(item));
+    }
+
+    public void removeItem(PurchasableItem item) {
+        validateIsEditable();
+        if (item == null || item.getName() == null) {
+            throw new IllegalArgumentException("PurchasableItem and its name cannot be null");
+        }
+        findAppliedItem(item);
+        this.items.remove(item.getName());
     }
 
     public void setAdditionalFees(BigDecimal additionalFees) {
@@ -257,6 +279,18 @@ public abstract class SalesDocument {
     public void setDiscountStrategy(DiscountStrategy discountStrategy) {
         validateIsEditable();
         this.discountStrategy = discountStrategy;
+    }
+
+    public void setAppliedItemPrice(PurchasableItem item, BigDecimal newPrice) {
+        validateIsEditable();
+        AppliedItem targetItem = findAppliedItem(item);
+        targetItem.setAppliedPrice(newPrice);
+    }
+
+    public AppliedItem findAppliedItem(PurchasableItem item) {
+        if (!this.items.containsKey(item.getName()))
+            throw new IllegalArgumentException("Item not found in this document");
+        return this.items.get(item.getName());
     }
 
     protected abstract void validateIsEditable();
