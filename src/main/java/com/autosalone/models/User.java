@@ -8,7 +8,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class User {
+public abstract class User extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -5,10 +5,12 @@ import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.autosalone.models.AuditableEntity;
+
 @Entity
 @Table(name = "purchasable_items")
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class PurchasableItem {
+public abstract class PurchasableItem extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

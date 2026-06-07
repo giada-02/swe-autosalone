@@ -19,7 +19,7 @@ import com.autosalone.models.discounts.PercentageDiscountStrategy;
 @Entity
 @Table(name = "sales_documents")
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class SalesDocument {
+public abstract class SalesDocument extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -11,7 +11,7 @@ import com.autosalone.utils.PeriodStringConverter;
 
 @Entity
 @Table(name = "deadlines")
-public class Deadline {
+public class Deadline extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -19,6 +19,7 @@
         <class>com.autosalone.models.catalog.PurchasableItem</class>
         <class>com.autosalone.models.catalog.Accessory</class>
         <class>com.autosalone.models.catalog.AccessoryPackage</class>
+        <class>com.autosalone.models.catalog.AuditableEntity</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5433/autosalone_test"/>

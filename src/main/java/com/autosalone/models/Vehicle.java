@@ -15,7 +15,7 @@ import com.autosalone.enums.VehicleStatus;
 
 @Entity
 @Table(name = "vehicles")
-public class Vehicle {
+public class Vehicle extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
