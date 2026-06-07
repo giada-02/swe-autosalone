@@ -44,7 +44,7 @@ public class AccessoryPackageTest {
         Accessory accessory = new Accessory("Accessorio", "Descrizione", new BigDecimal("50.00"));
         accessory.archive();
 
-        assertThrows(IllegalArgumentException.class, () -> pack.addItem(pack));
+        assertThrows(IllegalStateException.class, () -> pack.addItem(accessory));
     }
 
     @Test

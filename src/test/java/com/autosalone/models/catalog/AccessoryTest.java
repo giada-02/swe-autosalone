@@ -89,4 +89,14 @@ public class AccessoryTest {
 
         assertThrows(IllegalStateException.class, () -> accessory.setBasePrice(new BigDecimal("40.00")));
     }
+
+    @Test
+    public void setBasePrice_ToValidPrice_Success() {
+        Accessory accessory = new Accessory("Nome", null, new BigDecimal("50.00"));
+        BigDecimal newPrice = new BigDecimal("40.00");
+
+        accessory.setBasePrice(newPrice);
+
+        assertTrue(newPrice.equals(accessory.getPrice()));
+    }
 }

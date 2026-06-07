@@ -2,6 +2,7 @@ package com.autosalone.models.catalog;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Embeddable
 public class AppliedItem {
@@ -17,6 +18,9 @@ public class AppliedItem {
     }
 
     public AppliedItem(PurchasableItem item) {
+        item.validateIsNotArchived();
+        if (item instanceof AccessoryPackage && ((AccessoryPackage) item).getItems().isEmpty())
+            throw new IllegalStateException("The package must contain at least an item");
         this.item = item;
         this.appliedPrice = item.getPrice();
     }
@@ -30,8 +34,9 @@ public class AppliedItem {
     }
 
     public void setAppliedPrice(BigDecimal appliedPrice) {
-        if (appliedPrice == null || appliedPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Applied price cannot be null or negative");
+        Objects.requireNonNull(appliedPrice, "Applied price is required");
+        if (appliedPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Applied price cannot be negative");
         }
         this.appliedPrice = appliedPrice;
     }
