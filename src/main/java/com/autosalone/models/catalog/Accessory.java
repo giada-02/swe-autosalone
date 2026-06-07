@@ -2,6 +2,7 @@ package com.autosalone.models.catalog;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 @Table(name = "accessories")
@@ -31,8 +32,9 @@ public class Accessory extends PurchasableItem {
     }
 
     private void validateBasePrice(BigDecimal basePrice) {
-        if (basePrice == null || basePrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Base price cannot be null or negative");
+        Objects.requireNonNull(basePrice, "Base price is required");
+        if (basePrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Base price cannot be negative");
         }
     }
 }

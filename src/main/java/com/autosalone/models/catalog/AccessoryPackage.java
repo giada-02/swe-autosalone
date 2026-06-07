@@ -30,11 +30,16 @@ public class AccessoryPackage extends PurchasableItem {
         return total;
     }
 
+    public List<PurchasableItem> getItems() {
+        return items;
+    }
+
     public void addItem(PurchasableItem item) {
         validateIsNotArchived();
-
         Objects.requireNonNull(item, "Item is required");
+
         item.validateIsNotArchived();
+        validateAddSelf(item);
         validateItemAlreadyExists(item);
 
         this.items.add(item);
@@ -42,7 +47,6 @@ public class AccessoryPackage extends PurchasableItem {
 
     public void removeItem(PurchasableItem item) {
         validateIsNotArchived();
-
         Objects.requireNonNull(item, "Item is required");
 
         this.items.remove(item);
@@ -53,5 +57,10 @@ public class AccessoryPackage extends PurchasableItem {
                 .anyMatch(i -> i.getName().equalsIgnoreCase(item.getName()));
         if (alreadyExists)
             throw new IllegalArgumentException("This item is already in the package");
+    }
+
+    private void validateAddSelf(PurchasableItem item) {
+        if (this == item)
+            throw new IllegalArgumentException("Cannot add the package inside itself");
     }
 }
