@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
@@ -120,16 +121,27 @@ public class Contract extends SalesDocument {
         super.setCustomer(customer);
     }
 
+    public void setEstimatedHandoverDate(LocalDate estimatedHandoverDate) {
+        Objects.requireNonNull(estimatedHandoverDate, "Estimated handover date is required");
+        if (estimatedHandoverDate.isBefore(LocalDate.now()))
+            throw new IllegalArgumentException("The estimated handover date must be in the future");
+        if (!isDraft())
+            throw new IllegalStateException(
+                    "Cannot edit the estimated handover date for a contract in status " + this.status);
+        this.estimatedHandoverDate = estimatedHandoverDate;
+    }
+
     public void confirm(Transaction depositTransaction) {
         if (this.status != ContractStatus.DRAFT) {
             throw new IllegalStateException("Only a DRAFT contract can be confirmed");
         }
 
-        if (depositTransaction == null) {
-            throw new IllegalStateException("Cannot confirm a contract without providing a deposit transaction");
+        if (this.estimatedHandoverDate == null) {
+            throw new IllegalStateException(
+                    "The estimated handover date of the contract must be set before confirming");
         }
 
-        if (depositTransaction.getType() != TransactionType.IN) {
+        if (depositTransaction != null && depositTransaction.getType() != TransactionType.IN) {
             throw new IllegalArgumentException("Deposit must be an IN transaction");
         }
 

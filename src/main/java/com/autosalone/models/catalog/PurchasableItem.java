@@ -2,6 +2,7 @@ package com.autosalone.models.catalog;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -26,7 +27,7 @@ public abstract class PurchasableItem {
     }
 
     public PurchasableItem(String name, String description) {
-        java.util.Objects.requireNonNull(name, "Name is required");
+        Objects.requireNonNull(name, "Name is required");
         this.name = name;
         this.description = description;
     }

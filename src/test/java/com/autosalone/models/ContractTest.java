@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -275,6 +276,28 @@ public class ContractTest {
     }
 
     @Test
+    public void confirm_WhenContractDraft_WithoutEstimatedHandoverDate_ThrowsException() {
+        Contract contract = new Contract(defaultCar, defaultCustomer);
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.confirm(null);
+        });
+        assertEquals(ContractStatus.DRAFT, contract.getStatus());
+    }
+
+    @Test
+    public void confirm_WhenContractDraft_WithNullDepositTransaction_Success() {
+        Contract contract = new Contract(defaultCar, defaultCustomer);
+        contract.setEstimatedHandoverDate(LocalDate.now());
+
+        assertDoesNotThrow(() -> {
+            contract.confirm(null);
+        });
+        assertEquals(ContractStatus.CONFIRMED, contract.getStatus());
+        assertNull(contract.getDeposit());
+    }
+
+    @Test
     public void registerPayment_WhenStatusDraft_ThrowsException() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
         Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("500.00"),
@@ -314,7 +337,7 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenStatusDraft_ThrowsException() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
-        Transaction refund = TransactionFactory.createContractRefund(contract, new BigDecimal("500.00"),
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"),
                 LocalDate.now());
 
         assertEquals(ContractStatus.DRAFT, contract.getStatus());
@@ -326,7 +349,7 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenStatusCompleted_ThrowsException() {
         Contract contract = getCompletedContract();
-        Transaction refund = TransactionFactory.createContractRefund(contract, new BigDecimal("500.00"),
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"),
                 LocalDate.now());
 
         assertEquals(ContractStatus.COMPLETED, contract.getStatus());
@@ -338,7 +361,7 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenStatusConfirmed_Success() {
         Contract contract = getConfirmedContract("500.00");
-        Transaction refund = TransactionFactory.createContractRefund(contract, new BigDecimal("500.00"),
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"),
                 LocalDate.now());
 
         assertEquals(ContractStatus.CONFIRMED, contract.getStatus());
@@ -350,7 +373,7 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenStatusCanceled_Success() {
         Contract contract = getConfirmedContract("500.00");
-        Transaction refund = TransactionFactory.createContractRefund(contract, new BigDecimal("500.00"),
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"),
                 LocalDate.now());
         contract.cancel("Ripensamento");
 
@@ -367,7 +390,7 @@ public class ContractTest {
                 LocalDate.now());
         contract.registerPayment(payment);
 
-        Transaction refund = TransactionFactory.createContractRefund(contract, new BigDecimal("1500.00"),
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("1500.00"),
                 LocalDate.now());
 
         assertEquals(ContractStatus.CONFIRMED, contract.getStatus());
@@ -388,7 +411,7 @@ public class ContractTest {
         assertTrue(new BigDecimal("10000.00").equals(contract.getFinalPrice()));
         assertTrue(new BigDecimal("6000.00").equals(contract.getRemainingBalance()));
 
-        Transaction refund = TransactionFactory.createContractRefund(contract, new BigDecimal("3000.00"),
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("3000.00"),
                 LocalDate.now());
         contract.registerRefund(refund);
 
@@ -504,10 +527,7 @@ public class ContractTest {
     }
 
     private Contract getCompletedContract() {
-        Contract contract = new Contract(defaultCar, defaultCustomer);
-        Transaction deposit = TransactionFactory.createContractDeposit(contract, new BigDecimal("500.00"),
-                LocalDate.now());
-        contract.confirm(deposit);
+        Contract contract = getConfirmedContract("500.00");
         Transaction remainingAmout = TransactionFactory.createContractPayment(contract, "Rimanente",
                 new BigDecimal("9500.00"),
                 LocalDate.now());
@@ -522,6 +542,8 @@ public class ContractTest {
     private Contract getConfirmedContract(String depositValue) {
         Contract contract = new Contract(defaultCar, defaultCustomer);
         Transaction deposit = TransactionFactory.createContractDeposit(contract, new BigDecimal(depositValue),
+                LocalDate.now());
+        contract.setEstimatedHandoverDate(
                 LocalDate.now());
         contract.confirm(deposit);
         return contract;

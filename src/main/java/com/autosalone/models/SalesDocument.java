@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.enums.VehicleStatus;
@@ -97,6 +98,8 @@ public abstract class SalesDocument {
     };
 
     protected SalesDocument(Vehicle vehicle, Customer customer) {
+        Objects.requireNonNull(vehicle, "Vehicle is required");
+        Objects.requireNonNull(customer, "Customer is required");
         VehicleStatus vs = vehicle.getStatus();
         if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
             throw new IllegalStateException(
@@ -270,7 +273,7 @@ public abstract class SalesDocument {
     public void addItem(PurchasableItem item) {
         validateIsEditable();
 
-        java.util.Objects.requireNonNull(item, "Item is required");
+        Objects.requireNonNull(item, "Item is required");
         item.validateIsNotArchived();
         validatePurchasableItemAlreadyExists(item);
 
@@ -280,7 +283,7 @@ public abstract class SalesDocument {
     public void removeItem(PurchasableItem item) {
         validateIsEditable();
 
-        java.util.Objects.requireNonNull(item, "Item is required");
+        Objects.requireNonNull(item, "Item is required");
 
         AppliedItem targetItem = findAppliedItem(item);
         this.items.remove(targetItem);

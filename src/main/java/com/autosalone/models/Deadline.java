@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.temporal.TemporalAdjusters;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.utils.PeriodStringConverter;
@@ -55,9 +56,9 @@ public class Deadline {
 
     Deadline(String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion,
             Vehicle vehicle) {
-        java.util.Objects.requireNonNull(vehicle, "A deadline must be linked to a vehicle");
-        java.util.Objects.requireNonNull(reason, "Reason is required");
-        java.util.Objects.requireNonNull(dueDate, "Due date is required");
+        Objects.requireNonNull(vehicle, "A deadline must be linked to a vehicle");
+        Objects.requireNonNull(reason, "Reason is required");
+        Objects.requireNonNull(dueDate, "Due date is required");
 
         if (recurrence == null && recalculateFromCompletion) {
             throw new IllegalArgumentException("Cannot recalculate from completion if there is no recurrence");

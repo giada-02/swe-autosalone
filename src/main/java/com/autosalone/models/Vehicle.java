@@ -7,6 +7,7 @@ import java.time.Period;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.enums.VehicleCondition;
@@ -161,7 +162,7 @@ public class Vehicle {
     }
 
     public void setPurchaseTransaction(Transaction purchaseTransaction) {
-        assertNotTerminal();
+        assertNotWithdrawn();
         this.purchaseTransaction = purchaseTransaction;
     }
 
@@ -196,10 +197,7 @@ public class Vehicle {
     }
 
     public void addDeadline(String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion) {
-        if (this.status == VehicleStatus.WITHDRAWN) {
-            throw new IllegalStateException("Cannot edit an inactive vehicle (Status: " + this.status + ")");
-        }
-
+        assertNotWithdrawn();
         Deadline deadline = new Deadline(reason, dueDate, recurrence, recalculateFromCompletion, this);
         this.deadlines.add(deadline);
     }
@@ -222,6 +220,12 @@ public class Vehicle {
     }
 
     // validation helper methods
+    private void assertNotWithdrawn() {
+        if (this.status == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException("Cannot edit an inactive vehicle (Status: " + this.status + ")");
+        }
+    }
+
     private void assertNotTerminal() {
         if (this.status == VehicleStatus.SOLD || this.status == VehicleStatus.WITHDRAWN) {
             throw new IllegalStateException("Cannot edit an inactive vehicle (Status: " + this.status + ")");
@@ -281,7 +285,7 @@ public class Vehicle {
      * revisione.
      */
     public void generateInspectionFromLastDate(LocalDate lastActualInspection) {
-        java.util.Objects.requireNonNull(lastActualInspection, "The last actual inspection date is required");
+        Objects.requireNonNull(lastActualInspection, "The last actual inspection date is required");
 
         LocalDate nextInspectionDate = lastActualInspection
                 .plusYears(2)
@@ -362,11 +366,11 @@ public class Vehicle {
         }
 
         public Vehicle build() {
-            java.util.Objects.requireNonNull(this.brand, "Brand is required");
-            java.util.Objects.requireNonNull(this.model, "Model is required");
-            java.util.Objects.requireNonNull(this.color, "Color is required");
-            java.util.Objects.requireNonNull(this.condition, "Condition is required");
-            java.util.Objects.requireNonNull(this.isInShowroom, "Is in showroom is required");
+            Objects.requireNonNull(this.brand, "Brand is required");
+            Objects.requireNonNull(this.model, "Model is required");
+            Objects.requireNonNull(this.color, "Color is required");
+            Objects.requireNonNull(this.condition, "Condition is required");
+            Objects.requireNonNull(this.isInShowroom, "Is in showroom is required");
             return new Vehicle(this);
         }
     }

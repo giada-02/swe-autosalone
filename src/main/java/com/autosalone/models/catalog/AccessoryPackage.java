@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "accessory_packages")
@@ -32,7 +33,7 @@ public class AccessoryPackage extends PurchasableItem {
     public void addItem(PurchasableItem item) {
         validateIsNotArchived();
 
-        java.util.Objects.requireNonNull(item, "Item is required");
+        Objects.requireNonNull(item, "Item is required");
         item.validateIsNotArchived();
         validateItemAlreadyExists(item);
 
@@ -42,7 +43,7 @@ public class AccessoryPackage extends PurchasableItem {
     public void removeItem(PurchasableItem item) {
         validateIsNotArchived();
 
-        java.util.Objects.requireNonNull(item, "Item is required");
+        Objects.requireNonNull(item, "Item is required");
 
         this.items.remove(item);
     }
