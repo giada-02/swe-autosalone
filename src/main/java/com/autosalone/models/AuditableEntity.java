@@ -1,6 +1,6 @@
 package com.autosalone.models;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import com.autosalone.utils.AuditContext;
@@ -15,20 +15,20 @@ public abstract class AuditableEntity {
     private Long version; // gestito automaticamente da Hibernate (parte da 0)
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
 
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @Column(name = "updated_by", nullable = false)
     private UUID updatedBy;
 
     @PrePersist
     public void onPrePersist() {
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
         this.createdBy = AuditContext.getCurrentUserId();
@@ -37,7 +37,7 @@ public abstract class AuditableEntity {
 
     @PreUpdate
     public void onPreUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
         this.updatedBy = AuditContext.getCurrentUserId();
     }
 
@@ -47,7 +47,7 @@ public abstract class AuditableEntity {
         return version;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
@@ -55,7 +55,7 @@ public abstract class AuditableEntity {
         return createdBy;
     }
 
-    public LocalDateTime getUpdatedAt() {
+    public Instant getUpdatedAt() {
         return updatedAt;
     }
 
@@ -64,7 +64,7 @@ public abstract class AuditableEntity {
     }
 
     // setters
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -72,7 +72,7 @@ public abstract class AuditableEntity {
         this.createdBy = createdBy;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
 
