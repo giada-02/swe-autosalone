@@ -42,6 +42,7 @@ public class QuotationTest {
         this.defaultCustomer = new CustomerBuilder()
                 .setFirstName("Mario")
                 .setLastName("Rossi")
+                .setPhoneNumber("1234567890")
                 .build();
     }
 

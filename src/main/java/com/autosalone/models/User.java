@@ -1,6 +1,8 @@
 package com.autosalone.models;
 
 import jakarta.persistence.*;
+
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -31,6 +33,10 @@ public abstract class User {
     }
 
     protected User(UserBuilder<?, ?> builder) {
+        Objects.requireNonNull(builder.firstName);
+        Objects.requireNonNull(builder.lastName);
+        Objects.requireNonNull(builder.phoneNumber);
+
         this.firstName = builder.firstName;
         this.lastName = builder.lastName;
         this.phoneNumber = builder.phoneNumber;

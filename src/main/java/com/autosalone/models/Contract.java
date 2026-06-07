@@ -36,6 +36,10 @@ public class Contract extends SalesDocument {
     @Column(name = "cancelation_reason", columnDefinition = "TEXT")
     private String cancelationReason;
 
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JoinColumn(name = "customer_snapshot_id")
+    private CustomerSnapshot customerSnapshot;
+
     protected Contract() {
         super();
     }
@@ -83,6 +87,10 @@ public class Contract extends SalesDocument {
 
     public String getCancelationReason() {
         return cancelationReason;
+    }
+
+    public CustomerSnapshot getCustomerSnapshot() {
+        return customerSnapshot;
     }
 
     public BigDecimal getTotalPayment() {
@@ -144,6 +152,14 @@ public class Contract extends SalesDocument {
         if (depositTransaction != null && depositTransaction.getType() != TransactionType.IN) {
             throw new IllegalArgumentException("Deposit must be an IN transaction");
         }
+
+        if ((this.getCustomer().getFiscalCode() == null && this.getCustomer().getVatNumber() == null)
+                || this.getCustomer().getResidenceCity() == null || this.getCustomer().getZipCode() == null) {
+            throw new IllegalStateException(
+                    "To confirm the contract the customer requires fiscal data and residency details");
+        }
+
+        this.customerSnapshot = new CustomerSnapshot(this.getCustomer());
 
         this.deposit = depositTransaction;
         this.status = ContractStatus.CONFIRMED;

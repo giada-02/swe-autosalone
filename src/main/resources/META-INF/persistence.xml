@@ -14,6 +14,7 @@
         <class>com.autosalone.models.SalesDocument</class>
         <class>com.autosalone.models.Quotation</class>
         <class>com.autosalone.models.Contract</class>
+        <class>com.autosalone.models.CustomerSnapshot</class>
         <class>com.autosalone.models.catalog.AppliedItem</class>
         <class>com.autosalone.models.catalog.PurchasableItem</class>
         <class>com.autosalone.models.catalog.Accessory</class>

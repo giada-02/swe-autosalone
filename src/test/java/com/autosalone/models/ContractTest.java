@@ -41,6 +41,10 @@ public class ContractTest {
         this.defaultCustomer = new CustomerBuilder()
                 .setFirstName("Mario")
                 .setLastName("Rossi")
+                .setPhoneNumber("1234567890")
+                .setFiscalCode("RSSMRA00X00X000X")
+                .setResidenceCity("Roma")
+                .setZipCode("00000")
                 .build();
     }
 
@@ -160,7 +164,9 @@ public class ContractTest {
     @Test
     public void changeCustomer_WhenContractIsDraft_Success() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
-        Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi").build();
+        Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi")
+                .setPhoneNumber("1234567890")
+                .build();
 
         assertDoesNotThrow(() -> contract.setCustomer(newCustomer));
         assertEquals(newCustomer, contract.getCustomer());
@@ -172,7 +178,9 @@ public class ContractTest {
         quote.setExpirationDate(LocalDate.now());
         quote.issue();
         Contract contract = new Contract(quote);
-        Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi").build();
+        Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi")
+                .setPhoneNumber("1234567890")
+                .build();
 
         assertThrows(IllegalStateException.class, () -> contract.setCustomer(newCustomer));
     }
@@ -501,7 +509,9 @@ public class ContractTest {
     }
 
     private void assertDocumentIsLocked(SalesDocument document) {
-        Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi").build();
+        Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi")
+                .setPhoneNumber("1234567890")
+                .build();
         Vehicle newVehicle = new Vehicle.VehicleBuilder()
                 .setBrand("Fiat")
                 .setModel("Panda")

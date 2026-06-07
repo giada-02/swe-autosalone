@@ -10,6 +10,9 @@ public class Customer extends User {
     @Column(name = "residence_city")
     private String residenceCity;
 
+    @Column(name = "zip_code", length = 5)
+    private String zipCode;
+
     @Column(name = "is_active")
     private boolean isActive;
 
@@ -28,6 +31,7 @@ public class Customer extends User {
     private Customer(CustomerBuilder builder) {
         super(builder);
         this.residenceCity = builder.residenceCity;
+        this.zipCode = builder.zipCode;
         this.fiscalCode = builder.fiscalCode;
         this.vatNumber = builder.vatNumber;
         this.isActive = false;
@@ -36,6 +40,10 @@ public class Customer extends User {
     // getters
     public String getResidenceCity() {
         return residenceCity;
+    }
+
+    public String getZipCode() {
+        return zipCode;
     }
 
     public boolean isActive() {
@@ -53,6 +61,10 @@ public class Customer extends User {
     // setters
     public void setResidenceCity(String residenceCity) {
         this.residenceCity = residenceCity;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
     }
 
     public void activate() {
@@ -74,11 +86,17 @@ public class Customer extends User {
     // builder
     public static class CustomerBuilder extends UserBuilder<Customer, CustomerBuilder> {
         private String residenceCity;
+        private String zipCode;
         private String fiscalCode;
         private String vatNumber;
 
         public CustomerBuilder setResidenceCity(String residenceCity) {
             this.residenceCity = residenceCity;
+            return self();
+        }
+
+        public CustomerBuilder setZipCode(String zipCode) {
+            this.zipCode = zipCode;
             return self();
         }
 
