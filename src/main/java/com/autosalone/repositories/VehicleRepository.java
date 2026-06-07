@@ -65,8 +65,7 @@ public class VehicleRepository {
             parameters.put("status", status);
         }
 
-        // todo ordinare per data di inserimento (created_at)
-        // jpql.append(" ORDER BY v.createdAt DESC");
+        jpql.append(" ORDER BY v.createdAt DESC");
 
         TypedQuery<Vehicle> query = em.createQuery(jpql.toString(), Vehicle.class);
         parameters.forEach(query::setParameter);
