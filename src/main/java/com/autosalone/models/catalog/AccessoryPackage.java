@@ -38,9 +38,8 @@ public class AccessoryPackage extends PurchasableItem {
         validateIsNotArchived();
         Objects.requireNonNull(item, "Item is required");
 
-        item.validateIsNotArchived();
         validateAddSelf(item);
-        validateItemAlreadyExists(item);
+        item.validateIsNotArchived();
 
         this.items.add(item);
     }
@@ -50,13 +49,6 @@ public class AccessoryPackage extends PurchasableItem {
         Objects.requireNonNull(item, "Item is required");
 
         this.items.remove(item);
-    }
-
-    private void validateItemAlreadyExists(PurchasableItem item) {
-        boolean alreadyExists = this.items.stream()
-                .anyMatch(i -> i.getName().equalsIgnoreCase(item.getName()));
-        if (alreadyExists)
-            throw new IllegalArgumentException("This item is already in the package");
     }
 
     private void validateAddSelf(PurchasableItem item) {

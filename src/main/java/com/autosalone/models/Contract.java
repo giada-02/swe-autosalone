@@ -49,7 +49,7 @@ public class Contract extends SalesDocument {
         this.status = ContractStatus.DRAFT;
     }
 
-    /// Conversion Constructor: Turns a quotation into a contract
+    /// Conversion copy constructor: turns a quotation into a contract
     public Contract(Quotation source) {
         super(source);
         if (source.isArchived()) {

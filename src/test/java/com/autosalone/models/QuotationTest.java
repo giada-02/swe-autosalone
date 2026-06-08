@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +22,7 @@ import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
 import com.autosalone.models.Customer.CustomerBuilder;
 import com.autosalone.models.catalog.Accessory;
+import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.discounts.FixedAmountDiscountStrategy;
 import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
@@ -46,20 +48,26 @@ public class QuotationTest {
                 .build();
     }
 
+    // base constructor
     @Test
     public void constructor() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
 
         assertAll(
+                () -> assertNotNull(quote),
                 () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus()),
                 () -> assertFalse(quote.isArchived()),
                 () -> assertTrue(LocalDate.now().equals(quote.getDate())),
                 () -> assertNull(quote.getExpirationDate()),
                 () -> assertNull(quote.getExpirationPolicy()),
+                () -> assertEquals(defaultCustomer, quote.getCustomer()),
+                () -> assertEquals(defaultCar, quote.getVehicle()),
+                () -> assertTrue(new BigDecimal("10000.00").equals(quote.getVehicleSellingPriceSnapshot())),
                 () -> assertTrue(quote.getItems().size() == 0),
                 () -> assertTrue(BigDecimal.ZERO.equals(quote.getAdditionalFees())),
-                () -> assertTrue(new BigDecimal("10000.00").equals(quote.getVehicleSellingPriceSnapshot())),
-                () -> assertTrue(BigDecimal.ZERO.equals(quote.getDiscountAmount())));
+                () -> assertTrue(BigDecimal.ZERO.equals(quote.getDiscountAmount())),
+                () -> assertNull(quote.getPublicNotes()),
+                () -> assertNull(quote.getInternalNotes()));
     }
 
     @Test
@@ -86,8 +94,9 @@ public class QuotationTest {
                 "Should be able to create a quotation from a QUOTED vehicle");
     }
 
+    // cloning copy construsctor
     @Test
-    public void copyConstructor_FromDraftQuotation() {
+    public void copyConstructor_FromDraftQuotation_Success() {
         LocalDate date = LocalDate.now().plusDays(10);
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
         sourceQuote.setDate(date);
@@ -110,18 +119,18 @@ public class QuotationTest {
     }
 
     @Test
-    public void copyConstructor_FromArchivedQuotation() {
+    public void copyConstructor_FromArchivedQuotation_Success() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
         sourceQuote.archive();
         assertTrue(sourceQuote.isArchived());
 
         Quotation quote = new Quotation(sourceQuote);
 
-        assertFalse(quote.isArchived());
+        assertFalse(quote.isArchived(), "The cloned quotation should not be archived");
     }
 
     @Test
-    public void copyConstructor_FromIssuedQuotation() {
+    public void copyConstructor_FromIssuedQuotation_Success() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
         sourceQuote.setExpirationDate(LocalDate.now());
         sourceQuote.issue();
@@ -129,11 +138,11 @@ public class QuotationTest {
 
         Quotation quote = new Quotation(sourceQuote);
 
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus());
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(), "The cloned quotation should be DRAFT");
     }
 
     @Test
-    public void copyConstructor_FromAcceptedQuotation() {
+    public void copyConstructor_FromAcceptedQuotation_Success() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
         sourceQuote.setExpirationDate(LocalDate.now());
         sourceQuote.issue();
@@ -142,11 +151,22 @@ public class QuotationTest {
 
         Quotation quote = new Quotation(sourceQuote);
 
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus());
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(), "The cloned quotation should be DRAFT");
     }
 
     @Test
-    public void copyConstructor_FromExpiredQuotation() {
+    public void copyConstructor_FromVoidedQuotation_Success() {
+        Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
+        sourceQuote.voidDocument();
+        assertEquals(QuotationStatus.VOIDED, sourceQuote.getStatus());
+
+        Quotation quote = new Quotation(sourceQuote);
+
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(), "The cloned quotation should be DRAFT");
+    }
+
+    @Test
+    public void copyConstructor_FromExpiredQuotation_Success() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
         sourceQuote.setExpirationDate(LocalDate.now());
         sourceQuote.issue();
@@ -157,18 +177,9 @@ public class QuotationTest {
 
         Quotation quote = new Quotation(sourceQuote);
 
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus());
-    }
-
-    @Test
-    public void copyConstructor_FromVoidedQuotation() {
-        Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
-        sourceQuote.voidDocument();
-        assertEquals(QuotationStatus.VOIDED, sourceQuote.getStatus());
-
-        Quotation quote = new Quotation(sourceQuote);
-
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus());
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(), "The cloned quotation should be DRAFT");
+        assertNull(quote.getExpirationDate(), "The cloned quotation should have null expiration date");
+        assertNull(quote.getExpirationPolicy(), "The cloned quotation should have null expiration policy");
     }
 
     @Test
@@ -177,6 +188,42 @@ public class QuotationTest {
         defaultCar.setStatus(VehicleStatus.WITHDRAWN);
 
         assertThrows(IllegalStateException.class, () -> new Quotation(sourceQuote));
+    }
+
+    @Test
+    public void copyConstructor_AfterOriginalPricesHaveBeenUpdated_Success() {
+        Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
+        Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
+        sourceQuote.addItem(new AppliedItem(accessory));
+
+        accessory.setBasePrice(new BigDecimal("40.00"));
+        defaultCar.setSellingPrice(new BigDecimal("15000.00"));
+
+        Quotation quote = new Quotation(sourceQuote);
+
+        assertAll(
+                () -> assertTrue(sourceQuote.getItems().size() == 1),
+                () -> assertTrue(quote.getItems().size() == 1),
+                () -> assertTrue(new BigDecimal("10000.00").equals(sourceQuote.getVehicleSellingPriceSnapshot())),
+                () -> assertTrue(new BigDecimal("15000.00").equals(quote.getVehicleSellingPriceSnapshot()),
+                        "The cloned quotation should get the current vehicle selling price"),
+                () -> assertTrue(new BigDecimal("50.00").equals(sourceQuote.getItems().getFirst().getAppliedPrice())),
+                () -> assertTrue(new BigDecimal("40.00").equals(quote.getItems().getFirst().getAppliedPrice()),
+                        "The cloned quotation should get the current item base price"));
+    }
+
+    @Test
+    public void copyConstructor_AfterOriginalItemHasBeenArchived_Success() {
+        Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
+        Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
+        sourceQuote.addItem(new AppliedItem(accessory));
+        accessory.archive();
+
+        Quotation quote = new Quotation(sourceQuote);
+
+        assertTrue(quote.getItems().isEmpty(),
+                "The cloned quotation should not contain archived items");
+
     }
 
     @Test
@@ -327,70 +374,246 @@ public class QuotationTest {
         }, "Cannot void an ACCEPTED quotation");
     }
 
+    // add item
     @Test
-    public void addAccessoryItem_WhenQuotationIsDraft_Success() {
+    public void addItem_WhenQuotationIsDraft_Success() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
 
         assertDoesNotThrow(() -> {
-            Accessory accessory = new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00"));
-            quote.addItem(accessory);
+            AppliedItem accessoryItem = new AppliedItem(
+                    new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+            quote.addItem(accessoryItem);
         }, "Should be able to add items to a DRAFT quotation");
     }
 
     @Test
-    public void addAccessoryItem_WhenQuotationIsIssued_ThrowsException() {
+    public void addItem_WhenQuotationIsIssued_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setExpirationDate(LocalDate.now());
         quote.issue();
 
         assertThrows(IllegalStateException.class, () -> {
-            Accessory accessory = new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00"));
-            quote.addItem(accessory);
+            AppliedItem accessoryItem = new AppliedItem(
+                    new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+            quote.addItem(accessoryItem);
         }, "Cannot add items to an ISSUED quotation");
     }
 
     @Test
-    public void addAccessoryItem_WhenQuotationIsAccepted_ThrowsException() {
+    public void addItem_WhenQuotationIsAccepted_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setExpirationDate(LocalDate.now());
         quote.issue();
         quote.accept();
 
         assertThrows(IllegalStateException.class, () -> {
-            Accessory accessory = new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00"));
-            quote.addItem(accessory);
+            AppliedItem accessoryItem = new AppliedItem(
+                    new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+            quote.addItem(accessoryItem);
         }, "Cannot add items to an ACCEPTED quotation");
     }
 
     @Test
-    public void addAccessoryItem_WhenQuotationIsExpired_ThrowsException() {
+    public void addItem_WhenQuotationIsExpired_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setExpirationDate(LocalDate.now());
         quote.issue();
         setPastExpirationDateForTesting(quote, 1);
 
         assertThrows(IllegalStateException.class, () -> {
-            Accessory accessory = new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00"));
-            quote.addItem(accessory);
+            AppliedItem accessoryItem = new AppliedItem(
+                    new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+            quote.addItem(accessoryItem);
         }, "Cannot add items to an EXPIRED quotation");
     }
 
     @Test
-    public void addAccessoryItem_WhenQuotationIsVoided_ThrowsException() {
+    public void addItem_WhenQuotationIsVoided_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.voidDocument();
 
         assertThrows(IllegalStateException.class, () -> {
-            Accessory accessory = new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00"));
-            quote.addItem(accessory);
+            AppliedItem accessoryItem = new AppliedItem(
+                    new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+            quote.addItem(accessoryItem);
         }, "Cannot add items to a VOIDED quotation");
     }
 
+    // remove item
+    @Test
+    public void removeItem_WhenQuotationIsDraft_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+
+        assertDoesNotThrow(() -> {
+            quote.removeItem(accessoryItem);
+        }, "Should be able to remove items from a DRAFT quotation");
+        assertTrue(quote.getItems().isEmpty());
+    }
+
+    @Test
+    public void removeItem_WhenQuotationIsIssued_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.issue();
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.removeItem(accessoryItem);
+        }, "Cannot remove items from an ISSUED quotation");
+    }
+
+    @Test
+    public void removeItem_WhenQuotationIsAccepted_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.issue();
+        quote.accept();
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.removeItem(accessoryItem);
+        }, "Cannot remove items from an ACCEPTED quotation");
+    }
+
+    @Test
+    public void removeItem_WhenQuotationIsExpired_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.issue();
+        setPastExpirationDateForTesting(quote, 1);
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.removeItem(accessoryItem);
+        }, "Cannot remove items from an EXPIRED quotation");
+    }
+
+    @Test
+    public void removeItem_WhenQuotationIsVoided_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.voidDocument();
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.removeItem(accessoryItem);
+        }, "Cannot remove items from a VOIDED quotation");
+    }
+
+    // set item price
+    @Test
+    public void setAppliedItemPrice_WhenQuotationIsDraft_ToValidPrice_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+
+        assertDoesNotThrow(() -> {
+            quote.setAppliedItemPrice(accessoryItem, new BigDecimal("980.00"));
+        }, "Should be able to change the applied price of items in a DRAFT quotation");
+        assertTrue(new BigDecimal("980.00").equals(accessoryItem.getAppliedPrice()));
+        assertTrue(new BigDecimal("1000.00").equals(accessoryItem.getItem().getPrice()),
+                "Should not apply the change to the base price of the item");
+    }
+
+    @Test
+    public void setAppliedItemPrice_WhenQuotationIsDraft_ToNullPrice_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+
+        assertThrows(NullPointerException.class, () -> {
+            quote.setAppliedItemPrice(accessoryItem, null);
+        });
+    }
+
+    @Test
+    public void setAppliedItemPrice_WhenQuotationIsDraft_ToNegativePrice_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            quote.setAppliedItemPrice(accessoryItem, new BigDecimal("-1000.00"));
+        });
+    }
+
+    @Test
+    public void setAppliedItemPrice_WhenQuotationIsIssued_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.issue();
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.setAppliedItemPrice(accessoryItem, new BigDecimal("950.00"));
+        }, "Cannot change items price of an ISSUED quotation");
+    }
+
+    @Test
+    public void setAppliedItemPrice_WhenQuotationIsAccepted_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.issue();
+        quote.accept();
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.setAppliedItemPrice(accessoryItem, new BigDecimal("950.00"));
+        }, "Cannot change items price of an ACCEPTED quotation");
+    }
+
+    @Test
+    public void setAppliedItemPrice_WhenQuotationIsExpired_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.issue();
+        setPastExpirationDateForTesting(quote, 1);
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.setAppliedItemPrice(accessoryItem, new BigDecimal("950.00"));
+        }, "Cannot change items price of an EXPIRED quotation");
+    }
+
+    @Test
+    public void setAppliedItemPrice_WhenQuotationIsVoided_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
+        quote.voidDocument();
+
+        assertThrows(IllegalStateException.class, () -> {
+            quote.setAppliedItemPrice(accessoryItem, new BigDecimal("950.00"));
+        }, "Cannot change items price of a VOIDED quotation");
+    }
+
+    // get final price
     @Test
     public void getFinalPrice_PercentageDiscountAndFees_CalculatesCorrectly() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        Accessory accessory = new Accessory("Cerchi in lega", "Estetica", new BigDecimal("1000.00"));
-        quote.addItem(accessory);
+        AppliedItem accessoryItem = new AppliedItem(
+                new Accessory("Cerchi in lega", "Estetica", new BigDecimal("1000.00")));
+        quote.addItem(accessoryItem);
         quote.setAdditionalFees(new BigDecimal("500.00"));
         quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal(10)));
 
@@ -407,8 +630,8 @@ public class QuotationTest {
     @Test
     public void getFinalPrice_PercentageDiscountAndFeesWithDecimals_RoundsHalfUpCorrectly() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        Accessory accessory = new Accessory("Sensori", null, new BigDecimal("501.50"));
-        quote.addItem(accessory);
+        AppliedItem accessoryItem = new AppliedItem(new Accessory("Sensori", null, new BigDecimal("501.50")));
+        quote.addItem(accessoryItem);
         quote.setAdditionalFees(new BigDecimal("250.00"));
         quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal(15)));
 

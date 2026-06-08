@@ -115,7 +115,9 @@ public abstract class SalesDocument extends AuditableEntity {
         this.vehicleSellingPriceSnapshot = vehicle.getSellingPrice();
     }
 
-    // copy constructor
+    /// Conversion Constructor (from quotation to contract)
+    // Conserva i prezzi stabiliti e gli item presenti (anche archiviati) nel
+    // documento originale
     protected SalesDocument(SalesDocument original) {
         VehicleStatus vs = original.getVehicle().getStatus();
         if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
@@ -126,18 +128,46 @@ public abstract class SalesDocument extends AuditableEntity {
         this.date = LocalDate.now(); // current date
         this.vehicle = original.getVehicle();
         this.customer = original.getCustomer();
-        this.additionalFees = original.additionalFees;
-        this.discountStrategy = original.discountStrategy;
+        this.additionalFees = original.getAdditionalFees();
+        this.discountStrategy = original.getDiscountStrategy();
         this.isArchived = false;
-        this.publicNotes = original.publicNotes;
-        this.internalNotes = original.internalNotes;
-        this.vehicleSellingPriceSnapshot = original.vehicleSellingPriceSnapshot;
+        this.publicNotes = original.getPublicNotes();
+        this.internalNotes = original.getInternalNotes();
+        this.vehicleSellingPriceSnapshot = original.getVehicleSellingPriceSnapshot(); // snapshot selling price
 
         this.items = new ArrayList<>(); // items deep copy
         for (AppliedItem originalItem : original.getItems()) {
-            AppliedItem newItem = new AppliedItem(originalItem.getItem());
-            newItem.setAppliedPrice(originalItem.getAppliedPrice());
-            this.items.add(newItem);
+            this.items.add(new AppliedItem(originalItem)); // snapshot applied price
+        }
+    }
+
+    /// Cloning Constructor (from old quotation to new quotation)
+    // Aggiorna ai prezzi di listino attuali e fa pulizia degli accessori
+    // archiviati
+    protected SalesDocument(SalesDocument original, boolean skipArchived) {
+        VehicleStatus vs = original.getVehicle().getStatus();
+        if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException(
+                    "Cannot create sales document: the vehicle is unavailable (Status: " + vs + ")");
+        }
+
+        this.date = LocalDate.now();
+        this.vehicle = original.getVehicle();
+        this.customer = original.getCustomer();
+        this.additionalFees = original.getAdditionalFees();
+        this.discountStrategy = original.getDiscountStrategy();
+        this.isArchived = false;
+        this.publicNotes = original.getPublicNotes();
+        this.internalNotes = original.getInternalNotes();
+        this.vehicleSellingPriceSnapshot = original.getVehicle().getSellingPrice(); // updated vehicle selling price
+
+        this.items = new ArrayList<>(); // items deep copy
+        for (AppliedItem originalItem : original.getItems()) {
+            PurchasableItem catalogItem = originalItem.getItem();
+            if (skipArchived && catalogItem.isArchived()) {
+                continue;
+            }
+            this.items.add(new AppliedItem(originalItem, true)); // updated items price
         }
     }
 
@@ -264,43 +294,22 @@ public abstract class SalesDocument extends AuditableEntity {
     }
 
     // items
-    public void setAppliedItemPrice(PurchasableItem item, BigDecimal newPrice) {
+    public void addItem(AppliedItem appliedItem) {
         validateIsEditable();
-        AppliedItem targetItem = findAppliedItem(item);
-        targetItem.setAppliedPrice(newPrice);
+        Objects.requireNonNull(appliedItem, "Applied item is required");
+        this.items.add(appliedItem);
     }
 
-    public void addItem(PurchasableItem item) {
+    public void removeItem(AppliedItem appliedItem) {
         validateIsEditable();
-
-        Objects.requireNonNull(item, "Item is required");
-        item.validateIsNotArchived();
-        validatePurchasableItemAlreadyExists(item);
-
-        this.items.add(new AppliedItem(item));
+        Objects.requireNonNull(appliedItem, "Applied item is required");
+        this.items.remove(appliedItem);
     }
 
-    public void removeItem(PurchasableItem item) {
+    public void setAppliedItemPrice(AppliedItem targetItem, BigDecimal newPrice) {
         validateIsEditable();
-
-        Objects.requireNonNull(item, "Item is required");
-
-        AppliedItem targetItem = findAppliedItem(item);
-        this.items.remove(targetItem);
-    }
-
-    private AppliedItem findAppliedItem(PurchasableItem item) {
-        return this.items.stream()
-                .filter(applied -> applied.getItem().getName().equalsIgnoreCase(item.getName()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Item not found in this document"));
-    }
-
-    private void validatePurchasableItemAlreadyExists(PurchasableItem item) {
-        boolean alreadyExists = this.items.stream()
-                .anyMatch(applied -> applied.getItem().getName().equalsIgnoreCase(item.getName()));
-        if (alreadyExists)
-            throw new IllegalArgumentException("This item is already in the document");
+        Objects.requireNonNull(targetItem, "Target item is required");
+        targetItem.setAppliedPrice(newPrice); // validates the price
     }
 
     // abstract methods

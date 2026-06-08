@@ -18,11 +18,22 @@ public class AppliedItem {
     }
 
     public AppliedItem(PurchasableItem item) {
-        item.validateIsNotArchived();
-        if (item instanceof AccessoryPackage && ((AccessoryPackage) item).getItems().isEmpty())
-            throw new IllegalStateException("The package must contain at least an item");
+        if (item.isArchived())
+            throw new IllegalArgumentException("The item must not be archived to add it in a sales document");
         this.item = item;
         this.appliedPrice = item.getPrice();
+    }
+
+    // copy constructor
+    public AppliedItem(AppliedItem original) {
+        this.item = original.getItem();
+        this.appliedPrice = original.getAppliedPrice();
+    }
+
+    // cloning copy constructor
+    public AppliedItem(AppliedItem original, boolean getCurrentItemBasePrice) {
+        this.item = original.getItem();
+        this.appliedPrice = getCurrentItemBasePrice ? original.getItem().getPrice() : original.getAppliedPrice();
     }
 
     public PurchasableItem getItem() {
@@ -34,10 +45,14 @@ public class AppliedItem {
     }
 
     public void setAppliedPrice(BigDecimal appliedPrice) {
-        Objects.requireNonNull(appliedPrice, "Applied price is required");
-        if (appliedPrice.compareTo(BigDecimal.ZERO) < 0) {
+        validatePrice(appliedPrice);
+        this.appliedPrice = appliedPrice;
+    }
+
+    private void validatePrice(BigDecimal price) {
+        Objects.requireNonNull(price, "Applied price is required");
+        if (price.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Applied price cannot be negative");
         }
-        this.appliedPrice = appliedPrice;
     }
 }

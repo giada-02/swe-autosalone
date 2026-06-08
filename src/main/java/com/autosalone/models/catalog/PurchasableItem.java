@@ -16,7 +16,7 @@ public abstract class PurchasableItem extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "name", nullable = false, unique = true)
+    @Column(name = "name", nullable = false)
     private String name;
 
     @Column(name = "description")
@@ -51,7 +51,7 @@ public abstract class PurchasableItem extends AuditableEntity {
         return isArchived;
     }
 
-    protected abstract BigDecimal getPrice();
+    public abstract BigDecimal getPrice();
 
     // setters
     public void setName(String name) {
@@ -71,14 +71,8 @@ public abstract class PurchasableItem extends AuditableEntity {
         this.isArchived = true;
     }
 
-    public void unarchive() {
-        if (!this.isArchived)
-            return;
-        this.isArchived = false;
-    }
-
     public void validateIsNotArchived() {
         if (this.isArchived)
-            throw new IllegalStateException("Cannot edit nor add an archived item");
+            throw new IllegalStateException("No changes can be made to an archived purchasable item");
     }
 }

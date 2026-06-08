@@ -21,6 +21,8 @@ import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
 import com.autosalone.models.Customer.CustomerBuilder;
+import com.autosalone.models.catalog.Accessory;
+import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
 public class ContractTest {
@@ -48,94 +50,7 @@ public class ContractTest {
                 .build();
     }
 
-    @Test
-    public void constructor_FromDraftQuotation_ThrowsException() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer);
-
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus());
-        assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote);
-        }, "Cannot create a contract from a DRAFT quotation");
-    }
-
-    @Test
-    public void constructor_FromAcceptedQuotation_ThrowsException() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
-        quote.issue();
-        quote.accept();
-
-        assertEquals(QuotationStatus.ACCEPTED, quote.getStatus());
-        assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote);
-        }, "Cannot create a contract from an ACCEPTED quotation");
-    }
-
-    @Test
-    public void constructor_FromExpiredQuotation_ThrowsException() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
-        quote.issue();
-        setPastExpirationDateForTesting(quote, 1);
-
-        assertTrue(quote.isPastExpiration());
-        assertEquals(QuotationStatus.EXPIRED, quote.getStatus());
-        assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote);
-        }, "Cannot create a contract from an EXPIRED quotation");
-    }
-
-    @Test
-    public void constructor_FromVoidedQuotation_ThrowsException() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
-        quote.issue();
-        quote.voidDocument();
-
-        assertEquals(QuotationStatus.VOIDED, quote.getStatus());
-        assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote);
-        }, "Cannot create a contract from a VOIDED quotation");
-    }
-
-    @Test
-    public void constructor_FromValidIssuedQuotation_CreatesDraftContract() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now().plusDays(10));
-        quote.issue();
-
-        assertFalse(quote.isPastExpiration());
-
-        Contract contract = new Contract(quote);
-
-        assertNotNull(contract);
-        assertEquals(ContractStatus.DRAFT, contract.getStatus(), "The new contract must be in status DRAFT");
-    }
-
-    @Test
-    public void constructor_FromIssuedQuotation_Success() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
-        quote.issue();
-
-        assertEquals(QuotationStatus.ISSUED, quote.getStatus());
-        assertDoesNotThrow(() -> {
-            new Contract(quote);
-        }, "Should be able to create a contract from an ISSUED quotation");
-    }
-
-    @Test
-    public void constructor_FromIssuedQuotation_WhenVehicleIsSold_ThrowsException() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
-        quote.issue();
-        defaultCar.setStatus(VehicleStatus.SOLD);
-
-        assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote);
-        }, "Cannot create a contract from a quotation with SOLD vehicle");
-    }
-
+    // base constructor
     @Test
     public void constructor_WhenVehicleIsReserved_ThrowsException() {
         defaultCar.setStatus(VehicleStatus.RESERVED);
@@ -143,6 +58,15 @@ public class ContractTest {
         assertThrows(IllegalStateException.class, () -> {
             new Contract(defaultCar, defaultCustomer);
         }, "Cannot create a contract from a RESERVED vehicle");
+    }
+
+    @Test
+    public void constructor_WhenVehicleIsSold_ThrowsException() {
+        defaultCar.setStatus(VehicleStatus.SOLD);
+
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(defaultCar, defaultCustomer);
+        }, "Cannot create a contract from a SOLD vehicle");
     }
 
     @Test
@@ -157,8 +81,216 @@ public class ContractTest {
     @Test
     public void constructor_WhenVehicleIsQuoted_Success() {
         defaultCar.setStatus(VehicleStatus.QUOTED);
-
         assertDoesNotThrow(() -> new Contract(defaultCar, defaultCustomer));
+    }
+
+    @Test
+    public void constructor_WhenVehicleIsAvailable_Success() {
+        Contract contract = assertDoesNotThrow(() -> new Contract(defaultCar, defaultCustomer));
+
+        assertAll(
+                () -> assertNotNull(contract),
+                () -> assertEquals(ContractStatus.DRAFT, contract.getStatus()),
+                () -> assertFalse(contract.isArchived()),
+                () -> assertTrue(LocalDate.now().equals(contract.getDate())),
+                () -> assertNull(contract.getDeposit()),
+                () -> assertTrue(contract.getPayments().isEmpty()),
+                () -> assertNull(contract.getQuotationReference()),
+                () -> assertNull(contract.getEstimatedHandoverDate()),
+                () -> assertNull(contract.getCancelationReason()),
+                () -> assertEquals(defaultCustomer, contract.getCustomer()),
+                () -> assertEquals(defaultCar, contract.getVehicle()),
+                () -> assertTrue(new BigDecimal("10000.00").equals(contract.getVehicleSellingPriceSnapshot())),
+                () -> assertTrue(contract.getItems().size() == 0),
+                () -> assertTrue(BigDecimal.ZERO.equals(contract.getAdditionalFees())),
+                () -> assertTrue(BigDecimal.ZERO.equals(contract.getDiscountAmount())),
+                () -> assertNull(contract.getPublicNotes()),
+                () -> assertNull(contract.getInternalNotes()));
+    }
+
+    // conversion copy constructor
+    @Test
+    public void copyConstructor_FromDraftQuotation_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus());
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from a DRAFT quotation");
+    }
+
+    @Test
+    public void copyConstructor_FromAcceptedQuotation_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        quote.accept();
+
+        assertEquals(QuotationStatus.ACCEPTED, quote.getStatus());
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from an ACCEPTED quotation");
+    }
+
+    @Test
+    public void copyConstructor_FromExpiredQuotation_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        setPastExpirationDateForTesting(quote, 1);
+
+        assertTrue(quote.isPastExpiration());
+        assertEquals(QuotationStatus.EXPIRED, quote.getStatus());
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from an EXPIRED quotation");
+    }
+
+    @Test
+    public void copyConstructor_FromVoidedQuotation_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        quote.voidDocument();
+
+        assertEquals(QuotationStatus.VOIDED, quote.getStatus());
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from a VOIDED quotation");
+    }
+
+    @Test
+    public void copyConstructor_FromArchivedQuotation_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.archive();
+
+        assertTrue(quote.isArchived());
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from an archived quotation");
+    }
+
+    @Test
+    public void copyConstructor_FromValidIssuedQuotation_Success_CreatesDraftContract() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now().plusDays(10));
+        quote.setAdditionalFees(new BigDecimal("350.00"));
+        quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal("10")));
+        quote.setPublicNotes("Note pubbliche");
+        quote.setInternalNotes("Note interne");
+        quote.issue();
+
+        Contract contract = assertDoesNotThrow(() -> new Contract(quote),
+                "Should be able to create a contract from an ISSUED quotation");
+
+        assertAll(
+                () -> assertNotNull(contract),
+                () -> assertEquals(ContractStatus.DRAFT, contract.getStatus()),
+                () -> assertFalse(contract.isArchived()),
+                () -> assertTrue(LocalDate.now().equals(contract.getDate())),
+                () -> assertNull(contract.getDeposit()),
+                () -> assertTrue(contract.getPayments().isEmpty()),
+                () -> assertEquals(quote, contract.getQuotationReference()),
+                () -> assertNull(contract.getEstimatedHandoverDate()),
+                () -> assertNull(contract.getCancelationReason()),
+                () -> assertEquals(defaultCustomer, contract.getCustomer()),
+                () -> assertEquals(defaultCar, contract.getVehicle()),
+                () -> assertTrue(new BigDecimal("10000.00").equals(contract.getVehicleSellingPriceSnapshot())),
+                () -> assertTrue(
+                        quote.getVehicleSellingPriceSnapshot().equals(contract.getVehicleSellingPriceSnapshot())),
+                () -> assertTrue(contract.getItems().size() == 0),
+                () -> assertTrue(new BigDecimal("350.00").equals(contract.getAdditionalFees())),
+                () -> assertTrue(quote.getAdditionalFees().equals(contract.getAdditionalFees())),
+                () -> assertTrue(quote.getDiscountStrategy().equals(contract.getDiscountStrategy())),
+                () -> assertTrue(new BigDecimal("1000.00").equals(contract.getDiscountAmount())),
+                () -> assertTrue(quote.getDiscountAmount().equals(contract.getDiscountAmount())),
+                () -> assertTrue(quote.getPublicNotes().equals(contract.getPublicNotes())),
+                () -> assertTrue(quote.getInternalNotes().equals(contract.getInternalNotes())));
+    }
+
+    @Test
+    public void copyConstructor_WhenVehicleIsReserved_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        defaultCar.setStatus(VehicleStatus.RESERVED);
+
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from a quotation with a RESERVED vehicle");
+    }
+
+    @Test
+    public void copyConstructor_WhenVehicleIsSold_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        defaultCar.setStatus(VehicleStatus.SOLD);
+
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from a quotation with a SOLD vehicle");
+    }
+
+    @Test
+    public void copyConstructor_WhenVehicleIsWithdrawn_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        defaultCar.setStatus(VehicleStatus.WITHDRAWN);
+
+        assertThrows(IllegalStateException.class, () -> {
+            new Contract(quote);
+        }, "Cannot create a contract from a quotation with a WITHDRAWN vehicle");
+    }
+
+    @Test
+    public void copyConstructor_WhenVehicleIsQuoted_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        quote.issue();
+        defaultCar.setStatus(VehicleStatus.QUOTED);
+
+        assertDoesNotThrow(() -> new Contract(quote));
+    }
+
+    @Test
+    public void copyConstructor_AfterOriginalPricesHaveBeenUpdatedAndItemHasBeenArchived_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
+        quote.addItem(new AppliedItem(accessory));
+        quote.issue();
+
+        accessory.setBasePrice(new BigDecimal("40.00"));
+        defaultCar.setSellingPrice(new BigDecimal("15000.00"));
+
+        Contract contract = new Contract(quote);
+
+        assertAll(
+                () -> assertTrue(contract.getItems().size() == 1),
+                () -> assertTrue(new BigDecimal("10000.00").equals(contract.getVehicleSellingPriceSnapshot()),
+                        "The contract created from a quotation should get the snapshot vehicle selling price"),
+                () -> assertTrue(new BigDecimal("50.00").equals(contract.getItems().getFirst().getAppliedPrice()),
+                        "The contract created from a quotation should get the snapshot applied price of the item"));
+
+    }
+
+    @Test
+    public void copyConstructor_AfterOriginalItemHasBeenArchived_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setExpirationDate(LocalDate.now());
+        Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
+        quote.addItem(new AppliedItem(accessory));
+        quote.issue();
+
+        accessory.archive();
+
+        Contract contract = new Contract(quote);
+
+        assertTrue(contract.getItems().size() == 1,
+                "The contract created from a quotation should have all items of the original quotation source even if they have been archived");
     }
 
     @Test
@@ -294,6 +426,54 @@ public class ContractTest {
     }
 
     @Test
+    public void confirm_WhenContractDraft_WithoutCustomerFiscalData_ThrowsException() {
+        Customer incompleteCustomer = new CustomerBuilder().setFirstName("Mario")
+                .setLastName("Rossi")
+                .setPhoneNumber("1234567890")
+                .setResidenceCity("Roma")
+                .setZipCode("00000")
+                .build();
+        Contract contract = new Contract(defaultCar, incompleteCustomer);
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.confirm(null);
+        });
+        assertEquals(ContractStatus.DRAFT, contract.getStatus());
+    }
+
+    @Test
+    public void confirm_WhenContractDraft_WithoutCustomerResidenceCity_ThrowsException() {
+        Customer incompleteCustomer = new CustomerBuilder().setFirstName("Mario")
+                .setLastName("Rossi")
+                .setPhoneNumber("1234567890")
+                .setFiscalCode("RSSMRA00X00X000X")
+                .setZipCode("00000")
+                .build();
+        Contract contract = new Contract(defaultCar, incompleteCustomer);
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.confirm(null);
+        });
+        assertEquals(ContractStatus.DRAFT, contract.getStatus());
+    }
+
+    @Test
+    public void confirm_WhenContractDraft_WithoutCustomerZipCode_ThrowsException() {
+        Customer incompleteCustomer = new CustomerBuilder().setFirstName("Mario")
+                .setLastName("Rossi")
+                .setPhoneNumber("1234567890")
+                .setFiscalCode("RSSMRA00X00X000X")
+                .setResidenceCity("Roma")
+                .build();
+        Contract contract = new Contract(defaultCar, incompleteCustomer);
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.confirm(null);
+        });
+        assertEquals(ContractStatus.DRAFT, contract.getStatus());
+    }
+
+    @Test
     public void confirm_WhenContractDraft_WithNullDepositTransaction_Success() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
         contract.setEstimatedHandoverDate(LocalDate.now());
@@ -301,8 +481,23 @@ public class ContractTest {
         assertDoesNotThrow(() -> {
             contract.confirm(null);
         });
-        assertEquals(ContractStatus.CONFIRMED, contract.getStatus());
-        assertNull(contract.getDeposit());
+
+        assertAll(
+                () -> assertEquals(ContractStatus.CONFIRMED, contract.getStatus()),
+                () -> assertNull(contract.getDeposit()),
+                () -> assertTrue(defaultCustomer.getFirstName().equals(contract.getCustomerSnapshot().getFirstName())),
+                () -> assertTrue(defaultCustomer.getLastName().equals(contract.getCustomerSnapshot().getLastName())),
+                () -> assertTrue(
+                        defaultCustomer.getFiscalCode().equals(contract.getCustomerSnapshot().getFiscalCode())),
+                () -> assertNull(defaultCustomer.getVatNumber()),
+                () -> assertNull(contract.getCustomerSnapshot().getVatNumber()),
+                () -> assertTrue(
+                        defaultCustomer.getResidenceCity().equals(contract.getCustomerSnapshot().getResidenceCity())),
+                () -> assertTrue(defaultCustomer.getZipCode().equals(contract.getCustomerSnapshot().getZipCode())),
+                () -> assertNull(defaultCustomer.getEmail()),
+                () -> assertNull(contract.getCustomerSnapshot().getEmail()),
+                () -> assertTrue(
+                        defaultCustomer.getPhoneNumber().equals(contract.getCustomerSnapshot().getPhoneNumber())));
     }
 
     @Test

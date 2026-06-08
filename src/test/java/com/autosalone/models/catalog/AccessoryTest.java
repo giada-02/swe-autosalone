@@ -1,7 +1,6 @@
 package com.autosalone.models.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,17 +23,6 @@ public class AccessoryTest {
     public void constructor_WithNegativeBasePrice_ThrowsException() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Accessory("Nome", "Descrizione", new BigDecimal("-50.00")));
-    }
-
-    @Test
-    public void archive_unarchive_Success() {
-        Accessory accessory = new Accessory("Nome", null, new BigDecimal("50.00"));
-
-        accessory.archive();
-        assertTrue(accessory.isArchived());
-
-        accessory.unarchive();
-        assertFalse(accessory.isArchived());
     }
 
     @Test
@@ -64,6 +52,13 @@ public class AccessoryTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> accessory.setBasePrice(new BigDecimal("-50.00")));
+    }
+
+    @Test
+    public void archive_Success() {
+        Accessory accessory = new Accessory("Nome", null, new BigDecimal("50.00"));
+        assertDoesNotThrow(() -> accessory.archive());
+        assertTrue(accessory.isArchived());
     }
 
     @Test

@@ -31,9 +31,9 @@ public class Quotation extends SalesDocument {
         this.status = QuotationStatus.DRAFT;
     }
 
-    // copy constructor for cloning
+    /// Cloning copy constructor
     public Quotation(Quotation original) {
-        super(original);
+        super(original, true);
         this.status = QuotationStatus.DRAFT;
         this.expirationDate = null;
         this.expirationPolicy = null;

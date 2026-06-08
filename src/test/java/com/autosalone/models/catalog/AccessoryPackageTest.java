@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 public class AccessoryPackageTest {
 
     @Test
-    public void archive_ItemsInsideShouldNotBeArchived() {
+    public void archive_Success_ItemsInsideShouldNotBeArchived() {
         AccessoryPackage pack = new AccessoryPackage("Pacchetto", "Descrizione");
         Accessory accessory = new Accessory("Accessorio", "Descrizione", new BigDecimal("50.00"));
         Accessory innerPack = new Accessory("Pacchetto Interno", null, new BigDecimal("50.00"));
@@ -28,14 +28,6 @@ public class AccessoryPackageTest {
     public void addItem_Self_ThrowsException() {
         AccessoryPackage pack = new AccessoryPackage("Pacchetto", "Descrizione");
         assertThrows(IllegalArgumentException.class, () -> pack.addItem(pack));
-    }
-
-    @Test
-    public void addItem_AlreadyExisting_ThrowsException() {
-        AccessoryPackage pack = new AccessoryPackage("Pacchetto", "Descrizione");
-        Accessory accessory = new Accessory("Accessorio", "Descrizione", new BigDecimal("50.00"));
-        pack.addItem(accessory);
-        assertThrows(IllegalArgumentException.class, () -> pack.addItem(accessory));
     }
 
     @Test
