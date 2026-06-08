@@ -7,15 +7,17 @@ import jakarta.validation.constraints.Size;
 @Table(name = "customers")
 public class Customer extends User {
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive;
+
+    // residenza
     @Column(name = "residence_city")
     private String residenceCity;
 
     @Column(name = "zip_code", length = 5)
     private String zipCode;
 
-    @Column(name = "is_active")
-    private boolean isActive;
-
+    // dati fiscali
     @Size(min = 11, max = 16, message = "Il Codice Fiscale deve essere di 11 o 16 caratteri")
     @Column(name = "fiscal_code", length = 16)
     private String fiscalCode; // codice fiscale
@@ -38,16 +40,16 @@ public class Customer extends User {
     }
 
     // getters
+    public boolean isActive() {
+        return isActive;
+    }
+
     public String getResidenceCity() {
         return residenceCity;
     }
 
     public String getZipCode() {
         return zipCode;
-    }
-
-    public boolean isActive() {
-        return isActive;
     }
 
     public String getFiscalCode() {
@@ -59,20 +61,20 @@ public class Customer extends User {
     }
 
     // setters
-    public void setResidenceCity(String residenceCity) {
-        this.residenceCity = residenceCity;
-    }
-
-    public void setZipCode(String zipCode) {
-        this.zipCode = zipCode;
-    }
-
     public void activate() {
         this.isActive = true;
     }
 
     public void deactivate() {
         this.isActive = false;
+    }
+
+    public void setResidenceCity(String residenceCity) {
+        this.residenceCity = residenceCity;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
     }
 
     public void setFiscalCode(String fiscalCode) {

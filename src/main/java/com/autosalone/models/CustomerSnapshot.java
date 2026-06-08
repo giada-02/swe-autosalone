@@ -18,24 +18,24 @@ public class CustomerSnapshot {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "fiscal_code", nullable = false, length = 16)
+    @Column(name = "fiscal_code", length = 16)
     private String fiscalCode;
 
     @Column(name = "vat_number", length = 11)
     private String vatNumber;
 
     // residenza
-    @Column(name = "zip_code", length = 5)
-    private String zipCode;
-
-    @Column(name = "residence_city")
+    @Column(name = "residence_city", nullable = false)
     private String residenceCity;
+
+    @Column(name = "zip_code", length = 5, nullable = false)
+    private String zipCode;
 
     // contatti
     @Column(name = "email")
     private String email;
 
-    @Column(name = "phone_number")
+    @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
 
     protected CustomerSnapshot() {
@@ -49,8 +49,8 @@ public class CustomerSnapshot {
         this.lastName = customer.getLastName();
         this.fiscalCode = customer.getFiscalCode();
         this.vatNumber = customer.getVatNumber();
-        this.zipCode = customer.getZipCode();
         this.residenceCity = customer.getResidenceCity();
+        this.zipCode = customer.getZipCode();
         this.email = customer.getEmail();
         this.phoneNumber = customer.getPhoneNumber();
     }
@@ -76,12 +76,12 @@ public class CustomerSnapshot {
         return vatNumber;
     }
 
-    public String getZipCode() {
-        return zipCode;
-    }
-
     public String getResidenceCity() {
         return residenceCity;
+    }
+
+    public String getZipCode() {
+        return zipCode;
     }
 
     public String getEmail() {
