@@ -205,6 +205,13 @@ public class Contract extends SalesDocument {
         this.status = ContractStatus.CANCELED;
     }
 
+    public void voidDocument() {
+        if (this.status != ContractStatus.DRAFT) {
+            throw new IllegalStateException("Only a DRAFT contract can be voided");
+        }
+        this.status = ContractStatus.VOIDED;
+    }
+
     public void registerPayment(Transaction payment) {
         if (this.status != ContractStatus.CONFIRMED) {
             throw new IllegalStateException("Cannot accept payments for a contract in status " + this.status);

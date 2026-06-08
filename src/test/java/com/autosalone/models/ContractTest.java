@@ -294,7 +294,7 @@ public class ContractTest {
     }
 
     @Test
-    public void changeCustomer_WhenContractIsDraft_Success() {
+    public void changeCustomer_WhenStatusDraft_Success() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
         Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi")
                 .setPhoneNumber("1234567890")
@@ -305,7 +305,7 @@ public class ContractTest {
     }
 
     @Test
-    public void changeCustomer_WhenContractIsDraft_CreatedFromQuotation_ThrowsException() {
+    public void changeCustomer_WhenStatusDraft_CreatedFromQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setExpirationDate(LocalDate.now());
         quote.issue();
@@ -318,7 +318,7 @@ public class ContractTest {
     }
 
     @Test
-    public void changeVehicle_WhenContractIsDraft_CreatedFromQuotation_ThrowsException() {
+    public void changeVehicle_WhenStatusDraft_CreatedFromQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setExpirationDate(LocalDate.now());
         quote.issue();
@@ -336,19 +336,19 @@ public class ContractTest {
     }
 
     @Test
-    public void applyChanges_WhenContractIsConfirmed_ThrowsException() {
+    public void applyChanges_WhenStatusConfirmed_ThrowsException() {
         Contract contract = getConfirmedContract("500.00");
         assertDocumentIsLocked(contract);
     }
 
     @Test
-    public void applyChanges_WhenContractIsCompleted_ThrowsException() {
+    public void applyChanges_WhenStatusCompleted_ThrowsException() {
         Contract contract = getCompletedContract();
         assertDocumentIsLocked(contract);
     }
 
     @Test
-    public void applyChanges_WhenContractIsCanceled_ThrowsException() {
+    public void applyChanges_WhenStatusCanceled_ThrowsException() {
         Contract contract = getConfirmedContract("500.00");
         contract.cancel("Cancellazione per Finanziamento Rifiutato");
 
@@ -356,7 +356,7 @@ public class ContractTest {
     }
 
     @Test
-    public void setInternalNotes_WhenContractIsConfirmed_Success() {
+    public void setInternalNotes_WhenStatusConfirmed_Success() {
         Contract contract = getConfirmedContract("500.00");
 
         assertDoesNotThrow(() -> {
@@ -367,7 +367,7 @@ public class ContractTest {
     }
 
     @Test
-    public void setInternalNotes_WhenContractIsCompleted_Success() {
+    public void setInternalNotes_WhenStatusCompleted_Success() {
         Contract contract = getCompletedContract();
 
         assertDoesNotThrow(() -> {
@@ -378,7 +378,7 @@ public class ContractTest {
     }
 
     @Test
-    public void cancel_WhenContractIsDraft_ThrowsException() {
+    public void cancel_WhenStatusDraft_ThrowsException() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
 
         assertEquals(ContractStatus.DRAFT, contract.getStatus());
@@ -388,7 +388,7 @@ public class ContractTest {
     }
 
     @Test
-    public void cancel_WhenContractIsCompleted_ThrowsException() {
+    public void cancel_WhenStatusCompleted_ThrowsException() {
         Contract contract = getCompletedContract();
 
         assertEquals(ContractStatus.COMPLETED, contract.getStatus());
@@ -398,7 +398,7 @@ public class ContractTest {
     }
 
     @Test
-    public void cancel_WhenContractIsConfirmed_Success() {
+    public void cancel_WhenStatusConfirmed_Success() {
         Contract contract = getConfirmedContract("500.00");
 
         contract.cancel("Ripensamento");
@@ -407,7 +407,7 @@ public class ContractTest {
     }
 
     @Test
-    public void cancel_WhenContractIsConfirmed_WithoutCancelationReason_ThrowsException() {
+    public void cancel_WhenStatusConfirmed_WithoutCancelationReason_ThrowsException() {
         Contract contract = getConfirmedContract("500.00");
 
         assertAll("Canceling a contract without a cancelation reason should throw exceptions",
@@ -416,7 +416,7 @@ public class ContractTest {
     }
 
     @Test
-    public void confirm_WhenContractDraft_WithoutEstimatedHandoverDate_ThrowsException() {
+    public void confirm_WhenStausDraft_WithoutEstimatedHandoverDate_ThrowsException() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
 
         assertThrows(IllegalStateException.class, () -> {
@@ -426,7 +426,7 @@ public class ContractTest {
     }
 
     @Test
-    public void confirm_WhenContractDraft_WithoutCustomerFiscalData_ThrowsException() {
+    public void confirm_WhenStatusDraft_WithoutCustomerFiscalData_ThrowsException() {
         Customer incompleteCustomer = new CustomerBuilder().setFirstName("Mario")
                 .setLastName("Rossi")
                 .setPhoneNumber("1234567890")
@@ -442,7 +442,7 @@ public class ContractTest {
     }
 
     @Test
-    public void confirm_WhenContractDraft_WithoutCustomerResidenceCity_ThrowsException() {
+    public void confirm_WhenStatusDraft_WithoutCustomerResidenceCity_ThrowsException() {
         Customer incompleteCustomer = new CustomerBuilder().setFirstName("Mario")
                 .setLastName("Rossi")
                 .setPhoneNumber("1234567890")
@@ -458,7 +458,7 @@ public class ContractTest {
     }
 
     @Test
-    public void confirm_WhenContractDraft_WithoutCustomerZipCode_ThrowsException() {
+    public void confirm_WhenStatusDraft_WithoutCustomerZipCode_ThrowsException() {
         Customer incompleteCustomer = new CustomerBuilder().setFirstName("Mario")
                 .setLastName("Rossi")
                 .setPhoneNumber("1234567890")
@@ -474,7 +474,7 @@ public class ContractTest {
     }
 
     @Test
-    public void confirm_WhenContractDraft_WithNullDepositTransaction_Success() {
+    public void confirm_WhenStatusDraft_WithNullDepositTransaction_Success() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
         contract.setEstimatedHandoverDate(LocalDate.now());
 
@@ -498,6 +498,54 @@ public class ContractTest {
                 () -> assertNull(contract.getCustomerSnapshot().getEmail()),
                 () -> assertTrue(
                         defaultCustomer.getPhoneNumber().equals(contract.getCustomerSnapshot().getPhoneNumber())));
+    }
+
+    @Test
+    public void confirm_WhenStatusVoided_ThrowsException() {
+        Contract contract = new Contract(defaultCar, defaultCustomer);
+        contract.setEstimatedHandoverDate(LocalDate.now());
+        contract.voidDocument();
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.confirm(null);
+        }, "Cannot confirm a VOIDED contract");
+    }
+
+    @Test
+    public void voidDocument_WhenStatusConfirmed_ThrowsException() {
+        Contract contract = getConfirmedContract(null);
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.voidDocument();
+        }, "Cannot void a CONFIRMED contract");
+    }
+
+    @Test
+    public void voidDocument_WhenStatusCompleted_ThrowsException() {
+        Contract contract = getCompletedContract();
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.voidDocument();
+        }, "Cannot void a COMPLETED contract");
+    }
+
+    @Test
+    public void voidDocument_WhenStatusCanceled_ThrowsException() {
+        Contract contract = getConfirmedContract(null);
+        contract.cancel("Finanziamento Rifiutato");
+
+        assertThrows(IllegalStateException.class, () -> {
+            contract.voidDocument();
+        }, "Cannot void a CANCELED contract");
+    }
+
+    @Test
+    public void voidDocument_WhenStatusDraft_Success() {
+        Contract contract = new Contract(defaultCar, defaultCustomer);
+
+        assertDoesNotThrow(() -> {
+            contract.voidDocument();
+        }, "Should be able to void a DRAFT contract");
     }
 
     @Test
@@ -659,7 +707,7 @@ public class ContractTest {
 
     // archive
     @Test
-    public void archive_WhenContractIsDraft_Success() {
+    public void archive_WhenStatusDraft_Success() {
         Contract contract = new Contract(defaultCar, defaultCustomer);
 
         contract.archive();
@@ -667,14 +715,14 @@ public class ContractTest {
     }
 
     @Test
-    public void archive_WhenContractIsConfirmed_ThrowsException() {
+    public void archive_WhenStatusConfirmed_ThrowsException() {
         Contract contract = getConfirmedContract("1000.00");
 
         assertThrows(IllegalStateException.class, () -> contract.archive(), "Cannot archive a CONFIRMED contract");
     }
 
     @Test
-    public void archive_WhenContractIsCompleted_Success() {
+    public void archive_WhenStatusCompleted_Success() {
         Contract contract = getCompletedContract();
 
         contract.archive();
@@ -683,7 +731,7 @@ public class ContractTest {
     }
 
     @Test
-    public void archive_WhenContractIsCanceled_Success() {
+    public void archive_WhenStatusCanceled_Success() {
         Contract contract = getConfirmedContract("1000.00");
         contract.cancel("Finanziamento Rifiutato");
 
@@ -746,8 +794,10 @@ public class ContractTest {
 
     private Contract getConfirmedContract(String depositValue) {
         Contract contract = new Contract(defaultCar, defaultCustomer);
-        Transaction deposit = TransactionFactory.createContractDeposit(contract, new BigDecimal(depositValue),
-                LocalDate.now());
+        Transaction deposit = null;
+        if (depositValue != null)
+            deposit = TransactionFactory.createContractDeposit(contract, new BigDecimal(depositValue),
+                    LocalDate.now());
         contract.setEstimatedHandoverDate(
                 LocalDate.now());
         contract.confirm(deposit);
