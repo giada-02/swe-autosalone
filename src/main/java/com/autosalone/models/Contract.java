@@ -139,7 +139,7 @@ public class Contract extends SalesDocument {
         this.estimatedHandoverDate = estimatedHandoverDate;
     }
 
-    public void confirm(Transaction depositTransaction) {
+    public void confirm(Transaction deposit) {
         if (this.status != ContractStatus.DRAFT) {
             throw new IllegalStateException("Only a DRAFT contract can be confirmed");
         }
@@ -149,7 +149,7 @@ public class Contract extends SalesDocument {
                     "The estimated handover date of the contract must be set before confirming");
         }
 
-        if (depositTransaction != null && depositTransaction.getType() != TransactionType.IN) {
+        if (deposit != null && deposit.getType() != TransactionType.IN) {
             throw new IllegalArgumentException("Deposit must be an IN transaction");
         }
 
@@ -161,7 +161,7 @@ public class Contract extends SalesDocument {
 
         this.customerSnapshot = new CustomerSnapshot(this.getCustomer());
 
-        this.deposit = depositTransaction;
+        this.deposit = deposit;
         this.status = ContractStatus.CONFIRMED;
     }
 

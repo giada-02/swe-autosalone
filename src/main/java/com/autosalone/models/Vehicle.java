@@ -202,6 +202,10 @@ public class Vehicle extends AuditableEntity {
         this.deadlines.add(deadline);
     }
 
+    public void removeDeadline(Deadline deadline) {
+        this.deadlines.remove(deadline);
+    }
+
     public void setInShowroom(boolean isInShowroom) {
         assertNotTerminal();
         this.isInShowroom = isInShowroom;
