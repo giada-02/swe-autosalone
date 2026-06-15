@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.autosalone.enums.VehicleStatus;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.models.discounts.DiscountStrategy;
@@ -100,11 +99,7 @@ public abstract class SalesDocument extends AuditableEntity {
     protected SalesDocument(Vehicle vehicle, Customer customer) {
         Objects.requireNonNull(vehicle, "Vehicle is required");
         Objects.requireNonNull(customer, "Customer is required");
-        VehicleStatus vs = vehicle.getStatus();
-        if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
-            throw new IllegalStateException(
-                    "Cannot create sales document: the vehicle is unavailable (Status: " + vs + ")");
-        }
+        vehicle.validateVehicleStatusForDocument("Cannot create sales document");
 
         this.date = LocalDate.now(); // current date
         this.vehicle = vehicle;
@@ -119,11 +114,7 @@ public abstract class SalesDocument extends AuditableEntity {
     // Conserva i prezzi stabiliti e gli item presenti (anche archiviati) nel
     // documento originale
     protected SalesDocument(SalesDocument original) {
-        VehicleStatus vs = original.getVehicle().getStatus();
-        if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
-            throw new IllegalStateException(
-                    "Cannot create sales document: the vehicle is unavailable (Status: " + vs + ")");
-        }
+        original.getVehicle().validateVehicleStatusForDocument("Cannot create sales document");
 
         this.date = LocalDate.now(); // current date
         this.vehicle = original.getVehicle();
@@ -145,11 +136,7 @@ public abstract class SalesDocument extends AuditableEntity {
     // Aggiorna ai prezzi di listino attuali e fa pulizia degli accessori
     // archiviati
     protected SalesDocument(SalesDocument original, boolean skipArchived) {
-        VehicleStatus vs = original.getVehicle().getStatus();
-        if (vs == VehicleStatus.RESERVED || vs == VehicleStatus.SOLD || vs == VehicleStatus.WITHDRAWN) {
-            throw new IllegalStateException(
-                    "Cannot create sales document: the vehicle is unavailable (Status: " + vs + ")");
-        }
+        original.getVehicle().validateVehicleStatusForDocument("Cannot create sales document");
 
         this.date = LocalDate.now();
         this.vehicle = original.getVehicle();
@@ -243,16 +230,19 @@ public abstract class SalesDocument extends AuditableEntity {
     // setters
     public void setDate(LocalDate date) {
         validateIsEditable();
+        Objects.requireNonNull(date, "Date is required");
         this.date = date;
     }
 
     public void setVehicle(Vehicle vehicle) {
         validateIsEditable();
+        Objects.requireNonNull(date, "Vehicle is required");
         this.vehicle = vehicle;
     }
 
     public void setCustomer(Customer customer) {
         validateIsEditable();
+        Objects.requireNonNull(date, "Customer is required");
         this.customer = customer;
     }
 
@@ -285,6 +275,8 @@ public abstract class SalesDocument extends AuditableEntity {
 
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
         validateIsEditable();
+        if (vehicleSellingPriceSnapshot == null || vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("The vehicle selling price cannot be null or negative"); // todo test
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
     }
 
@@ -318,4 +310,13 @@ public abstract class SalesDocument extends AuditableEntity {
     protected abstract void validateIsArchivable();
 
     protected abstract boolean isDraft();
+
+    protected void validateSecondhandVehicle(String errorTitle) {
+        if (this.vehicle.getRegistrationDate() == null || this.vehicle.getLicensePlate() == null
+                || this.vehicle.getLicensePlate().trim().isEmpty()
+                || this.vehicle.getKilometers() == null) {
+            throw new IllegalStateException(
+                    errorTitle + ": the SECONDHAND vehicle is missing registration data or kilometers");
+        }
+    }
 }

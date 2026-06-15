@@ -70,7 +70,7 @@ public class VehicleTest {
             car.setBrand("Toyota");
             car.setModel("Yaris");
             car.setColor("Blu");
-            car.setKilometers(6800);
+            car.setKilometers(Double.valueOf(6800));
         });
         assertEquals("Toyota", car.getBrand());
         assertEquals("Yaris", car.getModel());
@@ -86,7 +86,7 @@ public class VehicleTest {
         assertThrows(IllegalStateException.class, () -> car.setBrand("Toyota"));
         assertThrows(IllegalStateException.class, () -> car.setModel("Yaris"));
         assertThrows(IllegalStateException.class, () -> car.setColor("Blu"));
-        assertThrows(IllegalStateException.class, () -> car.setKilometers(6800));
+        assertThrows(IllegalStateException.class, () -> car.setKilometers(Double.valueOf(6800)));
     }
 
     @Test
@@ -144,11 +144,12 @@ public class VehicleTest {
         assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
         assertThrows(IllegalStateException.class, () -> car.setHandoverDate(LocalDate.now()));
+        assertThrows(IllegalStateException.class, () -> car.setPurchaseTransaction(null));
     }
 
     @Test
     public void setStatus_ToTerminal_RemovesFromShowroom() {
-        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).setInShowroom(true).build();
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
 
         assertTrue(car.isInShowroom());
 
@@ -159,7 +160,7 @@ public class VehicleTest {
 
     @Test
     public void setStatus_ToWithdrawn_RemovesFromShowroom() {
-        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).setInShowroom(true).build();
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
 
         car.setStatus(VehicleStatus.WITHDRAWN);
 

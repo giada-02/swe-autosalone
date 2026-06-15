@@ -11,6 +11,9 @@ public class TransactionFactory {
     }
 
     public static Transaction createVehiclePurchase(Vehicle vehicle, BigDecimal amount, LocalDate date) {
+        if (vehicle.getPurchaseTransaction() != null)
+            throw new IllegalStateException(
+                    "The purchase transaction has already been registered and cannot be overwritten");
         String reason = String.format("Acquisto - %s %s", vehicle.getBrand(), vehicle.getModel());
         return new Transaction(reason, amount, date, TransactionType.OUT);
     }

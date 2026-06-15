@@ -21,6 +21,15 @@ public class AccessoryPackage extends PurchasableItem {
         super(name, description);
     }
 
+    public AccessoryPackage(String name, String description, List<PurchasableItem> items) {
+        super(name, description);
+        if (items != null) {
+            for (PurchasableItem item : items) {
+                this.addItem(item);
+            }
+        }
+    }
+
     @Override
     public BigDecimal getPrice() {
         BigDecimal total = BigDecimal.ZERO;

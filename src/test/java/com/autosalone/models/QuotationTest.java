@@ -282,6 +282,22 @@ public class QuotationTest {
     }
 
     @Test
+    public void setVehicleSellingPriceSnapshot_ToNull_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> quote.setVehicleSellingPriceSnapshot(null));
+    }
+
+    @Test
+    public void setVehicleSellingPriceSnapshot_ToNegative_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> quote.setVehicleSellingPriceSnapshot(new BigDecimal("-9800.00")));
+    }
+
+    @Test
     public void issue_WhenStatusExpired_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         setPastExpirationDateForTesting(quote, 1);

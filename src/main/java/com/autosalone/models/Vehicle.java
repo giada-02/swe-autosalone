@@ -57,7 +57,7 @@ public class Vehicle extends AuditableEntity {
     private LocalDate registrationDate; // data di immatricolazione
 
     @Column
-    private double kilometers;
+    private Double kilometers;
 
     @Column(name = "is_in_showroom", nullable = false)
     private boolean isInShowroom;
@@ -125,7 +125,7 @@ public class Vehicle extends AuditableEntity {
         return registrationDate;
     }
 
-    public double getKilometers() {
+    public Double getKilometers() {
         return kilometers;
     }
 
@@ -186,7 +186,7 @@ public class Vehicle extends AuditableEntity {
         this.registrationDate = registrationDate;
     }
 
-    public void setKilometers(double kilometers) {
+    public void setKilometers(Double kilometers) {
         assertCoreEditable();
         this.kilometers = kilometers;
     }
@@ -311,7 +311,7 @@ public class Vehicle extends AuditableEntity {
         private LocalDate handoverDate;
         private String licensePlate;
         private LocalDate registrationDate;
-        private double kilometers;
+        private Double kilometers;
         private boolean isInShowroom;
 
         public VehicleBuilder setBrand(String brand) {
@@ -359,7 +359,7 @@ public class Vehicle extends AuditableEntity {
             return this;
         }
 
-        public VehicleBuilder setKilometers(double kilometers) {
+        public VehicleBuilder setKilometers(Double kilometers) {
             this.kilometers = kilometers;
             return this;
         }
@@ -376,6 +376,14 @@ public class Vehicle extends AuditableEntity {
             Objects.requireNonNull(this.condition, "Condition is required");
             Objects.requireNonNull(this.isInShowroom, "Is in showroom is required");
             return new Vehicle(this);
+        }
+    }
+
+    public void validateVehicleStatusForDocument(String errorTitle) {
+        if (this.status == VehicleStatus.RESERVED || this.status == VehicleStatus.SOLD
+                || this.status == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException(
+                    errorTitle + ": the vehicle is unavailable (Status: " + this.status + ")");
         }
     }
 }

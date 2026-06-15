@@ -10,6 +10,7 @@ import java.util.Objects;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.TransactionType;
+import com.autosalone.enums.VehicleCondition;
 
 @Entity
 @Table(name = "contracts")
@@ -153,6 +154,11 @@ public class Contract extends SalesDocument {
             throw new IllegalArgumentException("Deposit must be an IN transaction");
         }
 
+        this.getVehicle().validateVehicleStatusForDocument("Cannot confirm the contract");
+        if (this.getVehicle().getCondition() == VehicleCondition.SECONDHAND) {
+            validateSecondhandVehicle("Cannot confirm the contract");
+        }
+
         if ((this.getCustomer().getFiscalCode() == null && this.getCustomer().getVatNumber() == null)
                 || this.getCustomer().getResidenceCity() == null || this.getCustomer().getZipCode() == null) {
             throw new IllegalStateException(
@@ -170,16 +176,17 @@ public class Contract extends SalesDocument {
             throw new IllegalStateException("Only a CONFIRMED contract can be completed");
         }
 
-        if (this.getVehicle().getHandoverDate() == null) {
+        Vehicle v = this.getVehicle();
+        if (v.getHandoverDate() == null) {
             throw new IllegalStateException("The actual handover date must be set before completing the contract");
         }
 
-        if (this.getVehicle().getLicensePlate() == null || this.getVehicle().getLicensePlate().trim().isEmpty()) {
+        if (v.getLicensePlate() == null || v.getLicensePlate().trim().isEmpty()) {
             throw new IllegalStateException(
                     "The licence plate of the associated vehicle must be set before completing the contract");
         }
 
-        if (this.getVehicle().getRegistrationDate() == null) {
+        if (v.getRegistrationDate() == null) {
             throw new IllegalStateException(
                     "The registration date of the associated vehicle must be set before completing the contract");
         }
