@@ -139,7 +139,7 @@ public class VehicleTest {
     @Test
     public void editAnyData_WhenWithdrawn_ThrowsException() {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND).build();
-        car.setStatus(VehicleStatus.WITHDRAWN);
+        car.withdraw("Furto");
 
         assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
@@ -159,11 +159,29 @@ public class VehicleTest {
     }
 
     @Test
-    public void setStatus_ToWithdrawn_RemovesFromShowroom() {
+    public void withdraw_RemovesFromShowroom() {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
 
-        car.setStatus(VehicleStatus.WITHDRAWN);
+        car.withdraw("Restituito al fornitore");
 
         assertFalse(car.isInShowroom(), "When the vehicle is WITHDRAWN it must be removed from the showroom");
+        assertNotNull(car.getWithdrawalReason());
+        assertEquals("Restituito al fornitore", car.getWithdrawalReason());
+    }
+
+    @Test
+    public void withdraw_WithoutWithdrawalReason_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+
+        assertThrows(IllegalArgumentException.class, () -> car.withdraw(null));
+
+    }
+
+    @Test
+    public void setStatus_ToWithdrawn_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+
+        assertThrows(IllegalArgumentException.class, () -> car.setStatus(VehicleStatus.WITHDRAWN));
+
     }
 }

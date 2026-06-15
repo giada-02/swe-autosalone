@@ -66,6 +66,9 @@ public class Vehicle extends AuditableEntity {
     @Column(nullable = false)
     private VehicleStatus status;
 
+    @Column(name = "withdrawal_reason", columnDefinition = "TEXT")
+    private String withdrawalReason;
+
     protected Vehicle() {
     }
 
@@ -145,6 +148,10 @@ public class Vehicle extends AuditableEntity {
         return status;
     }
 
+    public String getWithdrawalReason() {
+        return withdrawalReason;
+    }
+
     // setters
     public void setBrand(String brand) {
         assertCoreEditable();
@@ -214,13 +221,32 @@ public class Vehicle extends AuditableEntity {
     public void setStatus(VehicleStatus status) {
         if (this.status == status)
             return;
+
         if (this.status == VehicleStatus.SOLD || this.status == VehicleStatus.WITHDRAWN) {
             throw new IllegalStateException("Cannot transition out of a terminal state (" + this.status + ")");
         }
-        if (status == VehicleStatus.SOLD || status == VehicleStatus.WITHDRAWN) {
+
+        if (status == VehicleStatus.WITHDRAWN)
+            throw new IllegalArgumentException("Use the withdraw(reason) method to transition to WITHDRAWN");
+
+        if (status == VehicleStatus.SOLD)
             this.isInShowroom = false;
-        }
+
         this.status = status;
+    }
+
+    public void withdraw(String reason) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("A withdrawal reason must be provided");
+        }
+
+        if (this.status == VehicleStatus.SOLD || this.status == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException("Cannot transition out of a terminal state (" + this.status + ")");
+        }
+
+        this.status = VehicleStatus.WITHDRAWN;
+        this.withdrawalReason = reason;
+        this.isInShowroom = false;
     }
 
     // validation helper methods

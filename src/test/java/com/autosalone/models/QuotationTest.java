@@ -185,7 +185,7 @@ public class QuotationTest {
     @Test
     public void copyConstructor_WhenVehicleIsWithdrawn_ThrowsException() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
-        defaultCar.setStatus(VehicleStatus.WITHDRAWN);
+        defaultCar.withdraw("Distrutto");
 
         assertThrows(IllegalStateException.class, () -> new Quotation(sourceQuote));
     }
@@ -330,7 +330,7 @@ public class QuotationTest {
     @Test
     public void issue_WhenVehicleIsWithdrawn_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        defaultCar.setStatus(VehicleStatus.WITHDRAWN);
+        defaultCar.withdraw("Restituito al fornitore");
 
         assertThrows(IllegalStateException.class, () -> {
             quote.issue();

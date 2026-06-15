@@ -71,7 +71,7 @@ public class ContractTest {
 
     @Test
     public void constructor_WhenVehicleIsWithdrawn_ThrowsException() {
-        defaultCar.setStatus(VehicleStatus.WITHDRAWN);
+        defaultCar.withdraw("Furto");
 
         assertThrows(IllegalStateException.class, () -> {
             new Contract(defaultCar, defaultCustomer);
@@ -238,7 +238,7 @@ public class ContractTest {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setExpirationDate(LocalDate.now());
         quote.issue();
-        defaultCar.setStatus(VehicleStatus.WITHDRAWN);
+        defaultCar.withdraw("Restituito al fornitore");
 
         assertThrows(IllegalStateException.class, () -> {
             new Contract(quote);
