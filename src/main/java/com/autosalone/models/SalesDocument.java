@@ -276,7 +276,7 @@ public abstract class SalesDocument extends AuditableEntity {
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
         validateIsEditable();
         if (vehicleSellingPriceSnapshot == null || vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException("The vehicle selling price cannot be null or negative"); // todo test
+            throw new IllegalArgumentException("The vehicle selling price cannot be null or negative");
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
     }
 
