@@ -24,9 +24,8 @@ public class CatalogRepository {
         return Optional.ofNullable(purchasableItem);
     }
 
-    public List<PurchasableItem> findPurchasableItems(String keyword, Boolean isArchived) { // todo: add type filter
-                                                                                            // (accessory/accessory
-                                                                                            // package)
+    public List<PurchasableItem> findPurchasableItems(String keyword, Boolean isArchived,
+            Class<? extends PurchasableItem> itemType) {
         StringBuilder jpql = new StringBuilder("SELECT p FROM PurchasableItem p WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
 
@@ -38,6 +37,11 @@ public class CatalogRepository {
         if (isArchived != null) {
             jpql.append(" AND p.isArchived = :isArchived");
             parameters.put("isArchived", isArchived);
+        }
+
+        if (itemType != null) {
+            jpql.append(" AND TYPE(p) = :itemType");
+            parameters.put("itemType", itemType);
         }
 
         jpql.append(" ORDER BY p.name ASC");
