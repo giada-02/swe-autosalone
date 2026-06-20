@@ -9,7 +9,9 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,41 +26,47 @@ public class QuotationRepository {
         return Optional.ofNullable(quotation);
     }
 
-    public List<Quotation> findQuotations(
-            List<QuotationStatus> statusList) {
+    public List<Quotation> findQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
+            UUID customerId, List<QuotationStatus> statusList) {
 
         StringBuilder jpql = new StringBuilder("SELECT q FROM Quotation q WHERE 1=1");
+        Map<String, Object> parameters = new HashMap<>();
 
-        if (statusList != null && !statusList.isEmpty())
+        if (dateFrom != null) {
+            jpql.append(" AND q.date >= :from");
+            parameters.put("from", dateFrom);
+        }
+        if (dateTo != null) {
+            jpql.append(" AND q.date <= :to");
+            parameters.put("to", dateTo);
+        }
+        if (IsArchived != null) {
+            jpql.append(" AND q.isArchived = :IsArchived");
+            parameters.put("IsArchived", IsArchived);
+        }
+        if (vehicleId != null) {
+            jpql.append(" AND q.vehicle.id = :vehicleId");
+            parameters.put("vehicleId", vehicleId);
+        }
+        if (customerId != null) {
+            jpql.append(" AND q.customer.id = :customerId");
+            parameters.put("customerId", customerId);
+        }
+        if (statusList != null && !statusList.isEmpty()) {
             jpql.append(" AND q.status IN :statusList");
-
-        jpql.append(" ORDER BY q.date DESC");
+            parameters.put("statusList", statusList);
+        }
+        jpql.append(" ORDER BY q.date DESC, q.createdAt DESC");
 
         TypedQuery<Quotation> query = em.createQuery(jpql.toString(), Quotation.class);
-
-        if (statusList != null && !statusList.isEmpty())
-            query.setParameter("statusList", statusList);
+        parameters.forEach(query::setParameter);
 
         return query.getResultList();
     }
 
-    public List<Quotation> findByVehicleId(UUID vehicleId) {
-        return em.createQuery("SELECT q FROM Quotation q WHERE q.vehicle.id = :vehicleId ORDER BY q.date DESC",
-                Quotation.class)
-                .setParameter("vehicleId", vehicleId)
-                .getResultList();
-    }
-
-    public List<Quotation> findByCustomerId(UUID customerId) {
-        return em.createQuery("SELECT q FROM Quotation q WHERE q.customer.id = :customerId ORDER BY q.date DESC",
-                Quotation.class)
-                .setParameter("customerId", customerId)
-                .getResultList();
-    }
-
     public List<Quotation> findVisibleQuotationsByCustomerId(UUID customerId) {
         return em.createQuery(
-                "SELECT q FROM Quotation q WHERE q.customer.id = :customerId AND q.status != :draftStatus ORDER BY q.date DESC",
+                "SELECT q FROM Quotation q WHERE q.customer.id = :customerId AND q.status != :draftStatus ORDER BY q.date DESC, q.createdAt DESC",
                 Quotation.class)
                 .setParameter("customerId", customerId)
                 .setParameter("draftStatus", QuotationStatus.DRAFT)

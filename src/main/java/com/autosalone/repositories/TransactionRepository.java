@@ -28,21 +28,21 @@ public class TransactionRepository {
     }
 
     public List<Transaction> findTransactions(
-            LocalDate from,
-            LocalDate to,
+            LocalDate dateFrom,
+            LocalDate dateTo,
             TransactionType type,
             SortOrder sortOrder) {
 
         StringBuilder jpql = new StringBuilder("SELECT t FROM Transaction t WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
 
-        if (from != null) {
+        if (dateFrom != null) {
             jpql.append(" AND t.date >= :from");
-            parameters.put("from", from);
+            parameters.put("from", dateFrom);
         }
-        if (to != null) {
+        if (dateTo != null) {
             jpql.append(" AND t.date <= :to");
-            parameters.put("to", to);
+            parameters.put("to", dateTo);
         }
         if (type != null) {
             jpql.append(" AND t.type = :type");
@@ -66,7 +66,8 @@ public class TransactionRepository {
     }
 
     public List<Transaction> findAllPayments(UUID contractId) {
-        return em.createQuery("SELECT t FROM Transaction t WHERE t.contract.id = :contractId", Transaction.class)
+        return em.createQuery("SELECT t FROM Transaction t WHERE t.contract.id = :contractId ORDER BY t.date DESC",
+                Transaction.class)
                 .setParameter("contractId", contractId)
                 .getResultList();
     }

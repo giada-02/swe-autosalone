@@ -7,12 +7,14 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class PurchasableItemRepository {
+public class CatalogRepository {
 
     @PersistenceContext
     private EntityManager em;
@@ -22,18 +24,26 @@ public class PurchasableItemRepository {
         return Optional.ofNullable(purchasableItem);
     }
 
-    public List<PurchasableItem> findPurchasableItems(String keyword) {
+    public List<PurchasableItem> findPurchasableItems(String keyword, Boolean isArchived) { // todo: add type filter
+                                                                                            // (accessory/accessory
+                                                                                            // package)
         StringBuilder jpql = new StringBuilder("SELECT p FROM PurchasableItem p WHERE 1=1");
+        Map<String, Object> parameters = new HashMap<>();
 
-        if (keyword != null && !keyword.isEmpty())
+        if (keyword != null && !keyword.isEmpty()) {
             jpql.append(" AND LOWER(p.name) LIKE LOWER(:keyword)");
+            parameters.put("keyword", "%" + keyword + "%");
+        }
+
+        if (isArchived != null) {
+            jpql.append(" AND p.isArchived = :isArchived");
+            parameters.put("isArchived", isArchived);
+        }
 
         jpql.append(" ORDER BY p.name ASC");
 
         TypedQuery<PurchasableItem> query = em.createQuery(jpql.toString(), PurchasableItem.class);
-
-        if (keyword != null && !keyword.isEmpty())
-            query.setParameter("keyword", "%" + keyword + "%");
+        parameters.forEach(query::setParameter);
 
         return query.getResultList();
     }

@@ -33,7 +33,7 @@ public class VehicleRepository {
             VehicleCondition condition,
             BigDecimal maxPrice,
             Boolean isInShowroom,
-            VehicleStatus status) {
+            List<VehicleStatus> statusList) {
 
         StringBuilder jpql = new StringBuilder("SELECT v FROM Vehicle v WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
@@ -60,9 +60,9 @@ public class VehicleRepository {
             jpql.append(" AND v.isInShowroom = :isInShowroom");
             parameters.put("isInShowroom", isInShowroom);
         }
-        if (status != null) {
-            jpql.append(" AND v.status = :status");
-            parameters.put("status", status);
+        if (statusList != null && !statusList.isEmpty()) {
+            jpql.append(" AND v.status IN :statusList");
+            parameters.put("statusList", statusList);
         }
 
         jpql.append(" ORDER BY v.createdAt DESC");

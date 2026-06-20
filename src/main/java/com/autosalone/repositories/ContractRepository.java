@@ -8,7 +8,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,46 +26,72 @@ public class ContractRepository {
         return Optional.ofNullable(contract);
     }
 
-    public List<Contract> findContracts(List<ContractStatus> statusList) {
+    public List<Contract> findContracts(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
+            UUID customerId, List<ContractStatus> statusList) {
 
         StringBuilder jpql = new StringBuilder("SELECT c FROM Contract c WHERE 1=1");
+        Map<String, Object> parameters = new HashMap<>();
 
+        if (dateFrom != null) {
+            jpql.append(" AND c.date >= :from");
+            parameters.put("from", dateFrom);
+        }
+        if (dateTo != null) {
+            jpql.append(" AND c.date <= :to");
+            parameters.put("to", dateTo);
+        }
+        if (IsArchived != null) {
+            jpql.append(" AND c.isArchived = :IsArchived");
+            parameters.put("IsArchived", IsArchived);
+        }
+        if (vehicleId != null) {
+            jpql.append(" AND c.vehicle.id = :vehicleId");
+            parameters.put("vehicleId", vehicleId);
+        }
+        if (customerId != null) {
+            jpql.append(" AND c.customer.id = :customerId");
+            parameters.put("customerId", customerId);
+        }
         if (statusList != null && !statusList.isEmpty()) {
             jpql.append(" AND c.status IN :statusList");
+            parameters.put("statusList", statusList);
         }
 
-        jpql.append(" ORDER BY c.date DESC");
+        jpql.append(" ORDER BY c.date DESC, c.createdAt DESC");
 
         TypedQuery<Contract> query = em.createQuery(jpql.toString(), Contract.class);
-
-        if (statusList != null && !statusList.isEmpty()) {
-            query.setParameter("statusList", statusList);
-        }
+        parameters.forEach(query::setParameter);
 
         return query.getResultList();
     }
 
-    public List<Contract> findByVehicleId(UUID vehicleId) {
-        return em.createQuery("SELECT c FROM Contract c WHERE c.vehicle.id = :vehicleId ORDER BY c.date DESC",
-                Contract.class)
-                .setParameter("vehicleId", vehicleId)
-                .getResultList();
-    }
-
-    public List<Contract> findByCustomerId(UUID customerId) {
-        return em.createQuery("SELECT c FROM Contract c WHERE c.customer.id = :customerId ORDER BY c.date DESC",
-                Contract.class)
-                .setParameter("customerId", customerId)
-                .getResultList();
-    }
-
     public List<Contract> findVisibleContractsByCustomerId(UUID customerId) {
         return em.createQuery(
-                "SELECT c FROM Contract c WHERE c.customer.id = :customerId AND c.status != :draftStatus ORDER BY c.date DESC",
+                "SELECT c FROM Contract c WHERE c.customer.id = :customerId AND c.status != :draftStatus ORDER BY c.date DESC, c.createdAt DESC",
                 Contract.class)
                 .setParameter("customerId", customerId)
                 .setParameter("draftStatus", ContractStatus.DRAFT)
                 .getResultList();
+    }
+
+    public List<Contract> findConflictingContractsForVehicle(UUID vehicleId,
+            UUID excludeContractId) {
+
+        StringBuilder jpql = new StringBuilder(
+                "SELECT c FROM Contract c WHERE c.vehicle.id = :vehicleId AND c.status = draft");
+
+        if (excludeContractId != null) {
+            jpql.append(" AND c.id != :excludeId");
+        }
+
+        TypedQuery<Contract> query = em.createQuery(jpql.toString(), Contract.class)
+                .setParameter("vehicleId", vehicleId);
+
+        if (excludeContractId != null) {
+            query.setParameter("excludeId", excludeContractId);
+        }
+
+        return query.getResultList();
     }
 
     public Contract save(Contract contract) {
