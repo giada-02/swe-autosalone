@@ -21,13 +21,15 @@ public class UserRepository {
         return Optional.ofNullable(user);
     }
 
-    public User findByEmail(String email) {
+    public Optional<User> findByEmail(String email) {
         return em.createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
-                .setParameter("email", email).getSingleResult();
+                .setParameter("email", email)
+                .getResultStream()
+                .findFirst();
     }
 
     public List<User> findUsers() {
-        return em.createQuery("SELECT u FROM users u ORDER BY u.lastName ASC, u.firstName ASC", User.class)
+        return em.createQuery("SELECT u FROM User u ORDER BY u.lastName ASC, u.firstName ASC", User.class)
                 .getResultList();
     }
 }

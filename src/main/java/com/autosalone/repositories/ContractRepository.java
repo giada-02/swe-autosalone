@@ -74,18 +74,17 @@ public class ContractRepository {
                 .getResultList();
     }
 
-    public List<Contract> findConflictingContractsForVehicle(UUID vehicleId,
-            UUID excludeContractId) {
-
+    public List<Contract> findConflictingContractsForVehicle(UUID vehicleId, UUID excludeContractId) {
         StringBuilder jpql = new StringBuilder(
-                "SELECT c FROM Contract c WHERE c.vehicle.id = :vehicleId AND c.status = draft");
+                "SELECT c FROM Contract c WHERE c.vehicle.id = :vehicleId AND c.status = :draft");
 
         if (excludeContractId != null) {
             jpql.append(" AND c.id != :excludeId");
         }
 
         TypedQuery<Contract> query = em.createQuery(jpql.toString(), Contract.class)
-                .setParameter("vehicleId", vehicleId);
+                .setParameter("vehicleId", vehicleId)
+                .setParameter("draft", ContractStatus.DRAFT);
 
         if (excludeContractId != null) {
             query.setParameter("excludeId", excludeContractId);
