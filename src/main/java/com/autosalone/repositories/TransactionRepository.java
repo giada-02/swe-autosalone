@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -70,6 +71,40 @@ public class TransactionRepository {
                 Transaction.class)
                 .setParameter("contractId", contractId)
                 .getResultList();
+    }
+
+    public BigDecimal sumInTransactions(LocalDate dateFrom, LocalDate dateTo) {
+        return calculateSum(dateFrom, dateTo, TransactionType.IN);
+    }
+
+    public BigDecimal sumOutTransactions(LocalDate dateFrom, LocalDate dateTo) {
+        return calculateSum(dateFrom, dateTo, TransactionType.OUT);
+    }
+
+    private BigDecimal calculateSum(LocalDate dateFrom, LocalDate dateTo, TransactionType type) {
+        StringBuilder jpql = new StringBuilder("SELECT SUM(t.amount) FROM Transaction t WHERE 1=1");
+        Map<String, Object> parameters = new HashMap<>();
+
+        if (type != null) {
+            jpql.append(" AND t.type = :type");
+            parameters.put("type", type);
+        }
+
+        if (dateFrom != null) {
+            jpql.append(" AND t.date >= :from");
+            parameters.put("from", dateFrom);
+        }
+
+        if (dateTo != null) {
+            jpql.append(" AND t.date <= :to");
+            parameters.put("to", dateTo);
+        }
+
+        TypedQuery<BigDecimal> query = em.createQuery(jpql.toString(), BigDecimal.class);
+        parameters.forEach(query::setParameter);
+
+        BigDecimal result = query.getSingleResult();
+        return result != null ? result : BigDecimal.ZERO;
     }
 
     public Transaction save(Transaction transaction) {
