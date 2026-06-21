@@ -66,6 +66,38 @@ public class CustomerRepositoryTest {
     }
 
     @Test
+    public void findById_NotFound() {
+        Optional<Customer> found = repository.findById(UUID.randomUUID());
+        assertTrue(found.isEmpty(), "Should be empty, the ID does not exist");
+    }
+
+    @Test
+    public void findByEmail_SuccessAndNotFound() {
+        em.getTransaction().begin();
+
+        Customer customer = new Customer.CustomerBuilder()
+                .setFirstName("Anna")
+                .setLastName("Neri")
+                .setEmail("anna.neri@example.com")
+                .setPhoneNumber("999888")
+                .setResidenceCity("Siena")
+                .build();
+        repository.save(customer);
+
+        em.getTransaction().commit();
+        em.clear();
+
+        // test found
+        Optional<Customer> found = repository.findByEmail("anna.neri@example.com");
+        assertTrue(found.isPresent(), "Should find the customer by email");
+        assertEquals("Anna", found.get().getFirstName());
+
+        // test not found
+        Optional<Customer> notFound = repository.findByEmail("non.esiste@example.com");
+        assertTrue(notFound.isEmpty(), "Should return empty Optional for non-existent email");
+    }
+
+    @Test
     public void findCustomers_WithDynamicFilters_ReturnsCorrectResults() {
         em.getTransaction().begin();
 
@@ -119,6 +151,37 @@ public class CustomerRepositoryTest {
     }
 
     @Test
+    public void saveCustomer_UpdateMerge_Success() {
+        em.getTransaction().begin();
+
+        Customer customer = new Customer.CustomerBuilder()
+                .setFirstName("Luca")
+                .setLastName("Gialli")
+                .setEmail("luca@example.com")
+                .setPhoneNumber("123123")
+                .setResidenceCity("Roma")
+                .build();
+        repository.save(customer);
+
+        em.getTransaction().commit();
+
+        UUID customerId = customer.getId();
+
+        em.clear();
+        em.getTransaction().begin();
+
+        Customer customerToUpdate = repository.findById(customerId).get();
+        customerToUpdate.setPhoneNumber("999999");
+        repository.save(customerToUpdate);
+
+        em.getTransaction().commit();
+        em.clear();
+
+        Customer updated = repository.findById(customerId).get();
+        assertEquals("999999", updated.getPhoneNumber(), "Phone number should be updated");
+    }
+
+    @Test
     public void deleteCustomer_Success() {
         em.getTransaction().begin();
 
@@ -137,7 +200,6 @@ public class CustomerRepositoryTest {
         assertNotNull(customerId);
 
         em.clear();
-
         em.getTransaction().begin();
 
         Customer customerToDelete = repository.findById(customerId)
@@ -146,7 +208,6 @@ public class CustomerRepositoryTest {
         repository.delete(customerToDelete);
 
         em.getTransaction().commit();
-
         em.clear();
 
         Optional<Customer> deletedCustomer = repository.findById(customerId);
