@@ -2,6 +2,7 @@ package com.autosalone.repositories;
 
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.models.Deadline;
 import com.autosalone.models.Vehicle;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -123,7 +125,8 @@ public class VehicleRepositoryTest {
         List<Vehicle> byCondition = repository.findVehicles(null, null, VehicleCondition.NEW, null, null, null);
         assertEquals(1, byCondition.size(), "Should find 1 vehicle with 'NEW' as condition");
 
-        List<Vehicle> maxPrice = repository.findVehicles(null, null, null, new BigDecimal("20000.00"), null, null);
+        List<Vehicle> maxPrice = repository.findVehicles(null, null, null, new BigDecimal("20000.00"), null,
+                null);
         assertEquals(2, maxPrice.size(), "Should find 2 vehicles with selling price under 20000");
 
         List<Vehicle> inShowroom = repository.findVehicles(null, null, null, null, true, null);
@@ -167,7 +170,8 @@ public class VehicleRepositoryTest {
         assertEquals(2, availableCars.size(), "Should only return AVAILABLE and QUOTED vehicles");
 
         boolean hasReservedOrSold = availableCars.stream()
-                .anyMatch(v -> v.getStatus() == VehicleStatus.RESERVED || v.getStatus() == VehicleStatus.SOLD);
+                .anyMatch(v -> v.getStatus() == VehicleStatus.RESERVED
+                        || v.getStatus() == VehicleStatus.SOLD);
         assertFalse(hasReservedOrSold, "Should not contain RESERVED or SOLD vehicles");
     }
 
@@ -277,4 +281,40 @@ public class VehicleRepositoryTest {
         Optional<Vehicle> deletedVehicle = repository.findById(vehicleId);
         assertTrue(deletedVehicle.isEmpty(), "Should be empty, the vehicle has been eliminated");
     }
+
+    @Test
+    public void deleteVehicle_CascadesToDeadlines() {
+        em.getTransaction().begin();
+        Vehicle vehicle = new Vehicle.VehicleBuilder()
+                .setBrand("Ford")
+                .setModel("Focus")
+                .setColor("Grigio")
+                .setCondition(VehicleCondition.NEW)
+                .setIsInShowroom(true)
+                .build();
+
+        vehicle.addDeadline("Assicurazione", LocalDate.now().plusMonths(6), null, false);
+
+        repository.save(vehicle);
+        em.getTransaction().commit();
+
+        UUID vehicleId = vehicle.getId();
+        UUID deadlineId = vehicle.getDeadlines().get(0).getId();
+
+        em.clear();
+        em.getTransaction().begin();
+
+        Vehicle vehicleToDelete = repository.findById(vehicleId).get();
+        repository.delete(vehicleToDelete);
+
+        em.getTransaction().commit();
+        em.clear();
+
+        Optional<Vehicle> deletedVehicle = repository.findById(vehicleId);
+        assertTrue(deletedVehicle.isEmpty(), "The vehicle should be deleted");
+
+        Deadline deletedDeadline = em.find(Deadline.class, deadlineId);
+        assertNull(deletedDeadline, "The associated deadline should be deleted via cascade");
+    }
+
 }

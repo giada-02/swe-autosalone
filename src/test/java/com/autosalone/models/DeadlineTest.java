@@ -75,6 +75,31 @@ public class DeadlineTest {
     }
 
     @Test
+    public void setRecurrence_ToNull_WithRecalculateFromCompletion_SetsRecalculateFromCompletionToFalse() {
+        Deadline deadline = new Deadline("Tagliando", LocalDate.of(2025, 10, 1), Period.ofYears(1), true, defaultCar);
+        assertNotNull(deadline.getRecurrence());
+        assertTrue(deadline.isRecalculatedFromCompletion());
+
+        deadline.setRecurrence(null);
+
+        assertNull(deadline.getRecurrence());
+        assertFalse(deadline.isRecalculatedFromCompletion());
+
+    }
+
+    @Test
+    public void setRecalculateFromCompletion_ToTrue_WithNullRecurrence_ThrowsException() {
+        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        assertNull(deadline.getRecurrence());
+        assertFalse(deadline.isRecalculatedFromCompletion());
+
+        assertThrows(IllegalArgumentException.class, () -> deadline.setRecalculateFromCompletion(true));
+        assertNull(deadline.getRecurrence());
+        assertFalse(deadline.isRecalculatedFromCompletion());
+
+    }
+
+    @Test
     public void complete_SingleEvent_ReturnsNull() {
         // scadenza singola, non si ripete
         Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);

@@ -128,12 +128,16 @@ public class Deadline extends AuditableEntity {
     public void setRecurrence(Period recurrence) {
         if (this.isCompleted)
             throw new IllegalStateException("Cannot edit a completed deadline");
+        if (recurrence == null && this.recalculateFromCompletion)
+            this.recalculateFromCompletion = false;
         this.recurrence = recurrence;
     }
 
     public void setRecalculateFromCompletion(boolean recalculateFromCompletion) {
         if (this.isCompleted)
             throw new IllegalStateException("Cannot edit a completed deadline");
+        if (recalculateFromCompletion && this.recurrence == null)
+            throw new IllegalArgumentException("Cannot recalculate from completion if there is no recurrence");
         this.recalculateFromCompletion = recalculateFromCompletion;
     }
 
@@ -143,7 +147,7 @@ public class Deadline extends AuditableEntity {
      */
     public Deadline complete(LocalDate actualCompletionDate, String notes) {
         if (this.isCompleted) {
-            throw new IllegalStateException("This deadline is already completed.");
+            throw new IllegalStateException("This deadline is already completed");
         }
 
         this.isCompleted = true;

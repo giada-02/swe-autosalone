@@ -15,7 +15,7 @@ import java.util.UUID;
 public class DeadlineRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<Deadline> findById(UUID id) {
         Deadline deadline = em.find(Deadline.class, id);
