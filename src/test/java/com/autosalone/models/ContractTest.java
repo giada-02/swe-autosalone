@@ -36,7 +36,7 @@ public class ContractTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
-                .setInShowroom(true)
+                .setIsInShowroom(true)
                 .setCondition(VehicleCondition.NEW)
                 .setSellingPrice(new BigDecimal("10000.00"))
                 .build();
@@ -327,7 +327,7 @@ public class ContractTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Giallo")
-                .setInShowroom(true)
+                .setIsInShowroom(true)
                 .setCondition(VehicleCondition.SECONDHAND)
                 .setSellingPrice(new BigDecimal("9000.00"))
                 .build();
@@ -759,7 +759,7 @@ public class ContractTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Giallo")
-                .setInShowroom(true)
+                .setIsInShowroom(true)
                 .setCondition(VehicleCondition.SECONDHAND)
                 .setSellingPrice(new BigDecimal("9000.00"))
                 .build();

@@ -21,7 +21,7 @@ public class DeadlineTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
-                .setInShowroom(true)
+                .setIsInShowroom(true)
                 .setCondition(VehicleCondition.SECONDHAND)
                 .setSellingPrice(new BigDecimal("10000.00"))
                 .build();

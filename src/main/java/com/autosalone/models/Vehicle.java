@@ -213,7 +213,7 @@ public class Vehicle extends AuditableEntity {
         this.deadlines.remove(deadline);
     }
 
-    public void setInShowroom(boolean isInShowroom) {
+    public void setIsInShowroom(boolean isInShowroom) {
         assertNotTerminal();
         this.isInShowroom = isInShowroom;
     }
@@ -390,7 +390,7 @@ public class Vehicle extends AuditableEntity {
             return this;
         }
 
-        public VehicleBuilder setInShowroom(boolean isInShowroom) {
+        public VehicleBuilder setIsInShowroom(boolean isInShowroom) {
             this.isInShowroom = isInShowroom;
             return this;
         }

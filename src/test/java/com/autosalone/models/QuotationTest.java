@@ -37,7 +37,7 @@ public class QuotationTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
-                .setInShowroom(true)
+                .setIsInShowroom(true)
                 .setCondition(VehicleCondition.NEW)
                 .setSellingPrice(new BigDecimal("10000.00"))
                 .build();

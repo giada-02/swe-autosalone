@@ -17,7 +17,7 @@ public class TransactionFactoryTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
-                .setInShowroom(true)
+                .setIsInShowroom(true)
                 .setCondition(VehicleCondition.SECONDHAND)
                 .build();
         Transaction purchaseTransaction = TransactionFactory.createVehiclePurchase(car, new BigDecimal("9000"),

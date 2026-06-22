@@ -20,7 +20,7 @@ public class VehicleTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
-                .setInShowroom(true);
+                .setIsInShowroom(true);
     }
 
     @Test
