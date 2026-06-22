@@ -20,7 +20,7 @@ import java.util.UUID;
 public class VehicleRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<Vehicle> findById(UUID id) {
         Vehicle vehicle = em.find(Vehicle.class, id);

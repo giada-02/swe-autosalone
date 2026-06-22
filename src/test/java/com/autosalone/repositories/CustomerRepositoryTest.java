@@ -31,18 +31,15 @@ public class CustomerRepositoryTest {
 
     @AfterEach
     public void tearDown() {
-        if (em != null) {
+        if (em != null)
             em.close();
-        }
-        if (emf != null) {
+        if (emf != null)
             emf.close();
-        }
     }
 
     @Test
     public void saveCustomer_Success() {
         em.getTransaction().begin();
-
         Customer customer = new Customer.CustomerBuilder()
                 .setFirstName("Mario")
                 .setLastName("Rossi")
@@ -53,13 +50,11 @@ public class CustomerRepositoryTest {
 
         repository.save(customer);
         em.getTransaction().commit();
-
         assertNotNull(customer.getId());
 
         em.clear(); // clear Hibernate cache to query the database
 
         Optional<Customer> found = repository.findById(customer.getId());
-
         assertTrue(found.isPresent());
         assertEquals("Mario", found.get().getFirstName()); // from users table
         assertEquals("Firenze", found.get().getResidenceCity()); // from customers table
@@ -74,7 +69,6 @@ public class CustomerRepositoryTest {
     @Test
     public void findByEmail_SuccessAndNotFound() {
         em.getTransaction().begin();
-
         Customer customer = new Customer.CustomerBuilder()
                 .setFirstName("Anna")
                 .setLastName("Neri")
@@ -87,12 +81,12 @@ public class CustomerRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        // test found
+        // found
         Optional<Customer> found = repository.findByEmail("anna.neri@example.com");
         assertTrue(found.isPresent(), "Should find the customer by email");
         assertEquals("Anna", found.get().getFirstName());
 
-        // test not found
+        // not found
         Optional<Customer> notFound = repository.findByEmail("non.esiste@example.com");
         assertTrue(notFound.isEmpty(), "Should return empty Optional for non-existent email");
     }
@@ -101,7 +95,6 @@ public class CustomerRepositoryTest {
     public void findCustomers_WithDynamicFilters_ReturnsCorrectResults() {
         em.getTransaction().begin();
 
-        // customer 1
         Customer c1 = new Customer.CustomerBuilder()
                 .setFirstName("Mario")
                 .setLastName("Rossi")
@@ -112,7 +105,6 @@ public class CustomerRepositoryTest {
         c1.activate();
         repository.save(c1);
 
-        // customer 2
         Customer c2 = new Customer.CustomerBuilder()
                 .setFirstName("Giulia")
                 .setLastName("Rossi")
@@ -122,7 +114,6 @@ public class CustomerRepositoryTest {
                 .build();
         repository.save(c2);
 
-        // customer 3
         Customer c3 = new Customer.CustomerBuilder()
                 .setFirstName("Luigi")
                 .setLastName("Verdi")
@@ -153,7 +144,6 @@ public class CustomerRepositoryTest {
     @Test
     public void saveCustomer_UpdateMerge_Success() {
         em.getTransaction().begin();
-
         Customer customer = new Customer.CustomerBuilder()
                 .setFirstName("Luca")
                 .setLastName("Gialli")
@@ -162,7 +152,6 @@ public class CustomerRepositoryTest {
                 .setResidenceCity("Roma")
                 .build();
         repository.save(customer);
-
         em.getTransaction().commit();
 
         UUID customerId = customer.getId();
@@ -172,19 +161,37 @@ public class CustomerRepositoryTest {
 
         Customer customerToUpdate = repository.findById(customerId).get();
         customerToUpdate.setPhoneNumber("999999");
-        repository.save(customerToUpdate);
 
+        repository.save(customerToUpdate); // em.merge()
         em.getTransaction().commit();
         em.clear();
 
-        Customer updated = repository.findById(customerId).get();
-        assertEquals("999999", updated.getPhoneNumber(), "Phone number should be updated");
+        Customer updatedCustomer = repository.findById(customerId).get();
+        assertEquals("999999", updatedCustomer.getPhoneNumber(), "Phone number should be updated");
     }
 
     @Test
-    public void deleteCustomer_Success() {
+    public void deleteCustomer_AttachedEntity_Success() {
         em.getTransaction().begin();
+        Customer customer = new Customer.CustomerBuilder()
+                .setFirstName("Andrea")
+                .setLastName("Bianchi")
+                .setEmail("andrea.bianchi@example.com")
+                .setPhoneNumber("333111222")
+                .build();
+        repository.save(customer);
 
+        repository.delete(customer); // em.remove(customer)
+        em.getTransaction().commit();
+        em.clear();
+
+        Optional<Customer> deletedCustomer = repository.findById(customer.getId());
+        assertTrue(deletedCustomer.isEmpty(), "Should be empty, the customer has been eliminated");
+    }
+
+    @Test
+    public void deleteCustomer_DetachedEntity_Success() {
+        em.getTransaction().begin();
         Customer customer = new Customer.CustomerBuilder()
                 .setFirstName("Chiara")
                 .setLastName("Bianchi")
@@ -205,7 +212,8 @@ public class CustomerRepositoryTest {
         Customer customerToDelete = repository.findById(customerId)
                 .orElseThrow(() -> new IllegalStateException("Customer not found"));
 
-        repository.delete(customerToDelete);
+        em.clear();
+        repository.delete(customerToDelete); // em.remove(em.merge(customer))
 
         em.getTransaction().commit();
         em.clear();
