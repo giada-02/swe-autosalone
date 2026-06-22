@@ -50,7 +50,7 @@ public class VehicleTest {
         assertTrue(expectedDate.isEqual(inspectionDeadline.getDueDate()));
         assertEquals(2, inspectionDeadline.getRecurrence().getYears());
         assertTrue(inspectionDeadline.isRecalculatedFromCompletion(),
-                "La revisione deve ricalcolare in base all'esecuzione effettiva");
+                "The next due inspection must be recalculated from the actual completion");
         assertFalse(inspectionDeadline.isCompleted());
     }
 
@@ -60,6 +60,28 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.generateStandardInspectionDeadline(),
                 "Cannot generate standard inspection deadlines without registration date");
+    }
+
+    @Test
+    public void generateInspectionFromLastDate_SetsInspectionTo2YearsEndOfMonth() {
+        LocalDate today = LocalDate.now();
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
+                .build();
+
+        car.generateInspectionFromLastDate(today);
+
+        assertEquals(1, car.getDeadlines().size());
+        Deadline inspectionDeadline = car.getDeadlines().get(0);
+
+        LocalDate expectedDate = today.plusYears(2)
+                .with(TemporalAdjusters.lastDayOfMonth());
+
+        assertEquals("Revisione Veicolo", inspectionDeadline.getReason());
+        assertTrue(expectedDate.isEqual(inspectionDeadline.getDueDate()));
+        assertEquals(2, inspectionDeadline.getRecurrence().getYears());
+        assertTrue(inspectionDeadline.isRecalculatedFromCompletion(),
+                "The next due inspection must be recalculated from the actual completion");
+        assertFalse(inspectionDeadline.isCompleted());
     }
 
     @Test

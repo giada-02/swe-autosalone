@@ -125,7 +125,7 @@ public class Deadline extends AuditableEntity {
         this.dueDate = dueDate;
     }
 
-    public void setRecurence(Period recurrence) {
+    public void setRecurrence(Period recurrence) {
         if (this.isCompleted)
             throw new IllegalStateException("Cannot edit a completed deadline");
         this.recurrence = recurrence;

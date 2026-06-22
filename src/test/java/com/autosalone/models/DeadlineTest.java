@@ -28,6 +28,53 @@ public class DeadlineTest {
     }
 
     @Test
+    public void constructor_RecalculateFromCompletionWithoutRecurrence_ThrowsException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Deadline("Tagliando", LocalDate.of(2025, 10, 1), null, true, defaultCar),
+                "Cannot recalculate from completion if there is no recurrence");
+    }
+
+    @Test
+    public void isExpired_IncompleteEventWithDueDateInThePast_ReturnsTrue() {
+        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        assertTrue(deadline.isExpired());
+    }
+
+    @Test
+    public void isExpired_CompletedEventWithDueDateInThePast_ReturnsFalse() {
+        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        deadline.complete(LocalDate.now(), "Sostituite pastiglie");
+        assertFalse(deadline.isExpired());
+    }
+
+    @Test
+    public void setters_IncompleteEvent_Success() {
+        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+
+        assertAll(
+                () -> assertDoesNotThrow(() -> deadline.setReason("Tagliando")),
+                () -> assertEquals("Tagliando", deadline.getReason()),
+                () -> assertDoesNotThrow(() -> deadline.setDueDate(LocalDate.of(2025, 10, 1))),
+                () -> assertTrue(LocalDate.of(2025, 10, 1).equals(deadline.getDueDate())),
+                () -> assertDoesNotThrow(() -> deadline.setRecurrence(Period.ofYears(1))),
+                () -> assertTrue(Period.ofYears(1).equals(deadline.getRecurrence())),
+                () -> assertDoesNotThrow(() -> deadline.setRecalculateFromCompletion(true)),
+                () -> assertTrue(deadline.isRecalculatedFromCompletion()));
+    }
+
+    @Test
+    public void setters_CompletedEvent_ThrowsException() {
+        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        deadline.complete(LocalDate.now(), "Sostituite pastiglie");
+
+        assertAll(
+                () -> assertThrows(IllegalStateException.class, () -> deadline.setReason("Tagliando")),
+                () -> assertThrows(IllegalStateException.class, () -> deadline.setDueDate(LocalDate.of(2025, 10, 1))),
+                () -> assertThrows(IllegalStateException.class, () -> deadline.setRecurrence(Period.ofYears(1))),
+                () -> assertThrows(IllegalStateException.class, () -> deadline.setRecalculateFromCompletion(true)));
+    }
+
+    @Test
     public void complete_SingleEvent_ReturnsNull() {
         // scadenza singola, non si ripete
         Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
@@ -35,6 +82,8 @@ public class DeadlineTest {
         Deadline nextEvent = deadline.complete(LocalDate.of(2025, 5, 8), "Sostituite pastiglie");
 
         assertTrue(deadline.isCompleted(), "The deadline should have been completed");
+        assertTrue(LocalDate.of(2025, 5, 8).equals(deadline.getCompletionDate()));
+        assertEquals("Sostituite pastiglie", deadline.getNotes());
         assertNull(nextEvent, "Without a recurrence it must not generate a next deadline event");
     }
 
@@ -76,5 +125,29 @@ public class DeadlineTest {
         assertThrows(IllegalStateException.class, () -> {
             deadline.complete(LocalDate.now(), null);
         }, "Cannot complete a completed deadline event");
+    }
+
+    @Test
+    public void complete_VehicleInspection_GeneratesCorrectNextEvent() {
+        Vehicle car = new Vehicle.VehicleBuilder()
+                .setBrand("Fiat")
+                .setModel("Panda")
+                .setColor("Rosso")
+                .setIsInShowroom(true)
+                .setCondition(VehicleCondition.SECONDHAND)
+                .build();
+
+        car.generateInspectionFromLastDate(LocalDate.of(2025, 10, 12));
+        Deadline deadline = car.getDeadlines().getFirst();
+        assertEquals(car, deadline.getVehicle());
+
+        LocalDate completionDate = LocalDate.of(2026, 5, 15);
+        Deadline nextEvent = deadline.complete(completionDate, "Cambio olio e filtri, speso 300€");
+
+        assertNotNull(nextEvent, "With a recurrence it must generate the next deadline event");
+        assertEquals(Deadline.VEHICLE_INSPECTION_REASON, nextEvent.getReason());
+        assertTrue(LocalDate.of(2028, 5, 31).isEqual(nextEvent.getDueDate()),
+                "The next inspection deadline should be in two years from the completion date of the last one and on the last day of the month");
+        assertFalse(nextEvent.isCompleted());
     }
 }
