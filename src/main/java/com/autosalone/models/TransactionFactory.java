@@ -50,7 +50,7 @@ public class TransactionFactory {
                 contract.getVehicle().getModel());
         if (description != null)
             reason = reason + ": " + description;
-        return new Transaction(reason, amount, date, TransactionType.OUT);
+        return new Transaction(reason, amount, date, TransactionType.OUT, contract);
     }
 
     public static Transaction createGeneralExpense(String reason, BigDecimal amount, LocalDate date) {

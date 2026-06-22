@@ -21,7 +21,7 @@ import java.util.UUID;
 public class TransactionRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<Transaction> findById(UUID id) {
         Transaction transaction = em.find(Transaction.class, id);
