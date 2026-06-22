@@ -74,6 +74,10 @@ public class Quotation extends SalesDocument {
                     "Only a DRAFT quotation can be issued (Current status: " + this.status + ")");
         }
 
+        if (this.isArchived()) {
+            throw new IllegalStateException("Cannot issue an ARCHIVED quotation");
+        }
+
         this.getVehicle().validateVehicleStatusForDocument("Cannot issue the quotation");
         if (this.getVehicle().getCondition() == VehicleCondition.SECONDHAND) {
             validateSecondhandVehicle("Cannot issue the quotation");

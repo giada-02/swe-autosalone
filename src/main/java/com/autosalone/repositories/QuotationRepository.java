@@ -19,7 +19,7 @@ import java.util.UUID;
 public class QuotationRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<Quotation> findById(UUID id) {
         Quotation quotation = em.find(Quotation.class, id);

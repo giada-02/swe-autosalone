@@ -19,7 +19,7 @@ import java.util.UUID;
 public class ContractRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<Contract> findById(UUID id) {
         Contract contract = em.find(Contract.class, id);

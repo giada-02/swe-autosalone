@@ -308,6 +308,17 @@ public class QuotationTest {
     }
 
     @Test
+    public void issue_WhenArchived_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.archive();
+
+        assertTrue(quote.isArchived());
+        assertThrows(IllegalStateException.class, () -> {
+            quote.issue();
+        }, "Cannot issue an ARCHIVED quotation");
+    }
+
+    @Test
     public void issue_WhenVehicleIsSold_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         defaultCar.setStatus(VehicleStatus.SOLD);
