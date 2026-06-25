@@ -14,7 +14,7 @@ import jakarta.persistence.PersistenceContext;
 public class UserRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<User> findById(UUID id) {
         User user = em.find(User.class, id);
@@ -31,5 +31,22 @@ public class UserRepository {
     public List<User> findUsers() {
         return em.createQuery("SELECT u FROM User u ORDER BY u.lastName ASC, u.firstName ASC", User.class)
                 .getResultList();
+    }
+
+    public User save(User user) {
+        if (user.getId() == null) {
+            em.persist(user);
+            return user;
+        } else {
+            return em.merge(user);
+        }
+    }
+
+    public void delete(User user) {
+        if (em.contains(user)) {
+            em.remove(user);
+        } else {
+            em.remove(em.merge(user));
+        }
     }
 }

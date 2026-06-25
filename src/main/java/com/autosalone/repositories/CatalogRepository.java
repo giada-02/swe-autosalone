@@ -17,7 +17,7 @@ import java.util.UUID;
 public class CatalogRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<PurchasableItem> findById(UUID id) {
         PurchasableItem purchasableItem = em.find(PurchasableItem.class, id);

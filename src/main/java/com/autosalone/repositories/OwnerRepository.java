@@ -14,7 +14,7 @@ import java.util.UUID;
 public class OwnerRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    protected EntityManager em;
 
     public Optional<Owner> findById(UUID id) {
         Owner owner = em.find(Owner.class, id);
