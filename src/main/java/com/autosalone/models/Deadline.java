@@ -54,8 +54,7 @@ public class Deadline extends AuditableEntity {
     protected Deadline() {
     }
 
-    Deadline(String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion,
-            Vehicle vehicle) {
+    Deadline(Vehicle vehicle, String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion) {
         Objects.requireNonNull(vehicle, "A deadline must be linked to a vehicle");
         Objects.requireNonNull(reason, "Reason is required");
         Objects.requireNonNull(dueDate, "Due date is required");
@@ -171,6 +170,6 @@ public class Deadline extends AuditableEntity {
         }
 
         // crea il nuovo evento per il futuro
-        return new Deadline(this.reason, nextDueDate, this.recurrence, this.recalculateFromCompletion, this.vehicle);
+        return new Deadline(this.vehicle, this.reason, nextDueDate, this.recurrence, this.recalculateFromCompletion);
     }
 }

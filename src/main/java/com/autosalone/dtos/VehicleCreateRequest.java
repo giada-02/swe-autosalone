@@ -1,0 +1,34 @@
+package com.autosalone.dtos;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+import com.autosalone.enums.VehicleCondition;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Positive;
+
+public record VehicleCreateRequest(
+        @NotBlank String brand,
+        @NotBlank String model,
+        @NotBlank String color,
+        @NotNull VehicleCondition condition,
+        @Positive BigDecimal purchaseTransactionAmount,
+        LocalDate purchaseTransactionDate,
+        @PositiveOrZero BigDecimal sellingPrice,
+        LocalDate handoverDate,
+        String licensePlate,
+        LocalDate registrationDate,
+        @PositiveOrZero Double kilometers,
+        @NotNull Boolean inShowroom) {
+
+    public VehicleCreateRequest {
+        if ((purchaseTransactionAmount != null && purchaseTransactionDate == null) ||
+                (purchaseTransactionAmount == null && purchaseTransactionDate != null)) {
+            throw new IllegalArgumentException(
+                    "If the purchase amount is provided, the purchase date must also be provided (and vice versa)");
+        }
+    }
+}

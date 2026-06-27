@@ -30,26 +30,26 @@ public class DeadlineTest {
     @Test
     public void constructor_RecalculateFromCompletionWithoutRecurrence_ThrowsException() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Deadline("Tagliando", LocalDate.of(2025, 10, 1), null, true, defaultCar),
+                () -> new Deadline(defaultCar, "Tagliando", LocalDate.of(2025, 10, 1), null, true),
                 "Cannot recalculate from completion if there is no recurrence");
     }
 
     @Test
     public void isExpired_IncompleteEventWithDueDateInThePast_ReturnsTrue() {
-        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", LocalDate.of(2025, 5, 10), null, false);
         assertTrue(deadline.isExpired());
     }
 
     @Test
     public void isExpired_CompletedEventWithDueDateInThePast_ReturnsFalse() {
-        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", LocalDate.of(2025, 5, 10), null, false);
         deadline.complete(LocalDate.now(), "Sostituite pastiglie");
         assertFalse(deadline.isExpired());
     }
 
     @Test
     public void setters_IncompleteEvent_Success() {
-        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", LocalDate.of(2025, 5, 10), null, false);
 
         assertAll(
                 () -> assertDoesNotThrow(() -> deadline.setReason("Tagliando")),
@@ -64,7 +64,7 @@ public class DeadlineTest {
 
     @Test
     public void setters_CompletedEvent_ThrowsException() {
-        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", LocalDate.of(2025, 5, 10), null, false);
         deadline.complete(LocalDate.now(), "Sostituite pastiglie");
 
         assertAll(
@@ -76,7 +76,7 @@ public class DeadlineTest {
 
     @Test
     public void setRecurrence_ToNull_WithRecalculateFromCompletion_SetsRecalculateFromCompletionToFalse() {
-        Deadline deadline = new Deadline("Tagliando", LocalDate.of(2025, 10, 1), Period.ofYears(1), true, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Tagliando", LocalDate.of(2025, 10, 1), Period.ofYears(1), true);
         assertNotNull(deadline.getRecurrence());
         assertTrue(deadline.isRecalculatedFromCompletion());
 
@@ -89,7 +89,7 @@ public class DeadlineTest {
 
     @Test
     public void setRecalculateFromCompletion_ToTrue_WithNullRecurrence_ThrowsException() {
-        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", LocalDate.of(2025, 5, 10), null, false);
         assertNull(deadline.getRecurrence());
         assertFalse(deadline.isRecalculatedFromCompletion());
 
@@ -102,7 +102,7 @@ public class DeadlineTest {
     @Test
     public void complete_SingleEvent_ReturnsNull() {
         // scadenza singola, non si ripete
-        Deadline deadline = new Deadline("Riparazione freni", LocalDate.of(2025, 5, 10), null, false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", LocalDate.of(2025, 5, 10), null, false);
 
         Deadline nextEvent = deadline.complete(LocalDate.of(2025, 5, 8), "Sostituite pastiglie");
 
@@ -115,7 +115,7 @@ public class DeadlineTest {
     @Test
     public void complete_RecalculateFromCompletion_GeneratesCorrectNextEvent() {
         // tagliando: ogni anno, ricalcola dall'effettiva data di completamento
-        Deadline deadline = new Deadline("Tagliando", LocalDate.of(2025, 10, 1), Period.ofYears(1), true, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Tagliando", LocalDate.of(2025, 10, 1), Period.ofYears(1), true);
 
         // completato in anticipo
         LocalDate completionDate = LocalDate.of(2025, 5, 15);
@@ -131,7 +131,7 @@ public class DeadlineTest {
     @Test
     public void complete_DoNotRecalculate_GeneratesCorrectNextEvent() {
         // bollo: ogni anno, NON ricalcola
-        Deadline deadline = new Deadline("Bollo Auto", LocalDate.of(2025, 8, 31), Period.ofYears(1), false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Bollo Auto", LocalDate.of(2025, 8, 31), Period.ofYears(1), false);
 
         // completato in anticipo
         LocalDate completionDate = LocalDate.of(2025, 6, 10);
@@ -144,7 +144,7 @@ public class DeadlineTest {
 
     @Test
     public void complete_AlreadyCompleted_ThrowsException() {
-        Deadline deadline = new Deadline("Riparazione", LocalDate.now(), null, false, defaultCar);
+        Deadline deadline = new Deadline(defaultCar, "Riparazione", LocalDate.now(), null, false);
         deadline.complete(LocalDate.now(), "Fatto");
 
         assertThrows(IllegalStateException.class, () -> {

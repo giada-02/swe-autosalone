@@ -77,7 +77,6 @@ public class Vehicle extends AuditableEntity {
         this.model = builder.model;
         this.color = builder.color;
         this.condition = builder.condition;
-        this.purchaseTransaction = builder.purchaseTransaction;
         this.sellingPrice = builder.sellingPrice;
         this.handoverDate = builder.handoverDate;
         this.licensePlate = builder.licensePlate;
@@ -168,13 +167,25 @@ public class Vehicle extends AuditableEntity {
         this.color = color;
     }
 
+    public void setCondition(VehicleCondition condition) {
+        assertCoreEditable();
+        this.condition = condition;
+    }
+
     public void setPurchaseTransaction(Transaction purchaseTransaction) {
         assertNotWithdrawn();
+        if (this.purchaseTransaction != null) {
+            throw new IllegalStateException(
+                    "The purchase transaction has already been registered and cannot be overwritten");
+        }
         this.purchaseTransaction = purchaseTransaction;
     }
 
     public void setSellingPrice(BigDecimal sellingPrice) {
         assertNotTerminal();
+        if (sellingPrice != null && sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Selling price cannot be negative");
+        }
         this.sellingPrice = sellingPrice;
     }
 
@@ -195,6 +206,9 @@ public class Vehicle extends AuditableEntity {
 
     public void setKilometers(Double kilometers) {
         assertCoreEditable();
+        if (kilometers != null && kilometers < 0) {
+            throw new IllegalArgumentException("Kilometers cannot be negative");
+        }
         this.kilometers = kilometers;
     }
 
@@ -205,7 +219,7 @@ public class Vehicle extends AuditableEntity {
 
     public void addDeadline(String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion) {
         assertNotWithdrawn();
-        Deadline deadline = new Deadline(reason, dueDate, recurrence, recalculateFromCompletion, this);
+        Deadline deadline = new Deadline(this, reason, dueDate, recurrence, recalculateFromCompletion);
         this.deadlines.add(deadline);
     }
 
@@ -311,13 +325,13 @@ public class Vehicle extends AuditableEntity {
     /**
      * Genera la prossima scadenza per la revisione basandosi sulla data dell'ultima
      * revisione effettivamente eseguita e annotata sul libretto di circolazione.
-     * * @param lastActualInspection La data esatta in cui è stata superata l'ultima
+     * * @param lastInspection La data esatta in cui è stata superata l'ultima
      * revisione.
      */
-    public void generateInspectionFromLastDate(LocalDate lastActualInspection) {
-        Objects.requireNonNull(lastActualInspection, "The last actual inspection date is required");
+    public void generateInspectionFromLastDate(LocalDate lastInspection) {
+        Objects.requireNonNull(lastInspection, "The last actual inspection date is required");
 
-        LocalDate nextInspectionDate = lastActualInspection
+        LocalDate nextInspectionDate = lastInspection
                 .plusYears(2)
                 .with(TemporalAdjusters.lastDayOfMonth());
 
@@ -332,7 +346,6 @@ public class Vehicle extends AuditableEntity {
         private String model;
         private String color;
         private VehicleCondition condition;
-        private Transaction purchaseTransaction;
         private BigDecimal sellingPrice;
         private LocalDate handoverDate;
         private String licensePlate;
@@ -360,12 +373,10 @@ public class Vehicle extends AuditableEntity {
             return this;
         }
 
-        public VehicleBuilder setPurchaseTransaction(Transaction purchaseTransaction) {
-            this.purchaseTransaction = purchaseTransaction;
-            return this;
-        }
-
         public VehicleBuilder setSellingPrice(BigDecimal sellingPrice) {
+            if (sellingPrice != null && sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Selling price cannot be negative");
+            }
             this.sellingPrice = sellingPrice;
             return this;
         }
@@ -386,6 +397,9 @@ public class Vehicle extends AuditableEntity {
         }
 
         public VehicleBuilder setKilometers(Double kilometers) {
+            if (kilometers != null && kilometers < 0) {
+                throw new IllegalArgumentException("Kilometers cannot be negative");
+            }
             this.kilometers = kilometers;
             return this;
         }
