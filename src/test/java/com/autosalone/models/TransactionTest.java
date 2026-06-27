@@ -13,23 +13,44 @@ import com.autosalone.enums.TransactionType;
 
 public class TransactionTest {
     @Test
-    public void constructor_NullAmount_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Transaction("Spesa", null, LocalDate.now(), TransactionType.OUT);
+    public void constructor_NullReason_ThrowsException() {
+        assertThrows(NullPointerException.class, () -> {
+            new Transaction(null, new BigDecimal("100.00"), LocalDate.now(), TransactionType.OUT);
         });
     }
 
     @Test
-    public void constructor_ZeroAmount_ThrowsIllegalArgumentException() {
+    public void constructor_NullAmount_ThrowsException() {
+        assertThrows(NullPointerException.class, () -> {
+            new Transaction("Guadagno", null, LocalDate.now(), TransactionType.IN);
+        });
+    }
+
+    @Test
+    public void constructor_NullDate_ThrowsException() {
+        assertThrows(NullPointerException.class, () -> {
+            new Transaction("Guadagno", new BigDecimal("100.00"), null, TransactionType.IN);
+        });
+    }
+
+    @Test
+    public void constructor_NullType_ThrowsException() {
+        assertThrows(NullPointerException.class, () -> {
+            new Transaction("Spesa", new BigDecimal("100.00"), LocalDate.now(), null);
+        });
+    }
+
+    @Test
+    public void constructor_ZeroAmount_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> {
             new Transaction("Spesa", BigDecimal.ZERO, LocalDate.now(), TransactionType.OUT);
         });
     }
 
     @Test
-    public void constructor_NegativeAmount_ThrowsIllegalArgumentException() {
+    public void constructor_NegativeAmount_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            new Transaction("Spesa", new BigDecimal("-1000.00"), LocalDate.now(), TransactionType.OUT);
+            new Transaction("Spesa", new BigDecimal("-100.00"), LocalDate.now(), TransactionType.OUT);
         });
     }
 

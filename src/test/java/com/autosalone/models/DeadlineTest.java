@@ -162,12 +162,11 @@ public class DeadlineTest {
                 .setCondition(VehicleCondition.SECONDHAND)
                 .build();
 
-        car.generateInspectionFromLastDate(LocalDate.of(2025, 10, 12));
-        Deadline deadline = car.getDeadlines().getFirst();
-        assertEquals(car, deadline.getVehicle());
+        Deadline inspectionDeadline = car.generateInspectionFromLastDate(LocalDate.of(2025, 10, 12));
+        assertEquals(car, inspectionDeadline.getVehicle());
 
         LocalDate completionDate = LocalDate.of(2026, 5, 15);
-        Deadline nextEvent = deadline.complete(completionDate, "Cambio olio e filtri, speso 300€");
+        Deadline nextEvent = inspectionDeadline.complete(completionDate, "Cambio olio e filtri, speso 300€");
 
         assertNotNull(nextEvent, "With a recurrence it must generate the next deadline event");
         assertEquals(Deadline.VEHICLE_INSPECTION_REASON, nextEvent.getReason());

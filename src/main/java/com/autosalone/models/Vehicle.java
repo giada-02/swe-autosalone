@@ -217,10 +217,12 @@ public class Vehicle extends AuditableEntity {
         this.expenses.add(expense);
     }
 
-    public void addDeadline(String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion) {
+    public Deadline addDeadline(String reason, LocalDate dueDate, Period recurrence,
+            boolean recalculateFromCompletion) {
         assertNotWithdrawn();
         Deadline deadline = new Deadline(this, reason, dueDate, recurrence, recalculateFromCompletion);
         this.deadlines.add(deadline);
+        return deadline;
     }
 
     public void removeDeadline(Deadline deadline) {
@@ -302,7 +304,7 @@ public class Vehicle extends AuditableEntity {
      * Genera la prima scadenza per revisione standard: prima revisione dopo 4
      * anni e ogni 2 anni le revisioni successive (entro l'ultimo giorno del mese)
      */
-    public void generateStandardInspectionDeadline() {
+    public Deadline generateStandardInspectionDeadline() {
         if (this.registrationDate == null) {
             throw new IllegalStateException(
                     "Cannot generate the standard inspection deadline without a registration date");
@@ -319,7 +321,7 @@ public class Vehicle extends AuditableEntity {
 
         Period standardRecurrence = Period.ofYears(2);
 
-        this.addDeadline(Deadline.VEHICLE_INSPECTION_REASON, firstInspectionDate, standardRecurrence, true);
+        return this.addDeadline(Deadline.VEHICLE_INSPECTION_REASON, firstInspectionDate, standardRecurrence, true);
     }
 
     /**
@@ -328,7 +330,7 @@ public class Vehicle extends AuditableEntity {
      * * @param lastInspection La data esatta in cui è stata superata l'ultima
      * revisione.
      */
-    public void generateInspectionFromLastDate(LocalDate lastInspection) {
+    public Deadline generateInspectionFromLastDate(LocalDate lastInspection) {
         Objects.requireNonNull(lastInspection, "The last actual inspection date is required");
 
         LocalDate nextInspectionDate = lastInspection
@@ -337,7 +339,7 @@ public class Vehicle extends AuditableEntity {
 
         Period standardRecurrence = Period.ofYears(2);
 
-        this.addDeadline(Deadline.VEHICLE_INSPECTION_REASON, nextInspectionDate, standardRecurrence, true);
+        return this.addDeadline(Deadline.VEHICLE_INSPECTION_REASON, nextInspectionDate, standardRecurrence, true);
     }
 
     // builder

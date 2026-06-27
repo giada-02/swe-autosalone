@@ -3,6 +3,7 @@ package com.autosalone.models;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.enums.TransactionType;
@@ -40,7 +41,14 @@ public class Transaction extends AuditableEntity {
     }
 
     Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type) {
-        validateAmount(amount);
+        Objects.requireNonNull(reason, "Reason is required");
+        Objects.requireNonNull(amount, "Amount is required");
+        Objects.requireNonNull(date, "Date is required");
+        Objects.requireNonNull(type, "Type is required");
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("The amount of the transaction must be positive");
+        }
+
         this.reason = reason;
         this.amount = amount;
         this.date = date;
@@ -55,12 +63,6 @@ public class Transaction extends AuditableEntity {
     Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type, Contract contract) {
         this(reason, amount, date, type);
         this.contract = contract;
-    }
-
-    private void validateAmount(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("The amount of the transaction must be > 0");
-        }
     }
 
     // getters

@@ -293,13 +293,13 @@ public class VehicleRepositoryTest {
                 .setIsInShowroom(true)
                 .build();
 
-        vehicle.addDeadline("Assicurazione", LocalDate.now().plusMonths(6), null, false);
+        Deadline deadline = vehicle.addDeadline("Assicurazione", LocalDate.now().plusMonths(6), null, false);
 
         repository.save(vehicle);
         em.getTransaction().commit();
 
         UUID vehicleId = vehicle.getId();
-        UUID deadlineId = vehicle.getDeadlines().get(0).getId();
+        UUID deadlineId = deadline.getId();
 
         em.clear();
         em.getTransaction().begin();

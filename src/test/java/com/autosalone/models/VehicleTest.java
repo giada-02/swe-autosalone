@@ -38,10 +38,9 @@ public class VehicleTest {
                 .setRegistrationDate(today)
                 .build();
 
-        car.generateStandardInspectionDeadline();
+        Deadline inspectionDeadline = car.generateStandardInspectionDeadline();
 
         assertEquals(1, car.getDeadlines().size());
-        Deadline inspectionDeadline = car.getDeadlines().get(0);
 
         LocalDate expectedDate = today.plusYears(4)
                 .with(TemporalAdjusters.lastDayOfMonth());
@@ -68,10 +67,9 @@ public class VehicleTest {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
                 .build();
 
-        car.generateInspectionFromLastDate(today);
+        Deadline inspectionDeadline = car.generateInspectionFromLastDate(today);
 
         assertEquals(1, car.getDeadlines().size());
-        Deadline inspectionDeadline = car.getDeadlines().get(0);
 
         LocalDate expectedDate = today.plusYears(2)
                 .with(TemporalAdjusters.lastDayOfMonth());

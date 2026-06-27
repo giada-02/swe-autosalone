@@ -48,8 +48,7 @@ public class DeadlineRepositoryTest {
         LocalDate dueDate = LocalDate.now().plusMonths(1);
         Period recurrence = Period.ofYears(1);
 
-        vehicle.addDeadline("Bollo Auto", dueDate, recurrence, false);
-        Deadline deadline = vehicle.getDeadlines().get(0);
+        Deadline deadline = vehicle.addDeadline("Bollo Auto", dueDate, recurrence, false);
 
         repository.save(deadline);
         em.getTransaction().commit();
@@ -76,11 +75,8 @@ public class DeadlineRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
 
-        vehicle.addDeadline("Tagliando", LocalDate.now().plusDays(10), null, false);
-        vehicle.addDeadline("Cambio Gomme", LocalDate.now().minusDays(5), null, false);
-
-        Deadline pendingDeadline = vehicle.getDeadlines().get(0);
-        Deadline completedDeadline = vehicle.getDeadlines().get(1);
+        Deadline pendingDeadline = vehicle.addDeadline("Tagliando", LocalDate.now().plusDays(10), null, false);
+        Deadline completedDeadline = vehicle.addDeadline("Cambio Gomme", LocalDate.now().minusDays(5), null, false);
 
         repository.save(pendingDeadline);
         repository.save(completedDeadline);
@@ -144,8 +140,7 @@ public class DeadlineRepositoryTest {
         LocalDate dueDate = LocalDate.now().plusMonths(1);
         Period recurrence = Period.ofYears(1);
 
-        vehicle.addDeadline("Bollo Auto", dueDate, recurrence, true);
-        Deadline deadline = vehicle.getDeadlines().get(0);
+        Deadline deadline = vehicle.addDeadline("Bollo Auto", dueDate, recurrence, true);
         repository.save(deadline);
         em.getTransaction().commit();
 
@@ -170,8 +165,7 @@ public class DeadlineRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
 
-        vehicle.addDeadline("Da Eliminare", LocalDate.now(), null, false);
-        Deadline deadline = vehicle.getDeadlines().get(0);
+        Deadline deadline = vehicle.addDeadline("Da Eliminare", LocalDate.now(), null, false);
         repository.save(deadline);
 
         repository.delete(deadline);
@@ -188,8 +182,7 @@ public class DeadlineRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
 
-        vehicle.addDeadline("Da Eliminare", LocalDate.now(), null, false);
-        Deadline deadline = vehicle.getDeadlines().get(0);
+        Deadline deadline = vehicle.addDeadline("Da Eliminare", LocalDate.now(), null, false);
         repository.save(deadline);
         em.getTransaction().commit();
 

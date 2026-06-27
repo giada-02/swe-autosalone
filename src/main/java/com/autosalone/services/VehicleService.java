@@ -2,10 +2,10 @@ package com.autosalone.services;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.List;
 import java.util.UUID;
 
+import com.autosalone.dtos.DeadlineCreateRequest;
 import com.autosalone.dtos.VehicleCreateRequest;
 import com.autosalone.dtos.VehicleUpdateRequest;
 import com.autosalone.enums.VehicleCondition;
@@ -84,36 +84,40 @@ public class VehicleService {
     }
 
     @Transactional
-    public void addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
+    public UUID addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
-        Transaction transaction = TransactionFactory.createVehicleExpense(vehicle, description, amount, date);
-        vehicle.addExpense(transaction);
+        Transaction expense = TransactionFactory.createVehicleExpense(vehicle, description, amount, date);
+        vehicle.addExpense(expense);
 
         vehicleRepository.save(vehicle);
+        return expense.getId();
     }
 
     @Transactional
-    public void generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
+    public UUID generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
         Vehicle vehicle = getVehicleById(vehicleId);
+        Deadline inspectionDeadline;
 
         if (lastInspection != null) {
-            vehicle.generateInspectionFromLastDate(lastInspection);
+            inspectionDeadline = vehicle.generateInspectionFromLastDate(lastInspection);
         } else {
-            vehicle.generateStandardInspectionDeadline();
+            inspectionDeadline = vehicle.generateStandardInspectionDeadline();
         }
 
         vehicleRepository.save(vehicle);
+        return inspectionDeadline.getId();
     }
 
     @Transactional
-    public void addDeadline(UUID vehicleId, String reason, LocalDate dueDate, Period recurrence,
-            boolean recalculateFromCompletion) {
+    public UUID addDeadline(UUID vehicleId, DeadlineCreateRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
-        vehicle.addDeadline(reason, dueDate, recurrence, recalculateFromCompletion);
+        Deadline newDealine = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
+                request.recalculateFromCompletion());
 
         vehicleRepository.save(vehicle);
+        return newDealine.getId();
     }
 
     @Transactional
