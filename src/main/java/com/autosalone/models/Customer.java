@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Size;
 @Table(name = "customers")
 public class Customer extends User {
 
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive;
-
     // residenza
     @Column(name = "residence_city")
     private String residenceCity;
@@ -36,14 +33,9 @@ public class Customer extends User {
         this.zipCode = builder.zipCode;
         this.fiscalCode = builder.fiscalCode;
         this.vatNumber = builder.vatNumber;
-        this.isActive = false;
     }
 
     // getters
-    public boolean isActive() {
-        return isActive;
-    }
-
     public String getResidenceCity() {
         return residenceCity;
     }
@@ -61,14 +53,6 @@ public class Customer extends User {
     }
 
     // setters
-    public void activate() {
-        this.isActive = true;
-    }
-
-    public void deactivate() {
-        this.isActive = false;
-    }
-
     public void setResidenceCity(String residenceCity) {
         this.residenceCity = residenceCity;
     }
@@ -121,7 +105,5 @@ public class Customer extends User {
         public Customer build() {
             return new Customer(this);
         }
-
     }
-
 }

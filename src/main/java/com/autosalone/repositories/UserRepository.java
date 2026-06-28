@@ -1,6 +1,5 @@
 package com.autosalone.repositories;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,11 +25,6 @@ public class UserRepository {
                 .setParameter("email", email)
                 .getResultStream()
                 .findFirst();
-    }
-
-    public List<User> findUsers() {
-        return em.createQuery("SELECT u FROM User u ORDER BY u.lastName ASC, u.firstName ASC", User.class)
-                .getResultList();
     }
 
     public User save(User user) {

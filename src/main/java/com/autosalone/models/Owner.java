@@ -25,7 +25,5 @@ public class Owner extends User {
         public Owner build() {
             return new Owner(this);
         }
-
     }
-
 }

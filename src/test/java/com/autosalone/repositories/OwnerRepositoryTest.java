@@ -111,7 +111,7 @@ public class OwnerRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        List<Owner> owners = repository.findOwners();
+        List<Owner> owners = repository.findOwners(null);
         assertEquals(2, owners.size(), "Should find the 2 owners");
         assertEquals("Mario", owners.get(0).getFirstName());
         assertEquals("Sofia", owners.get(1).getFirstName());

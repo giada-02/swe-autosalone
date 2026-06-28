@@ -29,6 +29,9 @@ public abstract class User extends AuditableEntity {
     @Column(name = "password")
     private String password;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive;
+
     protected User() {
     }
 
@@ -42,6 +45,7 @@ public abstract class User extends AuditableEntity {
         this.phoneNumber = builder.phoneNumber;
         this.email = builder.email;
         this.password = builder.password;
+        this.isActive = builder.isActive;
     }
 
     // getters
@@ -69,6 +73,10 @@ public abstract class User extends AuditableEntity {
         return password;
     }
 
+    public boolean isActive() {
+        return isActive;
+    }
+
     // setters
     public void setFirstName(String firstName) {
         this.firstName = firstName;
@@ -86,8 +94,16 @@ public abstract class User extends AuditableEntity {
         this.email = email;
     }
 
-    public void changePassword(String newPassword) {
+    public void setPassword(String newPassword) {
         this.password = newPassword;
+    }
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
     }
 
     public abstract static class UserBuilder<T extends User, B extends UserBuilder<T, B>> {
@@ -96,6 +112,7 @@ public abstract class User extends AuditableEntity {
         private String phoneNumber;
         private String email;
         private String password;
+        private boolean isActive = false;
 
         public B setFirstName(String firstName) {
             this.firstName = firstName;
@@ -119,6 +136,11 @@ public abstract class User extends AuditableEntity {
 
         public B setPassword(String password) {
             this.password = password;
+            return self();
+        }
+
+        public B setIsActive(boolean isActive) {
+            this.isActive = isActive;
             return self();
         }
 

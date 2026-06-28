@@ -5,6 +5,7 @@ import com.autosalone.models.Owner;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,9 +29,19 @@ public class OwnerRepository {
                 .findFirst();
     }
 
-    public List<Owner> findOwners() {
-        return em.createQuery("SELECT o FROM Owner o ORDER BY o.lastName ASC, o.firstName ASC",
-                Owner.class).getResultList();
+    public List<Owner> findOwners(Boolean isActive) {
+        StringBuilder jpql = new StringBuilder("SELECT o FROM Owner o WHERE 1=1");
+
+        if (isActive != null)
+            jpql.append(" AND o.isActive = :isActive");
+
+        jpql.append(" ORDER BY o.lastName ASC, o.firstName ASC");
+        TypedQuery<Owner> query = em.createQuery(jpql.toString(), Owner.class);
+
+        if (isActive != null)
+            query.setParameter("isActive", isActive);
+
+        return query.getResultList();
     }
 
     public Owner save(Owner owner) {
