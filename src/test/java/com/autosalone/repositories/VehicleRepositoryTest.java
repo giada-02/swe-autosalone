@@ -145,21 +145,25 @@ public class VehicleRepositoryTest {
         em.getTransaction().begin();
 
         Vehicle v1 = new Vehicle.VehicleBuilder().setBrand("V1").setModel("M1").setColor("C1")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build();
+                .setSellingPrice(new BigDecimal("10000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build();
         repository.save(v1); // AVAILABLE
 
         Vehicle v2 = new Vehicle.VehicleBuilder().setBrand("V2").setModel("M2").setColor("C2")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build();
+                .setSellingPrice(new BigDecimal("15000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build();
         v2.setStatus(VehicleStatus.QUOTED);
         repository.save(v2);
 
         Vehicle v3 = new Vehicle.VehicleBuilder().setBrand("V3").setModel("M3").setColor("C3")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build();
+                .setSellingPrice(new BigDecimal("7000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build();
         v3.setStatus(VehicleStatus.RESERVED);
         repository.save(v3);
 
         Vehicle v4 = new Vehicle.VehicleBuilder().setBrand("V4").setModel("M4").setColor("C4")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build();
+                .setSellingPrice(new BigDecimal("20000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build();
         v4.setStatus(VehicleStatus.SOLD);
         repository.save(v4);
 
@@ -180,13 +184,17 @@ public class VehicleRepositoryTest {
         em.getTransaction().begin();
 
         repository.save(new Vehicle.VehicleBuilder().setBrand("Toyota").setModel("Yaris").setColor("Bianco")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build());
+                .setSellingPrice(new BigDecimal("12000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build());
         repository.save(new Vehicle.VehicleBuilder().setBrand("Alfa Romeo").setModel("Giulia").setColor("Rosso")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build());
+                .setSellingPrice(new BigDecimal("21000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build());
         repository.save(new Vehicle.VehicleBuilder().setBrand("Toyota").setModel("Aygo").setColor("Nero")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build());
+                .setSellingPrice(new BigDecimal("20000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build());
         repository.save(new Vehicle.VehicleBuilder().setBrand("Honda").setModel("Civic").setColor("Grigio")
-                .setCondition(VehicleCondition.NEW).setIsInShowroom(true).build());
+                .setSellingPrice(new BigDecimal("10000")).setCondition(VehicleCondition.NEW).setIsInShowroom(true)
+                .build());
 
         em.getTransaction().commit();
         em.clear();
@@ -236,6 +244,7 @@ public class VehicleRepositoryTest {
                 .setBrand("Renault")
                 .setModel("Clio")
                 .setColor("Bianco")
+                .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.NEW)
                 .setIsInShowroom(true)
                 .build();
@@ -256,6 +265,7 @@ public class VehicleRepositoryTest {
                 .setBrand("Peugeot")
                 .setModel("208")
                 .setColor("Grigio")
+                .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.NEW)
                 .setIsInShowroom(true)
                 .build();
@@ -289,6 +299,7 @@ public class VehicleRepositoryTest {
                 .setBrand("Ford")
                 .setModel("Focus")
                 .setColor("Grigio")
+                .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.NEW)
                 .setIsInShowroom(true)
                 .build();

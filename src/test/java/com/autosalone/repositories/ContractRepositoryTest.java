@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -272,6 +273,7 @@ public class ContractRepositoryTest {
                 .setModel("Panda")
                 .setColor("Rosso")
                 .setCondition(VehicleCondition.NEW)
+                .setSellingPrice(new BigDecimal("20000"))
                 .setIsInShowroom(true)
                 .build();
         em.persist(v);

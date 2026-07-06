@@ -111,7 +111,8 @@ public class TransactionRepositoryTest {
                 new BigDecimal("300.00"), LocalDate.now());
         repository.save(expense);
 
-        Transaction unrelated = TransactionFactory.createGeneralExpense("Spesa generale", new BigDecimal("50.00"),
+        Transaction unrelated = TransactionFactory.createGeneralExpense("Spesa generale",
+                new BigDecimal("50.00"),
                 LocalDate.now());
         repository.save(unrelated);
 
@@ -131,7 +132,8 @@ public class TransactionRepositoryTest {
         Contract contract = new Contract(vehicle, customer);
         em.persist(contract);
 
-        Transaction payment = TransactionFactory.createContractPayment(contract, "Bonifico", new BigDecimal("500.00"),
+        Transaction payment = TransactionFactory.createContractPayment(contract, "Bonifico",
+                new BigDecimal("500.00"),
                 LocalDate.now());
         repository.save(payment);
 
@@ -153,7 +155,8 @@ public class TransactionRepositoryTest {
         repository.save(TransactionFactory.createGeneralIncome("Acconto", new BigDecimal("1000.00"),
                 LocalDate.of(2023, 5, 10)));
         repository.save(
-                TransactionFactory.createGeneralIncome("Saldo", new BigDecimal("2000.00"), LocalDate.of(2023, 5, 12)));
+                TransactionFactory.createGeneralIncome("Saldo", new BigDecimal("2000.00"),
+                        LocalDate.of(2023, 5, 12)));
         repository.save(TransactionFactory.createGeneralExpense("Riparazione", new BigDecimal("500.00"),
                 LocalDate.of(2023, 5, 15)));
         em.getTransaction().commit();
@@ -175,6 +178,7 @@ public class TransactionRepositoryTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
+                .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.NEW)
                 .setIsInShowroom(true)
                 .build();

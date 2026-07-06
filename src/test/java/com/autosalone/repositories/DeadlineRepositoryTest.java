@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
@@ -212,6 +213,7 @@ public class DeadlineRepositoryTest {
                 .setBrand("Peugeot")
                 .setModel("208")
                 .setColor("Bianco")
+                .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.NEW)
                 .setIsInShowroom(isInShowroom)
                 .build();

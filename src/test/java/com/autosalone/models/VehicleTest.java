@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 
@@ -20,6 +21,7 @@ public class VehicleTest {
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
+                .setSellingPrice(new BigDecimal("20000"))
                 .setIsInShowroom(true);
     }
 
@@ -29,6 +31,48 @@ public class VehicleTest {
 
         assertEquals(VehicleStatus.AVAILABLE, car.getStatus());
         assertTrue(car.isInShowroom());
+    }
+
+    @Test
+    public void vehicleBuilder_WithNullSellingPrice_ThrowsException() {
+        assertThrows(NullPointerException.class, () -> new Vehicle.VehicleBuilder()
+                .setBrand("Fiat")
+                .setModel("Panda")
+                .setColor("Rosso")
+                .setIsInShowroom(true)
+                .setCondition(VehicleCondition.NEW)
+                .build());
+    }
+
+    @Test
+    public void vehicleBuilder_WithNegativeSellingPrice_ThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> new Vehicle.VehicleBuilder()
+                .setBrand("Fiat")
+                .setModel("Panda")
+                .setColor("Rosso")
+                .setSellingPrice(new BigDecimal("-20000"))
+                .setIsInShowroom(true)
+                .setCondition(VehicleCondition.NEW)
+                .build());
+    }
+
+    @Test
+    public void setSellingPrice_ToNull_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+        assertThrows(NullPointerException.class, () -> car.setSellingPrice(null));
+    }
+
+    @Test
+    public void setSellingPrice_ToNegative_ThrowsException() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+        assertThrows(IllegalArgumentException.class, () -> car.setSellingPrice(new BigDecimal("-20000")));
+    }
+
+    @Test
+    public void setSellingPrice_ToPositive_Success() {
+        Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
+        assertDoesNotThrow(() -> car.setSellingPrice(new BigDecimal("30000")));
+        assertTrue(new BigDecimal("30000").equals(car.getSellingPrice()));
     }
 
     @Test

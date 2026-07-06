@@ -52,7 +52,7 @@ public abstract class SalesDocument extends AuditableEntity {
     @Column(name = "internal_notes", columnDefinition = "TEXT")
     private String internalNotes;
 
-    @Column(name = "vehicle_price_snapshot")
+    @Column(name = "vehicle_price_snapshot", nullable = false)
     private BigDecimal vehicleSellingPriceSnapshot;
 
     @Transient
@@ -274,8 +274,9 @@ public abstract class SalesDocument extends AuditableEntity {
 
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
         validateIsEditable();
-        if (vehicleSellingPriceSnapshot == null || vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException("The vehicle selling price cannot be null or negative");
+        Objects.requireNonNull(vehicleSellingPriceSnapshot, "The vehicle selling price is required");
+        if (vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("The vehicle selling price cannot negative");
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
     }
 
@@ -318,4 +319,5 @@ public abstract class SalesDocument extends AuditableEntity {
                     errorTitle + ": the SECONDHAND vehicle is missing registration data or kilometers");
         }
     }
+
 }

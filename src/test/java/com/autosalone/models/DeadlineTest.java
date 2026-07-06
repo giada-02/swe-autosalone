@@ -159,6 +159,7 @@ public class DeadlineTest {
                 .setModel("Panda")
                 .setColor("Rosso")
                 .setIsInShowroom(true)
+                .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.SECONDHAND)
                 .build();
 

@@ -38,7 +38,7 @@ public class Vehicle extends AuditableEntity {
     @JoinColumn(name = "purchase_transaction_id", referencedColumnName = "id", unique = true)
     private Transaction purchaseTransaction;
 
-    @Column(name = "selling_price")
+    @Column(name = "selling_price", nullable = false)
     private BigDecimal sellingPrice;
 
     @Column(name = "handover_date")
@@ -183,7 +183,8 @@ public class Vehicle extends AuditableEntity {
 
     public void setSellingPrice(BigDecimal sellingPrice) {
         assertNotTerminal();
-        if (sellingPrice != null && sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
+        Objects.requireNonNull(sellingPrice, "Selling price is required");
+        if (sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Selling price cannot be negative");
         }
         this.sellingPrice = sellingPrice;
@@ -376,9 +377,6 @@ public class Vehicle extends AuditableEntity {
         }
 
         public VehicleBuilder setSellingPrice(BigDecimal sellingPrice) {
-            if (sellingPrice != null && sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException("Selling price cannot be negative");
-            }
             this.sellingPrice = sellingPrice;
             return this;
         }
@@ -417,6 +415,10 @@ public class Vehicle extends AuditableEntity {
             Objects.requireNonNull(this.color, "Color is required");
             Objects.requireNonNull(this.condition, "Condition is required");
             Objects.requireNonNull(this.isInShowroom, "Is in showroom is required");
+            Objects.requireNonNull(this.sellingPrice, "Selling price is required");
+            if (this.sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Selling price cannot be negative");
+            }
             return new Vehicle(this);
         }
     }

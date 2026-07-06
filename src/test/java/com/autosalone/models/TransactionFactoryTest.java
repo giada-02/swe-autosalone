@@ -18,6 +18,7 @@ public class TransactionFactoryTest {
                 .setModel("Panda")
                 .setColor("Rosso")
                 .setIsInShowroom(true)
+                .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.SECONDHAND)
                 .build();
         Transaction purchaseTransaction = TransactionFactory.createVehiclePurchase(car, new BigDecimal("9000"),
@@ -26,6 +27,7 @@ public class TransactionFactoryTest {
 
         assertNotNull(car.getPurchaseTransaction());
         assertThrows(IllegalStateException.class,
-                () -> TransactionFactory.createVehiclePurchase(car, new BigDecimal("8000"), LocalDate.now()));
+                () -> TransactionFactory.createVehiclePurchase(car, new BigDecimal("8000"),
+                        LocalDate.now()));
     }
 }

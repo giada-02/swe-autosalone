@@ -379,7 +379,7 @@ public class QuotationTest {
     public void setVehicleSellingPriceSnapshot_ToNull_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> quote.setVehicleSellingPriceSnapshot(null));
     }
 
