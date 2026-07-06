@@ -1,7 +1,9 @@
 package com.autosalone.models;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
+import java.util.Objects;
 
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
@@ -65,7 +67,9 @@ public class Quotation extends SalesDocument {
     @Override
     public void setDate(LocalDate date) {
         super.setDate(date);
-        recalculateExpiration();
+        if (this.expirationPolicy != null) {
+            this.expirationDate = this.expirationPolicy.calculateExpirationDate(date, this.expirationDate);
+        }
     }
 
     public void issue() {
@@ -114,32 +118,23 @@ public class Quotation extends SalesDocument {
         this.status = QuotationStatus.VOIDED;
     }
 
-    public void setExpirationDate(LocalDate expirationDate) {
+    public void updateExpiration(ExpirationPolicy expirationPolicy, LocalDate expirationDate) {
         validateIsEditable();
-        LocalDate today = LocalDate.now();
-        if (expirationDate.isBefore(today))
-            throw new IllegalArgumentException("Cannot set the expiration date in the past");
-        this.expirationPolicy = ExpirationPolicy.CUSTOM;
-        this.expirationDate = expirationDate;
+        Objects.requireNonNull(expirationPolicy, "Expiration policy is required");
+        this.expirationDate = expirationPolicy.calculateExpirationDate(this.getDate(), expirationDate);
+        this.expirationPolicy = expirationPolicy;
     }
 
-    public void setExpirationPolicy10Days() {
-        validateIsEditable();
-        this.expirationPolicy = ExpirationPolicy.TEN_DAYS;
-        recalculateExpiration();
+    public void updateExpiration(ExpirationPolicy expirationPolicy) {
+        if (expirationPolicy == ExpirationPolicy.CUSTOM)
+            throw new IllegalArgumentException(
+                    "Cannot apply CUSTOM policy without providing an explicit expiration date");
+        updateExpiration(expirationPolicy, null);
     }
 
-    public void setExpirationPolicyEndOfMonth() {
-        validateIsEditable();
-        this.expirationPolicy = ExpirationPolicy.END_OF_MONTH;
-        recalculateExpiration();
-    }
+    public void updateExpiration(LocalDate expirationDate) {
+        updateExpiration(ExpirationPolicy.CUSTOM, expirationDate);
 
-    private void recalculateExpiration() {
-        if (this.expirationPolicy == null || this.expirationPolicy == ExpirationPolicy.CUSTOM) {
-            return;
-        }
-        this.expirationDate = this.expirationPolicy.calculateExpirationDate(this.getDate());
     }
 
     @Override

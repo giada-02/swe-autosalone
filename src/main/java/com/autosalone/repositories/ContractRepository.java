@@ -91,6 +91,15 @@ public class ContractRepository {
         return query.getResultList();
     }
 
+    public List<Contract> findDraftContractsBySourceQuotation(UUID quotationId) {
+        return em.createQuery(
+                "SELECT c FROM Contract c WHERE c.quotationReference.id = :quotationId AND c.status = :status",
+                Contract.class)
+                .setParameter("quotationId", quotationId)
+                .setParameter("status", ContractStatus.DRAFT)
+                .getResultList();
+    }
+
     public Contract save(Contract contract) {
         if (contract.getId() == null) {
             em.persist(contract);

@@ -79,4 +79,22 @@ public abstract class AuditableEntity {
     public void setUpdatedBy(UUID updatedBy) {
         this.updatedBy = updatedBy;
     }
+
+    public abstract Object getId();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof AuditableEntity))
+            return false;
+        AuditableEntity that = (AuditableEntity) o;
+
+        return this.getId() != null && this.getId().equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

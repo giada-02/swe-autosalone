@@ -79,7 +79,7 @@ public class QuotationRepositoryTest {
 
         Quotation q1 = new Quotation(vehicle1, customer);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.setExpirationDate(LocalDate.of(9999, 1, 1));
+        q1.updateExpiration(LocalDate.of(9999, 1, 1));
         q1.issue();
         q1.accept(); // ACCEPTED
         repository.save(q1);
@@ -91,7 +91,7 @@ public class QuotationRepositoryTest {
 
         Quotation q3 = new Quotation(vehicle3, customer);
         q3.setDate(LocalDate.of(2026, 3, 12));
-        q3.setExpirationDate(LocalDate.of(9999, 1, 1));
+        q3.updateExpiration(LocalDate.of(9999, 1, 1));
         q3.issue(); // ISSUED
         repository.save(q3);
 
@@ -138,7 +138,7 @@ public class QuotationRepositoryTest {
 
         Quotation q1 = new Quotation(vehicle, customer1);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.setExpirationDate(LocalDate.of(9999, 1, 1));
+        q1.updateExpiration(LocalDate.of(9999, 1, 1));
         q1.issue();
         q1.accept(); // ACCEPTED
         repository.save(q1);
@@ -149,7 +149,7 @@ public class QuotationRepositoryTest {
 
         Quotation q3 = new Quotation(vehicle, customer2);
         q3.setDate(LocalDate.of(2026, 3, 12));
-        q3.setExpirationDate(LocalDate.of(9999, 1, 1));
+        q3.updateExpiration(LocalDate.of(9999, 1, 1));
         q3.issue(); // ISSUED
         repository.save(q3);
 
@@ -173,14 +173,14 @@ public class QuotationRepositoryTest {
 
         Quotation q1 = new Quotation(vehicle, customer);
         q1.setDate(LocalDate.of(2026, 1, 5));
-        q1.setExpirationDate(LocalDate.now());
+        q1.updateExpiration(LocalDate.now());
         q1.issue(); // ISSUED
         setPastExpirationDateForTesting(q1, 1); // expired
         repository.save(q1);
 
         Quotation q2 = new Quotation(vehicle, customer);
         q2.setDate(LocalDate.of(2026, 1, 7));
-        q2.setExpirationDate(LocalDate.now());
+        q2.updateExpiration(LocalDate.now());
         q2.issue(); // ISSUED
         repository.save(q2);
 
@@ -201,7 +201,7 @@ public class QuotationRepositoryTest {
 
         Quotation q1 = new Quotation(vehicle, customer1);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.setExpirationDate(LocalDate.of(9999, 1, 1));
+        q1.updateExpiration(LocalDate.of(9999, 1, 1));
         q1.issue(); // ISSUED
         repository.save(q1);
 
@@ -212,7 +212,7 @@ public class QuotationRepositoryTest {
 
         Quotation q3 = new Quotation(vehicle, customer2);
         q3.setDate(LocalDate.of(2026, 3, 12));
-        q3.setExpirationDate(LocalDate.of(9999, 1, 1));
+        q3.updateExpiration(LocalDate.of(9999, 1, 1));
         q3.issue(); // ISSUED
         repository.save(q3);
 

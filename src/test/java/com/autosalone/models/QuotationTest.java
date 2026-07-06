@@ -100,7 +100,7 @@ public class QuotationTest {
         LocalDate date = LocalDate.now().plusDays(10);
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
         sourceQuote.setDate(date);
-        sourceQuote.setExpirationPolicy10Days();
+        sourceQuote.updateExpiration(ExpirationPolicy.TEN_DAYS);
         sourceQuote.setAdditionalFees(new BigDecimal("300.00"));
 
         Quotation quote = new Quotation(sourceQuote);
@@ -132,7 +132,7 @@ public class QuotationTest {
     @Test
     public void copyConstructor_FromIssuedQuotation_Success() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
-        sourceQuote.setExpirationDate(LocalDate.now());
+        sourceQuote.updateExpiration(LocalDate.now());
         sourceQuote.issue();
         assertEquals(QuotationStatus.ISSUED, sourceQuote.getStatus());
 
@@ -144,7 +144,7 @@ public class QuotationTest {
     @Test
     public void copyConstructor_FromAcceptedQuotation_Success() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
-        sourceQuote.setExpirationDate(LocalDate.now());
+        sourceQuote.updateExpiration(LocalDate.now());
         sourceQuote.issue();
         sourceQuote.accept();
         assertEquals(QuotationStatus.ACCEPTED, sourceQuote.getStatus());
@@ -168,7 +168,7 @@ public class QuotationTest {
     @Test
     public void copyConstructor_FromExpiredQuotation_Success() {
         Quotation sourceQuote = new Quotation(defaultCar, defaultCustomer);
-        sourceQuote.setExpirationDate(LocalDate.now());
+        sourceQuote.updateExpiration(LocalDate.now());
         sourceQuote.issue();
 
         setPastExpirationDateForTesting(sourceQuote, 1);
@@ -230,9 +230,9 @@ public class QuotationTest {
     public void changeExpirationDate_WhenStatusDraft_ExpirationPolicyBecomesCustom() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setDate(LocalDate.of(2096, 02, 05));
-        quote.setExpirationPolicyEndOfMonth();
+        quote.updateExpiration(ExpirationPolicy.END_OF_MONTH);
 
-        quote.setExpirationDate(LocalDate.of(2096, 03, 01));
+        quote.updateExpiration(LocalDate.of(2096, 03, 01));
 
         assertEquals(ExpirationPolicy.CUSTOM, quote.getExpirationPolicy());
         assertTrue(LocalDate.of(2096, 03, 01).equals(quote.getExpirationDate()));
@@ -243,7 +243,7 @@ public class QuotationTest {
     public void changeDate_WhenStatusDraft_WithEndOfMonthExpirationPolicy_ExpirationDateIsRecalculated() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setDate(LocalDate.of(2096, 02, 05)); // Date: 5 February 2096 (leap year)
-        quote.setExpirationPolicyEndOfMonth(); // End of month => Expiration date: 29 February 2096
+        quote.updateExpiration(ExpirationPolicy.END_OF_MONTH); // End of month => Expiration date: 29 February 2096
 
         assertEquals(ExpirationPolicy.END_OF_MONTH, quote.getExpirationPolicy());
         assertTrue(LocalDate.of(2096, 02, 29).equals(quote.getExpirationDate()));
@@ -259,7 +259,7 @@ public class QuotationTest {
     public void changeDate_WhenStatusDraft_WithTenDaysExpirationPolicy_ExpirationDateIsRecalculated() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
         quote.setDate(LocalDate.of(2096, 02, 20)); // Date: 20 February 2096 (leap year)
-        quote.setExpirationPolicy10Days(); // Ten days => Expiration date: 1 March 2096
+        quote.updateExpiration(ExpirationPolicy.TEN_DAYS); // Ten days => Expiration date: 1 March 2096
 
         assertEquals(ExpirationPolicy.TEN_DAYS, quote.getExpirationPolicy());
         assertTrue(LocalDate.of(2096, 03, 01).equals(quote.getExpirationDate()));
@@ -269,6 +269,100 @@ public class QuotationTest {
 
         assertEquals(ExpirationPolicy.TEN_DAYS, quote.getExpirationPolicy());
         assertTrue(LocalDate.of(2096, 03, 15).equals(quote.getExpirationDate()));
+    }
+
+    @Test
+    public void updateExpiration_WhenStatusIsNotDraft_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        LocalDate today = LocalDate.now();
+        quote.updateExpiration(today);
+        quote.issue();
+
+        assertThrows(IllegalStateException.class, () -> quote.updateExpiration(ExpirationPolicy.END_OF_MONTH));
+        assertEquals(ExpirationPolicy.CUSTOM, quote.getExpirationPolicy());
+        assertEquals(today, quote.getExpirationDate());
+    }
+
+    @Test
+    public void updateExpiration_ToNullExpirationPolicy_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        assertThrows(NullPointerException.class, () -> quote.updateExpiration(null, LocalDate.now()),
+                "Expiration policy is required to update the expiration");
+    }
+
+    @Test
+    public void updateExpiration_ToCustomExpirationPolicyWithNullExpirationDate_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        assertThrows(IllegalArgumentException.class, () -> quote.updateExpiration(ExpirationPolicy.CUSTOM, null),
+                "Expiration policy of type CUSTOM requires a custom expiration date");
+    }
+
+    @Test
+    public void updateExpiration_ToCustomExpirationPolicyWithExpirationDateBeforeDocumentDate_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setDate(LocalDate.of(2026, 1, 12));
+        assertThrows(IllegalArgumentException.class,
+                () -> quote.updateExpiration(ExpirationPolicy.CUSTOM, LocalDate.of(2026, 1, 10)),
+                "Cannot set the expiration date before the document date");
+    }
+
+    @Test
+    public void updateExpiration_ToCustomExpirationPolicyWhenStatusIsDraft_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setDate(LocalDate.of(2026, 1, 12));
+
+        quote.updateExpiration(LocalDate.of(2026, 1, 19));
+
+        assertEquals(ExpirationPolicy.CUSTOM, quote.getExpirationPolicy());
+        assertEquals(LocalDate.of(2026, 1, 19), quote.getExpirationDate());
+    }
+
+    @Test
+    public void updateExpiration_ToTenDaysExpirationPolicyWhenStatusIsDraft_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setDate(LocalDate.of(2026, 1, 30));
+
+        quote.updateExpiration(ExpirationPolicy.TEN_DAYS);
+
+        assertEquals(ExpirationPolicy.TEN_DAYS, quote.getExpirationPolicy());
+        assertEquals(LocalDate.of(2026, 2, 9), quote.getExpirationDate());
+    }
+
+    @Test
+    public void updateExpiration_ToEndOfMonthExpirationPolicyWhenStatusIsDraft_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setDate(LocalDate.of(2026, 1, 11));
+
+        quote.updateExpiration(ExpirationPolicy.END_OF_MONTH);
+
+        assertEquals(ExpirationPolicy.END_OF_MONTH, quote.getExpirationPolicy());
+        assertEquals(LocalDate.of(2026, 1, 31), quote.getExpirationDate());
+    }
+
+    @Test
+    public void setAdditionalFees_ToNegative_ThrowsException() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> quote.setAdditionalFees(new BigDecimal("-800.00")), "Additional fees cannot be negative");
+    }
+
+    @Test
+    public void setAdditionalFees_ToZero_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+
+        quote.setAdditionalFees(BigDecimal.ZERO);
+
+        assertEquals(BigDecimal.ZERO, quote.getAdditionalFees());
+    }
+
+    @Test
+    public void setAdditionalFees_ToNull_SetsAdditionalFeesToZero() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+
+        quote.setAdditionalFees(null);
+
+        assertEquals(BigDecimal.ZERO, quote.getAdditionalFees());
     }
 
     @Test
@@ -371,7 +465,7 @@ public class QuotationTest {
     @Test
     public void accept_WhenStatusExpired_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         setPastExpirationDateForTesting(quote, 1);
 
@@ -384,7 +478,7 @@ public class QuotationTest {
     @Test
     public void accept_WhenStatusVoided_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         quote.voidDocument();
 
@@ -397,7 +491,7 @@ public class QuotationTest {
     @Test
     public void voidDocument_WhenStatusAccepted_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         quote.accept();
 
@@ -420,7 +514,7 @@ public class QuotationTest {
     @Test
     public void voidDocument_WhenStatusIssued_Success() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
 
         assertDoesNotThrow(() -> {
@@ -444,7 +538,7 @@ public class QuotationTest {
     @Test
     public void addItem_WhenStatusIssued_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
 
         assertThrows(IllegalStateException.class, () -> {
@@ -457,7 +551,7 @@ public class QuotationTest {
     @Test
     public void addItem_WhenStatusAccepted_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         quote.accept();
 
@@ -471,7 +565,7 @@ public class QuotationTest {
     @Test
     public void addItem_WhenStatusExpired_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         setPastExpirationDateForTesting(quote, 1);
 
@@ -511,7 +605,7 @@ public class QuotationTest {
     @Test
     public void removeItem_WhenStatusIssued_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
@@ -525,7 +619,7 @@ public class QuotationTest {
     @Test
     public void removeItem_WhenStatusAccepted_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
@@ -540,7 +634,7 @@ public class QuotationTest {
     @Test
     public void removeItem_WhenStatusExpired_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
@@ -608,7 +702,7 @@ public class QuotationTest {
     @Test
     public void setAppliedItemPrice_WhenStatusIssued_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
@@ -622,7 +716,7 @@ public class QuotationTest {
     @Test
     public void setAppliedItemPrice_WhenStatusAccepted_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
@@ -637,7 +731,7 @@ public class QuotationTest {
     @Test
     public void setAppliedItemPrice_WhenStatusExpired_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
@@ -720,7 +814,7 @@ public class QuotationTest {
     @Test
     public void archive_WhenStatusDraft_Success() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now().plusMonths(1));
+        quote.updateExpiration(LocalDate.now().plusMonths(1));
 
         assertEquals(QuotationStatus.DRAFT, quote.getStatus());
 
@@ -743,7 +837,7 @@ public class QuotationTest {
     @Test
     public void archive_WhenStatusAccepted_Success() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         quote.accept();
 
@@ -765,7 +859,7 @@ public class QuotationTest {
     @Test
     public void archive_WhenStatusIssued_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
 
         assertThrows(IllegalStateException.class, () -> quote.archive(), "Cannot archive an ISSUED quotation");

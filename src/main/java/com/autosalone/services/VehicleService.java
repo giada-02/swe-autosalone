@@ -8,13 +8,19 @@ import java.util.UUID;
 import com.autosalone.dtos.DeadlineCreateRequest;
 import com.autosalone.dtos.VehicleCreateRequest;
 import com.autosalone.dtos.VehicleUpdateRequest;
+import com.autosalone.enums.ContractStatus;
+import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.models.Contract;
 import com.autosalone.models.Deadline;
+import com.autosalone.models.Quotation;
 import com.autosalone.models.Transaction;
 import com.autosalone.models.TransactionFactory;
 import com.autosalone.models.Vehicle;
+import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.DeadlineRepository;
+import com.autosalone.repositories.QuotationRepository;
 import com.autosalone.repositories.VehicleRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -29,6 +35,12 @@ public class VehicleService {
 
     @Inject
     private DeadlineRepository deadlineRepository;
+
+    @Inject
+    private QuotationRepository quotationRepository;
+
+    @Inject
+    private ContractRepository contractRepository;
 
     // read
 
@@ -81,6 +93,30 @@ public class VehicleService {
         vehicle.withdraw(reason);
 
         vehicleRepository.save(vehicle);
+
+        List<Quotation> openQuotations = quotationRepository.findQuotations(
+                null, null, false, vehicleId, null, List.of(
+                        QuotationStatus.DRAFT,
+                        QuotationStatus.ISSUED));
+
+        for (Quotation quotation : openQuotations) {
+            quotation.voidDocument();
+            quotationRepository.save(quotation);
+        }
+
+        List<Contract> activeContracts = contractRepository.findContracts(
+                null, null, false, vehicleId, null, List.of(
+                        ContractStatus.DRAFT,
+                        ContractStatus.CONFIRMED));
+
+        for (Contract contract : activeContracts) {
+            if (contract.getStatus() == ContractStatus.DRAFT) {
+                contract.voidDocument();
+            } else {
+                contract.cancel(reason);
+            }
+            contractRepository.save(contract);
+        }
     }
 
     @Transactional

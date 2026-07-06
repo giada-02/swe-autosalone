@@ -55,4 +55,22 @@ public class AppliedItem {
             throw new IllegalArgumentException("Applied price cannot be negative");
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        AppliedItem that = (AppliedItem) o;
+
+        if (this.item == null || that.item == null)
+            return false;
+        return this.item.getId().equals(that.item.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return item != null && item.getId() != null ? item.getId().hashCode() : 0;
+    }
 }

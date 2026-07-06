@@ -122,7 +122,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_FromAcceptedQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         quote.accept();
 
@@ -135,7 +135,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_FromExpiredQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         setPastExpirationDateForTesting(quote, 1);
 
@@ -149,7 +149,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_FromVoidedQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         quote.voidDocument();
 
@@ -162,7 +162,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_FromArchivedQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.archive();
 
         assertTrue(quote.isArchived());
@@ -174,7 +174,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_FromValidIssuedQuotation_Success_CreatesDraftContract() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now().plusDays(10));
+        quote.updateExpiration(LocalDate.now().plusDays(10));
         quote.setAdditionalFees(new BigDecimal("350.00"));
         quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal("10")));
         quote.setPublicNotes("Note pubbliche");
@@ -212,7 +212,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_WhenVehicleIsReserved_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         defaultCar.setStatus(VehicleStatus.RESERVED);
 
@@ -224,7 +224,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_WhenVehicleIsSold_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         defaultCar.setStatus(VehicleStatus.SOLD);
 
@@ -236,7 +236,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_WhenVehicleIsWithdrawn_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         defaultCar.withdraw("Restituito al fornitore");
 
@@ -248,7 +248,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_WhenVehicleIsQuoted_Success() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         defaultCar.setStatus(VehicleStatus.QUOTED);
 
@@ -258,7 +258,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_AfterOriginalPricesHaveBeenUpdatedAndItemHasBeenArchived_Success() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
         quote.addItem(new AppliedItem(accessory));
         quote.issue();
@@ -280,7 +280,7 @@ public class ContractTest {
     @Test
     public void copyConstructor_AfterOriginalItemHasBeenArchived_Success() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
         quote.addItem(new AppliedItem(accessory));
         quote.issue();
@@ -307,7 +307,7 @@ public class ContractTest {
     @Test
     public void changeCustomer_WhenStatusDraft_CreatedFromQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         Contract contract = new Contract(quote);
         Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi")
@@ -320,7 +320,7 @@ public class ContractTest {
     @Test
     public void changeVehicle_WhenStatusDraft_CreatedFromQuotation_ThrowsException() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        quote.setExpirationDate(LocalDate.now());
+        quote.updateExpiration(LocalDate.now());
         quote.issue();
         Contract contract = new Contract(quote);
         Vehicle newVehicle = new Vehicle.VehicleBuilder()

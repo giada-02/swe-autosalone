@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.autosalone.enums.DiscountType;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.models.discounts.DiscountStrategy;
@@ -57,8 +58,9 @@ public abstract class SalesDocument extends AuditableEntity {
     @Transient
     private DiscountStrategy discountStrategy;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)
-    private String dbDiscountType = "NONE";
+    private DiscountType dbDiscountType = DiscountType.NONE;
 
     @Column(name = "discount_value")
     private BigDecimal dbDiscountValue;
@@ -66,31 +68,21 @@ public abstract class SalesDocument extends AuditableEntity {
     @PrePersist
     @PreUpdate
     private void serializeDiscountStrategy() { // from Java to Database
-        if (this.discountStrategy instanceof FixedAmountDiscountStrategy) {
-            this.dbDiscountType = "FIXED";
-            this.dbDiscountValue = ((FixedAmountDiscountStrategy) this.discountStrategy).getDiscountAmount();
-        } else if (this.discountStrategy instanceof PercentageDiscountStrategy) {
-            this.dbDiscountType = "PERCENTAGE";
-            this.dbDiscountValue = ((PercentageDiscountStrategy) this.discountStrategy).getPercentageValue();
+        if (this.discountStrategy instanceof FixedAmountDiscountStrategy fixed) {
+            this.dbDiscountType = DiscountType.FIXED;
+            this.dbDiscountValue = fixed.getDiscountAmount();
+        } else if (this.discountStrategy instanceof PercentageDiscountStrategy percentage) {
+            this.dbDiscountType = DiscountType.PERCENTAGE;
+            this.dbDiscountValue = percentage.getPercentageValue();
         } else {
-            this.dbDiscountType = "NONE";
+            this.dbDiscountType = DiscountType.NONE;
             this.dbDiscountValue = null;
         }
     }
 
     @PostLoad
     private void deserializeDiscountStrategy() { // from Database to Java
-        switch (this.dbDiscountType) {
-            case "FIXED":
-                this.discountStrategy = new FixedAmountDiscountStrategy(this.dbDiscountValue);
-                break;
-            case "PERCENTAGE":
-                this.discountStrategy = new PercentageDiscountStrategy(this.dbDiscountValue);
-                break;
-            default:
-                this.discountStrategy = new NoDiscountStrategy();
-                break;
-        }
+        this.discountStrategy = this.dbDiscountType.createStrategy(this.dbDiscountValue);
     }
 
     protected SalesDocument() {
@@ -248,7 +240,14 @@ public abstract class SalesDocument extends AuditableEntity {
 
     public void setAdditionalFees(BigDecimal additionalFees) {
         validateIsEditable();
-        this.additionalFees = (additionalFees == null) ? BigDecimal.ZERO : additionalFees;
+        if (additionalFees == null) {
+            this.additionalFees = BigDecimal.ZERO;
+            return;
+        }
+        if (additionalFees.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("Additional fees cannot be negative");
+
+        this.additionalFees = additionalFees;
     }
 
     public void archive() {
