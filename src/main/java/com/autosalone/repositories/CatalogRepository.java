@@ -52,6 +52,20 @@ public class CatalogRepository {
         return query.getResultList();
     }
 
+    public boolean isItemInUse(UUID itemId) {
+        Long documentCount = em.createQuery(
+                "SELECT COUNT(d) FROM SalesDocument d JOIN d.items i WHERE i.item.id = :itemId", Long.class)
+                .setParameter("itemId", itemId)
+                .getSingleResult();
+
+        Long packageCount = em.createQuery(
+                "SELECT COUNT(p) FROM AccessoryPackage p JOIN p.items i WHERE i.id = :itemId", Long.class)
+                .setParameter("itemId", itemId)
+                .getSingleResult();
+
+        return documentCount > 0 || packageCount > 0;
+    }
+
     public PurchasableItem save(PurchasableItem item) {
         if (item.getId() == null) {
             em.persist(item);
