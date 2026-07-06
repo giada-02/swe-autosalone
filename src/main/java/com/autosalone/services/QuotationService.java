@@ -235,5 +235,6 @@ public class QuotationService {
             DiscountStrategy newStrategy = request.discountType().createStrategy(request.discountValue());
             quotation.setDiscountStrategy(newStrategy);
         }
+        quotationRepository.save(quotation);
     }
 }
