@@ -94,7 +94,7 @@ public class ContractService {
         Contract contract = getContractById(contractId);
 
         Transaction deposit = null;
-        if (depositAmount != null && depositDate != null)
+        if (depositAmount != null || depositDate != null)
             deposit = TransactionFactory.createContractDeposit(contract, depositAmount, depositDate);
 
         contract.confirm(deposit);
@@ -286,5 +286,6 @@ public class ContractService {
             DiscountStrategy newStrategy = request.discountType().createStrategy(request.discountValue());
             contract.setDiscountStrategy(newStrategy);
         }
+        contractRepository.save(contract);
     }
 }

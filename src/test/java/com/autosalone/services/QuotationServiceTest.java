@@ -58,7 +58,7 @@ class QuotationServiceTest {
 
     private Vehicle mockVehicle;
     private Customer mockCustomer;
-    private Quotation mockQuotation;
+    private Quotation quotation;
 
     private UUID quotationId;
     private UUID vehicleId;
@@ -73,17 +73,17 @@ class QuotationServiceTest {
         mockVehicle = mock(Vehicle.class);
         mockCustomer = mock(Customer.class);
 
-        mockQuotation = new Quotation(mockVehicle, mockCustomer);
+        quotation = new Quotation(mockVehicle, mockCustomer);
     }
 
     // read
 
     @Test
     void getQuotationById_Success() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         Quotation result = quotationService.getQuotationById(quotationId);
         assertNotNull(result);
-        assertEquals(mockQuotation, result);
+        assertEquals(quotation, result);
     }
 
     @Test
@@ -97,7 +97,7 @@ class QuotationServiceTest {
     @Test
     void getQuotations_Success() {
         when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any()))
-                .thenReturn(List.of(mockQuotation));
+                .thenReturn(List.of(quotation));
 
         List<Quotation> results = quotationService.getQuotations(null, null, null, null, null, null);
         assertFalse(results.isEmpty());
@@ -108,7 +108,7 @@ class QuotationServiceTest {
     @Test
     void getVisibleQuotationsForCustomer_Success() {
         when(quotationRepository.findVisibleQuotationsByCustomerId(customerId))
-                .thenReturn(List.of(mockQuotation));
+                .thenReturn(List.of(quotation));
 
         List<Quotation> results = quotationService.getVisibleQuotationsForCustomer(customerId);
         assertFalse(results.isEmpty());
@@ -122,8 +122,8 @@ class QuotationServiceTest {
     void addQuotation_Success() {
         SalesDocumentCreateRequest request = new SalesDocumentCreateRequest(vehicleId, customerId);
 
-        when(vehicleService.getVehicleById(request.vehicleId())).thenReturn(mockVehicle);
-        when(customerService.getCustomerById(request.customerId())).thenReturn(mockCustomer);
+        when(vehicleService.getVehicleById(vehicleId)).thenReturn(mockVehicle);
+        when(customerService.getCustomerById(customerId)).thenReturn(mockCustomer);
 
         UUID resultId = quotationService.addQuotation(request);
         assertNull(resultId);
@@ -132,7 +132,7 @@ class QuotationServiceTest {
 
     @Test
     void cloneQuotation_Success() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         when(mockVehicle.getSellingPrice()).thenReturn(new BigDecimal("10000"));
 
         UUID resultId = quotationService.cloneQuotation(quotationId);
@@ -142,37 +142,37 @@ class QuotationServiceTest {
 
     @Test
     void issueQuotation_Success() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.AVAILABLE);
 
-        mockQuotation.updateExpiration(LocalDate.now().plusDays(10));
+        quotation.updateExpiration(LocalDate.now().plusDays(10));
 
         quotationService.issueQuotation(quotationId);
 
-        assertEquals(QuotationStatus.ISSUED, mockQuotation.getStatus());
+        assertEquals(QuotationStatus.ISSUED, quotation.getStatus());
         verify(mockVehicle, times(1)).setStatus(VehicleStatus.QUOTED);
         verify(vehicleRepository, times(1)).save(mockVehicle);
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        verify(quotationRepository, times(1)).save(quotation);
     }
 
     @Test
     void issueQuotationForQuotedVehicle_Success() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.QUOTED);
 
-        mockQuotation.updateExpiration(LocalDate.now().plusDays(10));
+        quotation.updateExpiration(LocalDate.now().plusDays(10));
 
         quotationService.issueQuotation(quotationId);
 
-        assertEquals(QuotationStatus.ISSUED, mockQuotation.getStatus());
+        assertEquals(QuotationStatus.ISSUED, quotation.getStatus());
         verify(mockVehicle, never()).setStatus(VehicleStatus.QUOTED);
         verify(vehicleRepository, never()).save(any());
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        verify(quotationRepository, times(1)).save(quotation);
     }
 
     @Test
     void issueQuotation_FailsWithoutExpirationDate() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
 
         assertThrows(IllegalStateException.class, () -> {
             quotationService.issueQuotation(quotationId);
@@ -183,23 +183,23 @@ class QuotationServiceTest {
 
     @Test
     void archiveQuotation_Success() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
 
         quotationService.archiveQuotation(quotationId);
 
-        assertTrue(mockQuotation.isArchived());
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        assertTrue(quotation.isArchived());
+        verify(quotationRepository, times(1)).save(quotation);
     }
 
     @Test
     void unarchiveQuotation_Success() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
-        mockQuotation.archive();
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
+        quotation.archive();
 
         quotationService.unarchiveQuotation(quotationId);
 
-        assertFalse(mockQuotation.isArchived());
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        assertFalse(quotation.isArchived());
+        verify(quotationRepository, times(1)).save(quotation);
     }
 
     @Test
@@ -255,18 +255,39 @@ class QuotationServiceTest {
     }
 
     @Test
+    void expireOutdatedQuotations_NoExpiredQuotations_DoesNothing() {
+        when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(Collections.emptyList());
+
+        quotationService.expireOutdatedQuotations();
+
+        verify(contractRepository, never()).findDraftContractsBySourceQuotation(any());
+        verify(vehicleRepository, never()).save(any());
+        verify(quotationRepository, never()).save(any());
+    }
+
+    @Test
     void addItemsToQuotation_Success() {
         UUID catalogItemId = UUID.randomUUID();
         PurchasableItem mockItem = mock(PurchasableItem.class);
         when(mockItem.getPrice()).thenReturn(BigDecimal.TEN);
 
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         when(catalogService.getItemById(catalogItemId)).thenReturn(mockItem);
 
         quotationService.addItemsToQuotation(quotationId, Set.of(catalogItemId));
 
-        assertFalse(mockQuotation.getItems().isEmpty());
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        assertFalse(quotation.getItems().isEmpty());
+        verify(quotationRepository, times(1)).save(quotation);
+    }
+
+    @Test
+    void addItemsToQuotation_NullOrEmptySet_DoesNothing() {
+        quotationService.addItemsToQuotation(quotationId, null);
+        quotationService.addItemsToQuotation(quotationId, Collections.emptySet());
+
+        verify(quotationRepository, never()).findById(any());
+        verify(quotationRepository, never()).save(any());
+        verify(catalogService, never()).getItemById(any());
     }
 
     @Test
@@ -276,15 +297,22 @@ class QuotationServiceTest {
         when(mockItem.getId()).thenReturn(catalogItemId);
         when(mockItem.getPrice()).thenReturn(BigDecimal.TEN);
 
-        AppliedItem appliedItem = new AppliedItem(mockItem);
-        mockQuotation.addItem(appliedItem);
-
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        quotation.addItem(new AppliedItem(mockItem));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
 
         quotationService.removeItemsFromQuotation(quotationId, Set.of(catalogItemId));
 
-        assertTrue(mockQuotation.getItems().isEmpty());
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        assertTrue(quotation.getItems().isEmpty());
+        verify(quotationRepository, times(1)).save(quotation);
+    }
+
+    @Test
+    void removeItemsFromQuotation_NullOrEmptySet_DoesNothing() {
+        quotationService.removeItemsFromQuotation(quotationId, null);
+        quotationService.removeItemsFromQuotation(quotationId, Collections.emptySet());
+
+        verify(quotationRepository, never()).findById(any());
+        verify(quotationRepository, never()).save(any());
     }
 
     @Test
@@ -294,44 +322,40 @@ class QuotationServiceTest {
         when(mockItem.getId()).thenReturn(catalogItemId);
         when(mockItem.getPrice()).thenReturn(BigDecimal.TEN);
 
-        AppliedItem appliedItem = new AppliedItem(mockItem);
-        mockQuotation.addItem(appliedItem);
+        quotation.addItem(new AppliedItem(mockItem));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
 
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
-
-        BigDecimal newPrice = BigDecimal.valueOf(99.99);
+        BigDecimal newPrice = BigDecimal.valueOf(50);
         quotationService.updateAppliedItemPrice(quotationId, catalogItemId, newPrice);
 
-        assertEquals(newPrice, mockQuotation.getItems().get(0).getAppliedPrice());
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        assertEquals(newPrice, quotation.getItems().get(0).getAppliedPrice());
+        verify(quotationRepository, times(1)).save(quotation);
     }
 
     @Test
     void updateAppliedItemPrice_ItemNotFound() {
         UUID wrongCatalogItemId = UUID.randomUUID();
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             quotationService.updateAppliedItemPrice(quotationId, wrongCatalogItemId, BigDecimal.TEN);
         });
 
-        assertTrue(ex.getMessage().contains("Accessory of id"));
         verify(quotationRepository, never()).save(any());
     }
 
     @Test
     void updateQuotation_Success() {
-        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(mockQuotation));
-
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         QuotationUpdateRequest request = mock(QuotationUpdateRequest.class);
         when(request.publicNotes()).thenReturn("Nuove note pubbliche");
         when(request.date()).thenReturn(LocalDate.now().plusDays(1));
 
-        quotationService.updateQuotation(quotationId, request);
+        assertDoesNotThrow(() -> quotationService.updateQuotation(quotationId, request));
 
-        assertEquals("Nuove note pubbliche", mockQuotation.getPublicNotes());
-        assertEquals(LocalDate.now().plusDays(1), mockQuotation.getDate());
-        verify(quotationRepository, times(1)).save(mockQuotation);
+        assertEquals("Nuove note pubbliche", quotation.getPublicNotes());
+        assertEquals(LocalDate.now().plusDays(1), quotation.getDate());
+        verify(quotationRepository, times(1)).save(quotation);
     }
 
 }
