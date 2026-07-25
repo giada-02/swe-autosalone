@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.DeadlineUpdateRequest;
+import com.autosalone.dtos.DeadlineRequest;
 import com.autosalone.models.Deadline;
 import com.autosalone.repositories.DeadlineRepository;
 
@@ -51,21 +51,13 @@ public class DeadlineService {
     }
 
     @Transactional
-    public void updateDeadline(UUID deadlineId, DeadlineUpdateRequest request) {
+    public void updateDeadline(UUID deadlineId, DeadlineRequest request) {
         Deadline deadline = getDeadlineById(deadlineId);
 
-        if (request.reason() != null) {
-            deadline.setReason(request.reason());
-        }
-        if (request.dueDate() != null) {
-            deadline.setDueDate(request.dueDate());
-        }
-        if (request.recurrence() != null) {
-            deadline.setRecurrence(request.recurrence());
-        }
-        if (request.recalculateFromCompletion() != null) {
-            deadline.setRecalculateFromCompletion(request.recalculateFromCompletion());
-        }
+        deadline.setReason(request.reason());
+        deadline.setDueDate(request.dueDate());
+        deadline.setRecurrence(request.recurrence());
+        deadline.setRecalculateFromCompletion(request.recalculateFromCompletion());
 
         deadlineRepository.save(deadline);
     }

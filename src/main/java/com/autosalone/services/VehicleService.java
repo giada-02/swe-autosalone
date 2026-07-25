@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.DeadlineCreateRequest;
+import com.autosalone.dtos.DeadlineRequest;
 import com.autosalone.dtos.VehicleCreateRequest;
 import com.autosalone.dtos.VehicleUpdateRequest;
 import com.autosalone.enums.ContractStatus;
@@ -146,7 +146,7 @@ public class VehicleService {
     }
 
     @Transactional
-    public UUID addDeadline(UUID vehicleId, DeadlineCreateRequest request) {
+    public UUID addDeadline(UUID vehicleId, DeadlineRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         Deadline newDealine = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
