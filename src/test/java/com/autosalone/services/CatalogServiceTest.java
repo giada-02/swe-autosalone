@@ -78,7 +78,7 @@ class CatalogServiceTest {
         List<PurchasableItem> results = catalogService.getPurchasableItems("Nav", false, PurchasableItem.class);
 
         assertEquals(2, results.size());
-        verify(catalogRepository, times(1)).findPurchasableItems("Nav", false, PurchasableItem.class);
+        verify(catalogRepository).findPurchasableItems("Nav", false, PurchasableItem.class);
     }
 
     // write
@@ -92,7 +92,7 @@ class CatalogServiceTest {
         UUID resultId = catalogService.addAccessory(request);
 
         assertNull(resultId);
-        verify(catalogRepository, times(1)).save(any(Accessory.class));
+        verify(catalogRepository).save(any(Accessory.class));
     }
 
     @Test
@@ -106,7 +106,7 @@ class CatalogServiceTest {
         assertEquals("Navigatore Pro", accessory.getName());
         assertEquals("Schermo 12 pollici", accessory.getDescription());
         assertEquals(BigDecimal.valueOf(800), accessory.getPrice());
-        verify(catalogRepository, times(1)).save(accessory);
+        verify(catalogRepository).save(accessory);
     }
 
     @Test
@@ -131,7 +131,7 @@ class CatalogServiceTest {
         UUID resultId = catalogService.addAccessoryPackage(request);
 
         assertNull(resultId);
-        verify(catalogRepository, times(1)).save(any(AccessoryPackage.class));
+        verify(catalogRepository).save(any(AccessoryPackage.class));
     }
 
     @Test
@@ -142,7 +142,7 @@ class CatalogServiceTest {
         catalogService.addAccessoryPackage(request);
 
         ArgumentCaptor<AccessoryPackage> packageCaptor = ArgumentCaptor.forClass(AccessoryPackage.class);
-        verify(catalogRepository, times(1)).save(packageCaptor.capture());
+        verify(catalogRepository).save(packageCaptor.capture());
 
         AccessoryPackage savedPackage = packageCaptor.getValue();
 
@@ -186,7 +186,7 @@ class CatalogServiceTest {
         assertTrue(accessoryPackage.getItems().contains(newChild));
         assertFalse(accessoryPackage.getItems().contains(oldChild));
 
-        verify(catalogRepository, times(1)).save(accessoryPackage);
+        verify(catalogRepository).save(accessoryPackage);
     }
 
     @Test
@@ -202,7 +202,7 @@ class CatalogServiceTest {
 
         assertEquals("Pacchetto Vuoto", accessoryPackage.getName());
         assertTrue(accessoryPackage.getItems().isEmpty());
-        verify(catalogRepository, times(1)).save(accessoryPackage);
+        verify(catalogRepository).save(accessoryPackage);
     }
 
     // delete
@@ -214,7 +214,7 @@ class CatalogServiceTest {
 
         catalogService.removePurchasableItem(accessoryId);
 
-        verify(catalogRepository, times(1)).delete(accessory);
+        verify(catalogRepository).delete(accessory);
         verify(catalogRepository, never()).save(any());
         assertFalse(accessory.isArchived());
     }
@@ -227,7 +227,7 @@ class CatalogServiceTest {
         catalogService.removePurchasableItem(accessoryId);
 
         verify(catalogRepository, never()).delete(any());
-        verify(catalogRepository, times(1)).save(accessory);
+        verify(catalogRepository).save(accessory);
         assertTrue(accessory.isArchived());
     }
 }

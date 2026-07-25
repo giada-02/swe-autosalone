@@ -104,7 +104,7 @@ class ContractServiceTest {
         List<Contract> results = contractService.getContracts(null, null, null, null, null, null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
-        verify(contractRepository, times(1)).findContracts(null, null, null, null, null, null);
+        verify(contractRepository).findContracts(null, null, null, null, null, null);
     }
 
     @Test
@@ -115,7 +115,7 @@ class ContractServiceTest {
         List<Contract> results = contractService.getVisibleContractsForCustomer(customerId);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
-        verify(contractRepository, times(1)).findVisibleContractsByCustomerId(customerId);
+        verify(contractRepository).findVisibleContractsByCustomerId(customerId);
     }
 
     // write
@@ -130,7 +130,7 @@ class ContractServiceTest {
 
         UUID resultId = contractService.addContract(request);
         assertNull(resultId);
-        verify(contractRepository, times(1)).save(any(Contract.class));
+        verify(contractRepository).save(any(Contract.class));
     }
 
     @Test
@@ -144,7 +144,7 @@ class ContractServiceTest {
 
         contractService.createContractFromQuotation(quotationId);
 
-        verify(contractRepository, times(1)).save(any(Contract.class));
+        verify(contractRepository).save(any(Contract.class));
     }
 
     @Test
@@ -171,20 +171,20 @@ class ContractServiceTest {
 
         contractService.confirmContract(contractId, BigDecimal.TEN, LocalDate.now());
 
-        verify(mockContract, times(1)).confirm(any());
-        verify(linkedQuotation, times(1)).accept();
-        verify(quotationRepository, times(1)).save(linkedQuotation);
+        verify(mockContract).confirm(any());
+        verify(linkedQuotation).accept();
+        verify(quotationRepository).save(linkedQuotation);
 
-        verify(mockVehicle, times(1)).setStatus(VehicleStatus.RESERVED);
-        verify(vehicleRepository, times(1)).save(mockVehicle);
+        verify(mockVehicle).setStatus(VehicleStatus.RESERVED);
+        verify(vehicleRepository).save(mockVehicle);
 
-        verify(conflictQuotation, times(1)).voidDocument();
-        verify(quotationRepository, times(1)).save(conflictQuotation);
+        verify(conflictQuotation).voidDocument();
+        verify(quotationRepository).save(conflictQuotation);
 
-        verify(conflictContract, times(1)).voidDocument();
-        verify(contractRepository, times(1)).save(conflictContract);
+        verify(conflictContract).voidDocument();
+        verify(contractRepository).save(conflictContract);
 
-        verify(contractRepository, times(1)).save(mockContract);
+        verify(contractRepository).save(mockContract);
     }
 
     @Test
@@ -201,9 +201,9 @@ class ContractServiceTest {
 
         contractService.confirmContract(contractId, null, null);
 
-        verify(mockContract, times(1)).confirm(null);
+        verify(mockContract).confirm(null);
         verify(quotationRepository, never()).save(any(Quotation.class));
-        verify(contractRepository, times(1)).save(mockContract);
+        verify(contractRepository).save(mockContract);
     }
 
     @Test
@@ -214,13 +214,13 @@ class ContractServiceTest {
 
         contractService.completeContract(contractId);
 
-        verify(mockContract, times(1)).complete();
-        verify(mockVehicle, times(1)).setIsInShowroom(false);
-        verify(mockVehicle, times(1)).generateStandardInspectionDeadline();
-        verify(mockVehicle, times(1)).setStatus(VehicleStatus.SOLD);
+        verify(mockContract).complete();
+        verify(mockVehicle).setIsInShowroom(false);
+        verify(mockVehicle).generateStandardInspectionDeadline();
+        verify(mockVehicle).setStatus(VehicleStatus.SOLD);
 
-        verify(vehicleRepository, times(1)).save(mockVehicle);
-        verify(contractRepository, times(1)).save(mockContract);
+        verify(vehicleRepository).save(mockVehicle);
+        verify(contractRepository).save(mockContract);
     }
 
     @Test
@@ -230,11 +230,11 @@ class ContractServiceTest {
 
         contractService.cancelContract(contractId, "Motivo cancellazione");
 
-        verify(mockContract, times(1)).cancel("Motivo cancellazione");
-        verify(mockVehicle, times(1)).setStatus(VehicleStatus.AVAILABLE);
+        verify(mockContract).cancel("Motivo cancellazione");
+        verify(mockVehicle).setStatus(VehicleStatus.AVAILABLE);
 
-        verify(vehicleRepository, times(1)).save(mockVehicle);
-        verify(contractRepository, times(1)).save(mockContract);
+        verify(vehicleRepository).save(mockVehicle);
+        verify(contractRepository).save(mockContract);
     }
 
     @Test
@@ -245,7 +245,7 @@ class ContractServiceTest {
         contractService.archiveContract(contractId);
 
         assertTrue(contract.isArchived());
-        verify(contractRepository, times(1)).save(contract);
+        verify(contractRepository).save(contract);
     }
 
     @Test
@@ -256,7 +256,7 @@ class ContractServiceTest {
         contractService.unarchiveContract(contractId);
 
         assertFalse(contract.isArchived());
-        verify(contractRepository, times(1)).save(contract);
+        verify(contractRepository).save(contract);
     }
 
     @Test
@@ -270,8 +270,8 @@ class ContractServiceTest {
 
         contractService.addPaymentToContract(contractId, "Bonifico", BigDecimal.TEN, LocalDate.now());
 
-        verify(mockContract, times(1)).registerPayment(any(Transaction.class));
-        verify(contractRepository, times(1)).save(mockContract);
+        verify(mockContract).registerPayment(any(Transaction.class));
+        verify(contractRepository).save(mockContract);
     }
 
     @Test
@@ -285,8 +285,8 @@ class ContractServiceTest {
 
         contractService.addRefundToContract(contractId, "Rimborso", BigDecimal.TEN, LocalDate.now());
 
-        verify(mockContract, times(1)).registerRefund(any(Transaction.class));
-        verify(contractRepository, times(1)).save(mockContract);
+        verify(mockContract).registerRefund(any(Transaction.class));
+        verify(contractRepository).save(mockContract);
     }
 
     @Test
@@ -302,7 +302,7 @@ class ContractServiceTest {
         contractService.addItemsToContract(contractId, Set.of(catalogItemId));
 
         assertFalse(contract.getItems().isEmpty());
-        verify(contractRepository, times(1)).save(contract);
+        verify(contractRepository).save(contract);
     }
 
     @Test
@@ -328,7 +328,7 @@ class ContractServiceTest {
         contractService.removeItemsFromContract(contractId, Set.of(catalogItemId));
 
         assertTrue(contract.getItems().isEmpty());
-        verify(contractRepository, times(1)).save(contract);
+        verify(contractRepository).save(contract);
     }
 
     @Test
@@ -355,7 +355,7 @@ class ContractServiceTest {
         contractService.updateAppliedItemPrice(contractId, catalogItemId, newPrice);
 
         assertEquals(newPrice, contract.getItems().get(0).getAppliedPrice());
-        verify(contractRepository, times(1)).save(contract);
+        verify(contractRepository).save(contract);
     }
 
     @Test
@@ -399,7 +399,7 @@ class ContractServiceTest {
         verify(vehicleService, never()).getVehicleById(any());
         verify(customerService, never()).getCustomerById(any());
 
-        verify(contractRepository, times(1)).save(contract);
+        verify(contractRepository).save(contract);
     }
 
     @Test
@@ -435,10 +435,10 @@ class ContractServiceTest {
         assertEquals(newMockVehicle, contract.getVehicle());
         assertEquals(newMockCustomer, contract.getCustomer());
 
-        verify(vehicleService, times(1)).getVehicleById(newVehicleId);
-        verify(customerService, times(1)).getCustomerById(newCustomerId);
+        verify(vehicleService).getVehicleById(newVehicleId);
+        verify(customerService).getCustomerById(newCustomerId);
 
-        verify(contractRepository, times(1)).save(contract);
+        verify(contractRepository).save(contract);
     }
 
     // helper

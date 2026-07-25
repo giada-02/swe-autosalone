@@ -103,7 +103,7 @@ class QuotationServiceTest {
         List<Quotation> results = quotationService.getQuotations(null, null, null, null, null, null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
-        verify(quotationRepository, times(1)).findQuotations(null, null, null, null, null, null);
+        verify(quotationRepository).findQuotations(null, null, null, null, null, null);
     }
 
     @Test
@@ -114,7 +114,7 @@ class QuotationServiceTest {
         List<Quotation> results = quotationService.getVisibleQuotationsForCustomer(customerId);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
-        verify(quotationRepository, times(1)).findVisibleQuotationsByCustomerId(customerId);
+        verify(quotationRepository).findVisibleQuotationsByCustomerId(customerId);
     }
 
     // write
@@ -128,7 +128,7 @@ class QuotationServiceTest {
 
         UUID resultId = quotationService.addQuotation(request);
         assertNull(resultId);
-        verify(quotationRepository, times(1)).save(any(Quotation.class));
+        verify(quotationRepository).save(any(Quotation.class));
     }
 
     @Test
@@ -138,7 +138,7 @@ class QuotationServiceTest {
 
         UUID resultId = quotationService.cloneQuotation(quotationId);
         assertNull(resultId);
-        verify(quotationRepository, times(1)).save(any(Quotation.class));
+        verify(quotationRepository).save(any(Quotation.class));
     }
 
     @Test
@@ -151,9 +151,9 @@ class QuotationServiceTest {
         quotationService.issueQuotation(quotationId);
 
         assertEquals(QuotationStatus.ISSUED, quotation.getStatus());
-        verify(mockVehicle, times(1)).setStatus(VehicleStatus.QUOTED);
-        verify(vehicleRepository, times(1)).save(mockVehicle);
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(mockVehicle).setStatus(VehicleStatus.QUOTED);
+        verify(vehicleRepository).save(mockVehicle);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -168,7 +168,7 @@ class QuotationServiceTest {
         assertEquals(QuotationStatus.ISSUED, quotation.getStatus());
         verify(mockVehicle, never()).setStatus(VehicleStatus.QUOTED);
         verify(vehicleRepository, never()).save(any());
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -189,7 +189,7 @@ class QuotationServiceTest {
         quotationService.archiveQuotation(quotationId);
 
         assertTrue(quotation.isArchived());
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -200,7 +200,7 @@ class QuotationServiceTest {
         quotationService.unarchiveQuotation(quotationId);
 
         assertFalse(quotation.isArchived());
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -222,13 +222,13 @@ class QuotationServiceTest {
 
         quotationService.expireOutdatedQuotations();
 
-        verify(expiredMock, times(1)).expire();
-        verify(quotationRepository, times(1)).save(expiredMock);
-        verify(draftContractMock, times(1)).voidDocument();
-        verify(contractRepository, times(1)).save(draftContractMock);
+        verify(expiredMock).expire();
+        verify(quotationRepository).save(expiredMock);
+        verify(draftContractMock).voidDocument();
+        verify(contractRepository).save(draftContractMock);
 
-        verify(mockVehicle, times(1)).setStatus(VehicleStatus.AVAILABLE);
-        verify(vehicleRepository, times(1)).save(mockVehicle);
+        verify(mockVehicle).setStatus(VehicleStatus.AVAILABLE);
+        verify(vehicleRepository).save(mockVehicle);
     }
 
     @Test
@@ -248,8 +248,8 @@ class QuotationServiceTest {
 
         quotationService.expireOutdatedQuotations();
 
-        verify(expiredMock, times(1)).expire();
-        verify(quotationRepository, times(1)).save(expiredMock);
+        verify(expiredMock).expire();
+        verify(quotationRepository).save(expiredMock);
 
         verify(mockVehicle, never()).setStatus(VehicleStatus.AVAILABLE);
         verify(vehicleRepository, never()).save(mockVehicle);
@@ -278,7 +278,7 @@ class QuotationServiceTest {
         quotationService.addItemsToQuotation(quotationId, Set.of(catalogItemId));
 
         assertFalse(quotation.getItems().isEmpty());
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -304,7 +304,7 @@ class QuotationServiceTest {
         quotationService.removeItemsFromQuotation(quotationId, Set.of(catalogItemId));
 
         assertTrue(quotation.getItems().isEmpty());
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -330,7 +330,7 @@ class QuotationServiceTest {
         quotationService.updateAppliedItemPrice(quotationId, catalogItemId, newPrice);
 
         assertEquals(newPrice, quotation.getItems().get(0).getAppliedPrice());
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -373,7 +373,7 @@ class QuotationServiceTest {
         verify(vehicleService, never()).getVehicleById(any());
         verify(customerService, never()).getCustomerById(any());
 
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
     @Test
@@ -409,10 +409,10 @@ class QuotationServiceTest {
         assertEquals(newMockVehicle, quotation.getVehicle());
         assertEquals(newMockCustomer, quotation.getCustomer());
 
-        verify(vehicleService, times(1)).getVehicleById(newVehicleId);
-        verify(customerService, times(1)).getCustomerById(newCustomerId);
+        verify(vehicleService).getVehicleById(newVehicleId);
+        verify(customerService).getCustomerById(newCustomerId);
 
-        verify(quotationRepository, times(1)).save(quotation);
+        verify(quotationRepository).save(quotation);
     }
 
 }

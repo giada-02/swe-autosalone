@@ -3,7 +3,7 @@ package com.autosalone.services;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.CustomerCreateRequest;
+import com.autosalone.dtos.CustomerRequest;
 import com.autosalone.models.Customer;
 import com.autosalone.repositories.CustomerRepository;
 
@@ -31,7 +31,7 @@ public class CustomerService {
     // write
 
     @Transactional
-    public UUID addCustomer(CustomerCreateRequest request) {
+    public UUID addCustomer(CustomerRequest request) {
 
         if (customerRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalStateException("This email is already in use");
@@ -51,4 +51,27 @@ public class CustomerService {
         customerRepository.save(customer);
         return customer.getId();
     }
+
+    @Transactional
+    public void updateCustomer(UUID customerId, CustomerRequest request) {
+        Customer customer = getCustomerById(customerId);
+
+        if (!customer.getEmail().equals(request.email())) {
+            customerRepository.findByEmail(request.email()).ifPresent(existing -> {
+                throw new IllegalStateException("This email is already in use");
+            });
+        }
+
+        customer.setFirstName(request.firstName());
+        customer.setLastName(request.lastName());
+        customer.setPhoneNumber(request.phoneNumber());
+        customer.setEmail(request.email());
+        customer.setResidenceCity(request.residenceCity());
+        customer.setZipCode(request.zipCode());
+        customer.setFiscalCode(request.fiscalCode());
+        customer.setVatNumber(request.vatNumber());
+
+        customerRepository.save(customer);
+    }
+
 }

@@ -89,8 +89,8 @@ class UserServiceTest {
 
         userService.updateEmail(userId, newEmail);
 
-        verify(mockUser, times(1)).setEmail(newEmail);
-        verify(userRepository, times(1)).save(mockUser);
+        verify(mockUser).setEmail(newEmail);
+        verify(userRepository).save(mockUser);
     }
 
     @Test
@@ -133,8 +133,8 @@ class UserServiceTest {
 
         userService.updatePassword(userId, rawPassword);
 
-        verify(mockUser, times(1)).setPassword(hashedPassword);
-        verify(userRepository, times(1)).save(mockUser);
+        verify(mockUser).setPassword(hashedPassword);
+        verify(userRepository).save(mockUser);
     }
 
     @Test
@@ -148,9 +148,9 @@ class UserServiceTest {
 
         userService.activateUser(userId, rawPassword);
 
-        verify(mockUser, times(1)).setPassword(hashedPassword);
-        verify(mockUser, times(1)).activate();
-        verify(userRepository, times(1)).save(mockUser);
+        verify(mockUser).setPassword(hashedPassword);
+        verify(mockUser).activate();
+        verify(userRepository).save(mockUser);
     }
 
     @Test
@@ -171,9 +171,9 @@ class UserServiceTest {
 
         userService.deactivateUser(userId);
 
-        verify(mockUser, times(1)).deactivate();
-        verify(mockUser, times(1)).setPassword(null);
-        verify(userRepository, times(1)).save(mockUser);
+        verify(mockUser).deactivate();
+        verify(mockUser).setPassword(null);
+        verify(userRepository).save(mockUser);
     }
 
     // security
