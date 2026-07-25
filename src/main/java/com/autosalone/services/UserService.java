@@ -1,5 +1,6 @@
 package com.autosalone.services;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import com.autosalone.models.User;
@@ -35,13 +36,15 @@ public class UserService {
 
     @Transactional
     public void updateEmail(UUID userId, String newEmail) {
-        userRepository.findByEmail(newEmail).ifPresent(existingUser -> {
-            if (!existingUser.getId().equals(userId)) {
-                throw new IllegalStateException("Email is already in use by another account");
-            }
-        });
-
         User user = getUserById(userId);
+
+        if (user.getEmail().equals(newEmail)) {
+            return;
+        }
+
+        userRepository.findByEmail(newEmail).ifPresent(existing -> {
+            throw new IllegalStateException("Email is already in use by another account");
+        });
 
         user.setEmail(newEmail);
 
@@ -93,10 +96,16 @@ public class UserService {
     }
 
     public User login(String email, String rawPassword) {
-        User user = getUserByEmail(email);
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        if (optionalUser.isEmpty()) {
+            throw new SecurityException("Invalid credentials");
+        }
+
+        User user = optionalUser.get();
 
         if (!user.isActive()) {
-            throw new SecurityException("This user in not active");
+            throw new SecurityException("This user is not active");
         }
 
         if (user.getPassword() == null) {
@@ -104,8 +113,9 @@ public class UserService {
         }
 
         boolean isPasswordCorrect = verifyPassword(rawPassword, user.getPassword());
+
         if (!isPasswordCorrect) {
-            throw new IllegalArgumentException("The provided creadentials are not valid");
+            throw new SecurityException("Invalid credentials");
         }
 
         return user;
