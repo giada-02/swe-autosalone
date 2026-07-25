@@ -70,5 +70,4 @@ public class TransactionService {
 
         return generalIncome.getId();
     }
-
 }
