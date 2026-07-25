@@ -205,36 +205,30 @@ public class QuotationService {
     public void updateQuotation(UUID quotationId, QuotationUpdateRequest request) {
         Quotation quotation = getQuotationById(quotationId);
 
-        if (request.date() != null) {
-            quotation.setDate(request.date());
-        }
-        if (request.expirationPolicy() != null) {
-            quotation.updateExpiration(request.expirationPolicy(), request.expirationDate());
-        }
-        if (request.vehicleId() != null) {
+        quotation.updateExpiration(request.expirationPolicy(), request.expirationDate());
+        quotation.setDate(request.date());
+        quotation.setAdditionalFees(request.additionalFees());
+        quotation.setPublicNotes(request.publicNotes());
+        quotation.setInternalNotes(request.internalNotes());
+        quotation.setVehicleSellingPriceSnapshot(request.vehicleSellingPrice());
+
+        if (!quotation.getVehicle().getId().equals(request.vehicleId())) {
             Vehicle vehicle = vehicleService.getVehicleById(request.vehicleId());
             quotation.setVehicle(vehicle);
         }
-        if (request.customerId() != null) {
+
+        if (!quotation.getCustomer().getId().equals(request.customerId())) {
             Customer customer = customerService.getCustomerById(request.customerId());
             quotation.setCustomer(customer);
         }
-        if (request.additionalFees() != null) {
-            quotation.setAdditionalFees(request.additionalFees());
-        }
-        if (request.publicNotes() != null) {
-            quotation.setPublicNotes(request.publicNotes());
-        }
-        if (request.internalNotes() != null) {
-            quotation.setInternalNotes(request.internalNotes());
-        }
-        if (request.vehicleSellingPrice() != null) {
-            quotation.setVehicleSellingPriceSnapshot(request.vehicleSellingPrice());
-        }
+
         if (request.discountType() != null) {
             DiscountStrategy newStrategy = request.discountType().createStrategy(request.discountValue());
             quotation.setDiscountStrategy(newStrategy);
+        } else {
+            quotation.setDiscountStrategy(null);
         }
+
         quotationRepository.save(quotation);
     }
 }

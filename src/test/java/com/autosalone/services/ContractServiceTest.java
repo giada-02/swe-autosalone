@@ -372,17 +372,72 @@ class ContractServiceTest {
     }
 
     @Test
-    void updateContract_WithAllNullFields_DoesNotCrash() {
+    void updateContract_Success_SameVehicleAndCustomer_NoExtraQueries() {
         Contract contract = getContract();
         when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
-        ContractUpdateRequest request = mock(ContractUpdateRequest.class);
-        when(request.internalNotes()).thenReturn("Nuove note interne");
-        when(request.date()).thenReturn(LocalDate.now().plusDays(2));
+
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockCustomer.getId()).thenReturn(customerId);
+
+        ContractUpdateRequest request = new ContractUpdateRequest(
+                LocalDate.now().plusDays(10),
+                LocalDate.now(),
+                vehicleId,
+                customerId,
+                BigDecimal.ZERO,
+                "Note pubbliche",
+                "Note interne",
+                BigDecimal.valueOf(20000),
+                null,
+                null);
 
         assertDoesNotThrow(() -> contractService.updateContract(contractId, request));
 
-        assertEquals("Nuove note interne", contract.getInternalNotes());
-        assertEquals(LocalDate.now().plusDays(2), contract.getDate());
+        assertEquals(LocalDate.now().plusDays(10), contract.getEstimatedHandoverDate());
+        assertEquals("Note interne", contract.getInternalNotes());
+
+        verify(vehicleService, never()).getVehicleById(any());
+        verify(customerService, never()).getCustomerById(any());
+
+        verify(contractRepository, times(1)).save(contract);
+    }
+
+    @Test
+    void updateContract_Success_DifferentVehicleAndCustomer_WithQueries() {
+        Contract contract = getContract();
+        when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockCustomer.getId()).thenReturn(customerId);
+
+        UUID newVehicleId = UUID.randomUUID();
+        UUID newCustomerId = UUID.randomUUID();
+        Vehicle newMockVehicle = mock(Vehicle.class);
+        Customer newMockCustomer = mock(Customer.class);
+
+        when(vehicleService.getVehicleById(newVehicleId)).thenReturn(newMockVehicle);
+        when(customerService.getCustomerById(newCustomerId)).thenReturn(newMockCustomer);
+
+        ContractUpdateRequest request = new ContractUpdateRequest(
+                LocalDate.now().plusDays(10),
+                LocalDate.now(),
+                newVehicleId,
+                newCustomerId,
+                BigDecimal.ZERO,
+                "Cambio veicolo",
+                null,
+                BigDecimal.valueOf(25000),
+                null,
+                null);
+
+        assertDoesNotThrow(() -> contractService.updateContract(contractId, request));
+
+        assertEquals(newMockVehicle, contract.getVehicle());
+        assertEquals(newMockCustomer, contract.getCustomer());
+
+        verify(vehicleService, times(1)).getVehicleById(newVehicleId);
+        verify(customerService, times(1)).getCustomerById(newCustomerId);
+
         verify(contractRepository, times(1)).save(contract);
     }
 

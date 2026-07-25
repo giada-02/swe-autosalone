@@ -128,7 +128,7 @@ public class Quotation extends SalesDocument {
     public void updateExpiration(ExpirationPolicy expirationPolicy) {
         if (expirationPolicy == ExpirationPolicy.CUSTOM)
             throw new IllegalArgumentException(
-                    "Cannot apply CUSTOM policy without providing an explicit expiration date");
+                    "Cannot apply a CUSTOM expiration policy without providing an explicit expiration date");
         updateExpiration(expirationPolicy, null);
     }
 

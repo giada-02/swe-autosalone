@@ -253,39 +253,33 @@ public class ContractService {
     }
 
     @Transactional
-    public void updateContract(UUID quotationId, ContractUpdateRequest request) {
-        Contract contract = getContractById(quotationId);
+    public void updateContract(UUID contractId, ContractUpdateRequest request) {
+        Contract contract = getContractById(contractId);
 
-        if (request.estimatedHandoverDate() != null) {
-            contract.setEstimatedHandoverDate(request.estimatedHandoverDate());
-        }
-        if (request.date() != null) {
-            contract.setDate(request.date());
-        }
-        if (request.vehicleId() != null) {
+        contract.setEstimatedHandoverDate(request.estimatedHandoverDate());
+        contract.setDate(request.date());
+        contract.setAdditionalFees(request.additionalFees());
+        contract.setPublicNotes(request.publicNotes());
+        contract.setInternalNotes(request.internalNotes());
+        contract.setVehicleSellingPriceSnapshot(request.vehicleSellingPrice());
+
+        if (!contract.getVehicle().getId().equals(request.vehicleId())) {
             Vehicle vehicle = vehicleService.getVehicleById(request.vehicleId());
             contract.setVehicle(vehicle);
         }
-        if (request.customerId() != null) {
+
+        if (!contract.getCustomer().getId().equals(request.customerId())) {
             Customer customer = customerService.getCustomerById(request.customerId());
             contract.setCustomer(customer);
         }
-        if (request.additionalFees() != null) {
-            contract.setAdditionalFees(request.additionalFees());
-        }
-        if (request.publicNotes() != null) {
-            contract.setPublicNotes(request.publicNotes());
-        }
-        if (request.internalNotes() != null) {
-            contract.setInternalNotes(request.internalNotes());
-        }
-        if (request.vehicleSellingPrice() != null) {
-            contract.setVehicleSellingPriceSnapshot(request.vehicleSellingPrice());
-        }
+
         if (request.discountType() != null) {
             DiscountStrategy newStrategy = request.discountType().createStrategy(request.discountValue());
             contract.setDiscountStrategy(newStrategy);
+        } else {
+            contract.setDiscountStrategy(null);
         }
+
         contractRepository.save(contract);
     }
 }

@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.QuotationUpdateRequest;
 import com.autosalone.dtos.SalesDocumentCreateRequest;
+import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleStatus;
 import com.autosalone.models.Contract;
@@ -345,16 +346,72 @@ class QuotationServiceTest {
     }
 
     @Test
-    void updateQuotation_Success() {
+    void updateQuotation_Success_SameVehicleAndCustomer_NoExtraQueries() {
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
-        QuotationUpdateRequest request = mock(QuotationUpdateRequest.class);
-        when(request.publicNotes()).thenReturn("Nuove note pubbliche");
-        when(request.date()).thenReturn(LocalDate.now().plusDays(1));
+
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockCustomer.getId()).thenReturn(customerId);
+
+        QuotationUpdateRequest request = new QuotationUpdateRequest(
+                LocalDate.now().plusDays(7),
+                ExpirationPolicy.CUSTOM,
+                LocalDate.now(),
+                vehicleId,
+                customerId,
+                BigDecimal.ZERO,
+                "Note pubbliche",
+                "Note interne",
+                BigDecimal.valueOf(10000),
+                null,
+                null);
 
         assertDoesNotThrow(() -> quotationService.updateQuotation(quotationId, request));
 
-        assertEquals("Nuove note pubbliche", quotation.getPublicNotes());
-        assertEquals(LocalDate.now().plusDays(1), quotation.getDate());
+        assertEquals("Note pubbliche", quotation.getPublicNotes());
+        assertEquals(LocalDate.now(), quotation.getDate());
+
+        verify(vehicleService, never()).getVehicleById(any());
+        verify(customerService, never()).getCustomerById(any());
+
+        verify(quotationRepository, times(1)).save(quotation);
+    }
+
+    @Test
+    void updateQuotation_Success_DifferentVehicleAndCustomer_WithQueries() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
+
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockCustomer.getId()).thenReturn(customerId);
+
+        UUID newVehicleId = UUID.randomUUID();
+        UUID newCustomerId = UUID.randomUUID();
+        Vehicle newMockVehicle = mock(Vehicle.class);
+        Customer newMockCustomer = mock(Customer.class);
+
+        when(vehicleService.getVehicleById(newVehicleId)).thenReturn(newMockVehicle);
+        when(customerService.getCustomerById(newCustomerId)).thenReturn(newMockCustomer);
+
+        QuotationUpdateRequest request = new QuotationUpdateRequest(
+                LocalDate.now().plusDays(7),
+                ExpirationPolicy.CUSTOM,
+                LocalDate.now(),
+                newVehicleId,
+                newCustomerId,
+                BigDecimal.ZERO,
+                "Cambio veicolo",
+                null,
+                BigDecimal.valueOf(15000),
+                null,
+                null);
+
+        assertDoesNotThrow(() -> quotationService.updateQuotation(quotationId, request));
+
+        assertEquals(newMockVehicle, quotation.getVehicle());
+        assertEquals(newMockCustomer, quotation.getCustomer());
+
+        verify(vehicleService, times(1)).getVehicleById(newVehicleId);
+        verify(customerService, times(1)).getCustomerById(newCustomerId);
+
         verify(quotationRepository, times(1)).save(quotation);
     }
 
