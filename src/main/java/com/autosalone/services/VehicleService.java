@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.DeadlineRequest;
-import com.autosalone.dtos.VehicleCreateRequest;
-import com.autosalone.dtos.VehicleUpdateRequest;
+import com.autosalone.dtos.VehicleRequest;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
@@ -61,7 +60,7 @@ public class VehicleService {
     // write
 
     @Transactional
-    public UUID addVehicle(VehicleCreateRequest request) {
+    public UUID addVehicle(VehicleRequest request) {
 
         Vehicle newVehicle = new Vehicle.VehicleBuilder()
                 .setBrand(request.brand())
@@ -169,40 +168,22 @@ public class VehicleService {
     }
 
     @Transactional
-    public void updateVehicle(UUID vehicleId, VehicleUpdateRequest request) {
+    public void updateVehicle(UUID vehicleId, VehicleRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
-        if (request.brand() != null) {
-            vehicle.setBrand(request.brand());
-        }
-        if (request.model() != null) {
-            vehicle.setModel(request.model());
-        }
-        if (request.color() != null) {
-            vehicle.setColor(request.color());
-        }
-        if (request.condition() != null) {
-            vehicle.setCondition(request.condition());
-        }
-        if (request.sellingPrice() != null) {
-            vehicle.setSellingPrice(request.sellingPrice());
-        }
-        if (request.handoverDate() != null) {
-            vehicle.setHandoverDate(request.handoverDate());
-        }
-        if (request.licensePlate() != null) {
-            vehicle.setLicensePlate(request.licensePlate());
-        }
-        if (request.registrationDate() != null) {
-            vehicle.setRegistrationDate(request.registrationDate());
-        }
-        if (request.kilometers() != null) {
-            vehicle.setKilometers(request.kilometers());
-        }
-        if (request.inShowroom() != null) {
-            vehicle.setIsInShowroom(request.inShowroom());
-        }
-        if (request.purchaseTransactionAmount() != null && request.purchaseTransactionDate() != null) {
+        vehicle.setBrand(request.brand());
+        vehicle.setModel(request.model());
+        vehicle.setColor(request.color());
+        vehicle.setCondition(request.condition());
+        vehicle.setSellingPrice(request.sellingPrice());
+        vehicle.setHandoverDate(request.handoverDate());
+        vehicle.setLicensePlate(request.licensePlate());
+        vehicle.setRegistrationDate(request.registrationDate());
+        vehicle.setKilometers(request.kilometers());
+        vehicle.setIsInShowroom(request.inShowroom());
+
+        if (request.purchaseTransactionAmount() != null && request.purchaseTransactionDate() != null
+                && vehicle.getPurchaseTransaction() == null) {
             Transaction transaction = TransactionFactory.createVehiclePurchase(vehicle,
                     request.purchaseTransactionAmount(), request.purchaseTransactionDate());
             vehicle.setPurchaseTransaction(transaction);
