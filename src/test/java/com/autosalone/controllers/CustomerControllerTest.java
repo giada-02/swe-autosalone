@@ -30,12 +30,12 @@ class CustomerControllerTest {
     private CustomerController customerController;
 
     private UUID customerId;
-    private CustomerRequest mockRequest;
+    private CustomerRequest customerRequest;
 
     @BeforeEach
     void setUp() {
         customerId = UUID.randomUUID();
-        mockRequest = new CustomerRequest("Mario", "Rossi", "12345", "test@test.com", "Roma", "00100", "CF", null);
+        customerRequest = new CustomerRequest("Mario", "Rossi", "12345", "test@test.com", "Roma", "00100", "CF", null);
     }
 
     @Test
@@ -63,9 +63,9 @@ class CustomerControllerTest {
 
     @Test
     void addCustomer_Returns201AndLocationHeader() {
-        when(customerService.addCustomer(mockRequest)).thenReturn(customerId);
+        when(customerService.addCustomer(customerRequest)).thenReturn(customerId);
 
-        Response response = customerController.addCustomer(mockRequest);
+        Response response = customerController.addCustomer(customerRequest);
 
         assertEquals(201, response.getStatus());
 
@@ -76,10 +76,10 @@ class CustomerControllerTest {
 
     @Test
     void updateCustomer_Returns204NoContent() {
-        Response response = customerController.updateCustomer(customerId, mockRequest);
+        Response response = customerController.updateCustomer(customerId, customerRequest);
 
         assertEquals(204, response.getStatus());
         assertNull(response.getEntity()); // no body
-        verify(customerService).updateCustomer(customerId, mockRequest);
+        verify(customerService).updateCustomer(customerId, customerRequest);
     }
 }
