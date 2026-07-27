@@ -24,6 +24,7 @@ import com.autosalone.dtos.SalesDocumentCreateRequest;
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Customer;
 import com.autosalone.models.Quotation;
@@ -90,7 +91,7 @@ class QuotationServiceTest {
     @Test
     void getQuotationById_NotFound() {
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             quotationService.getQuotationById(quotationId);
         });
     }
@@ -338,7 +339,7 @@ class QuotationServiceTest {
         UUID wrongCatalogItemId = UUID.randomUUID();
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             quotationService.updateAppliedItemPrice(quotationId, wrongCatalogItemId, BigDecimal.TEN);
         });
 

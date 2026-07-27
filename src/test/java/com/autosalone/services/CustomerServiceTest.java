@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.CustomerRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
 import com.autosalone.repositories.CustomerRepository;
 
@@ -63,7 +64,7 @@ class CustomerServiceTest {
     @Test
     void getCustomerById_NotFound() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             customerService.getCustomerById(customerId);
         });
     }

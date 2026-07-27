@@ -23,6 +23,7 @@ import com.autosalone.dtos.ContractUpdateRequest;
 import com.autosalone.dtos.SalesDocumentCreateRequest;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Customer;
 import com.autosalone.models.Quotation;
@@ -93,7 +94,7 @@ class ContractServiceTest {
     @Test
     void getContractById_NotFound() {
         when(contractRepository.findById(contractId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> contractService.getContractById(contractId));
+        assertThrows(ResourceNotFoundException.class, () -> contractService.getContractById(contractId));
     }
 
     @Test
@@ -364,7 +365,7 @@ class ContractServiceTest {
         UUID wrongCatalogItemId = UUID.randomUUID();
         when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             contractService.updateAppliedItemPrice(contractId, wrongCatalogItemId, BigDecimal.TEN);
         });
 

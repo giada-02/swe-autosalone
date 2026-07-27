@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.AccessoryRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.dtos.AccessoryPackageRequest;
 import com.autosalone.models.catalog.Accessory;
 import com.autosalone.models.catalog.AccessoryPackage;
@@ -65,7 +66,7 @@ class CatalogServiceTest {
     @Test
     void getItemById_NotFound() {
         when(catalogRepository.findById(accessoryId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             catalogService.getItemById(accessoryId);
         });
     }
@@ -114,7 +115,7 @@ class CatalogServiceTest {
         AccessoryRequest request = new AccessoryRequest("Test", null, BigDecimal.TEN);
         when(catalogRepository.findById(packageId)).thenReturn(Optional.of(accessoryPackage));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             catalogService.updateAccessory(packageId, request);
         });
 
@@ -155,7 +156,7 @@ class CatalogServiceTest {
         AccessoryPackageRequest request = new AccessoryPackageRequest("Test", null, null);
         when(catalogRepository.findById(accessoryId)).thenReturn(Optional.of(accessory));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             catalogService.updateAccessoryPackage(accessoryId, request);
         });
 

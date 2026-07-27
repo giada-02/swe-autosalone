@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.enums.SortOrder;
 import com.autosalone.enums.TransactionType;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Transaction;
 import com.autosalone.repositories.TransactionRepository;
 
@@ -57,7 +58,7 @@ class TransactionServiceTest {
     @Test
     void getTransactionById_NotFound() {
         when(transactionRepository.findById(transactionId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             transactionService.getTransactionById(transactionId);
         });
     }

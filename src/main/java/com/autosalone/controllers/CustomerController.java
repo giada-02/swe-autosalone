@@ -46,13 +46,13 @@ public class CustomerController {
         URI location = URI.create("/customers/" + newCustomerId);
         return Response.created(location)
                 .entity(java.util.Map.of("id", newCustomerId))
-                .build(); // 201 OK (Created)
+                .build(); // 201 Created
     }
 
     @PUT
     @Path("/{id}")
     public Response updateCustomer(@PathParam("id") UUID id, @Valid CustomerRequest request) {
         customerService.updateCustomer(id, request);
-        return Response.noContent().build(); // 204 OK (No Content)
+        return Response.noContent().build(); // 204 No Content
     }
 }

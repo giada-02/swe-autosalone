@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.OwnerRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Owner;
 import com.autosalone.repositories.OwnerRepository;
 
@@ -59,7 +60,7 @@ class OwnerServiceTest {
     @Test
     void getOwnerById_NotFound() {
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             ownerService.getOwnerById(ownerId);
         });
     }

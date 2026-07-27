@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.DeadlineRepository;
@@ -57,7 +58,7 @@ class DeadlineServiceTest {
     @Test
     void getDeadlineById_NotFound() {
         when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             deadlineService.getDeadlineById(deadlineId);
         });
     }

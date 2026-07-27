@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.User;
 import com.autosalone.repositories.UserRepository;
 
@@ -56,7 +57,7 @@ class UserServiceTest {
     @Test
     void getUserById_NotFound() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             userService.getUserById(userId);
         });
     }
@@ -72,7 +73,7 @@ class UserServiceTest {
     @Test
     void getUserByEmail_NotFound() {
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             userService.getUserByEmail(email);
         });
     }

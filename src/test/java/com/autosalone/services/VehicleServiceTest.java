@@ -27,6 +27,7 @@ import com.autosalone.dtos.VehicleRequest;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Quotation;
@@ -92,7 +93,7 @@ class VehicleServiceTest {
     @Test
     void getVehicleById_NotFound() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             vehicleService.getVehicleById(vehicleId);
         });
     }
