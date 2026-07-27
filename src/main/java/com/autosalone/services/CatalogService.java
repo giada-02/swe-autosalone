@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.autosalone.dtos.AccessoryRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.dtos.AccessoryPackageRequest;
 import com.autosalone.models.catalog.Accessory;
 import com.autosalone.models.catalog.AccessoryPackage;
@@ -27,7 +28,7 @@ public class CatalogService {
 
     public PurchasableItem getItemById(UUID id) {
         return catalogRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found of id: " + id));
     }
 
     public List<PurchasableItem> getPurchasableItems(String keyword, Boolean isArchived,
@@ -51,7 +52,7 @@ public class CatalogService {
         PurchasableItem item = getItemById(accessoryId);
 
         if (!(item instanceof Accessory accessory)) {
-            throw new IllegalArgumentException("This id does not belong to an accessory: " + accessoryId);
+            throw new ResourceNotFoundException("This id does not belong to an accessory: " + accessoryId);
         }
 
         accessory.setName(request.name());
@@ -86,7 +87,7 @@ public class CatalogService {
         PurchasableItem item = getItemById(accessoryPackageId);
 
         if (!(item instanceof AccessoryPackage accessoryPackage)) {
-            throw new IllegalArgumentException(
+            throw new ResourceNotFoundException(
                     "This id does not belong to an accessory package: " + accessoryPackageId);
         }
 

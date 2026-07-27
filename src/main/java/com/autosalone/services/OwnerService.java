@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.OwnerRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Owner;
 import com.autosalone.repositories.OwnerRepository;
 
@@ -21,7 +22,7 @@ public class OwnerService {
 
     public Owner getOwnerById(UUID id) {
         return ownerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Owner not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Owner not found of id: " + id));
     }
 
     public List<Owner> getOwners(Boolean isActive) {

@@ -11,6 +11,7 @@ import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Quotation;
@@ -45,7 +46,7 @@ public class VehicleService {
 
     public Vehicle getVehicleById(UUID id) {
         return vehicleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found of id: " + id));
     }
 
     public List<Vehicle> getVehicles(String keyword, String brand, VehicleCondition condition,
@@ -160,7 +161,7 @@ public class VehicleService {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         Deadline deadline = deadlineRepository.findById(deadlineId)
-                .orElseThrow(() -> new IllegalStateException("Deadline not found of id: " + deadlineId));
+                .orElseThrow(() -> new ResourceNotFoundException("Deadline not found of id: " + deadlineId));
 
         vehicle.removeDeadline(deadline);
 

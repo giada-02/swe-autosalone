@@ -11,6 +11,7 @@ import com.autosalone.dtos.ContractUpdateRequest;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
 import com.autosalone.models.Quotation;
 import com.autosalone.models.Transaction;
@@ -54,7 +55,7 @@ public class ContractService {
 
     public Contract getContractById(UUID id) {
         return contractRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Contract not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Contract not found of id: " + id));
     }
 
     public List<Contract> getContracts(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
@@ -225,7 +226,7 @@ public class ContractService {
                 .filter(applied -> applied.getItem().getId().equals(catalogItemId))
                 .findFirst()
                 .orElseThrow(
-                        () -> new IllegalArgumentException(
+                        () -> new ResourceNotFoundException(
                                 "Accessory of id: " + catalogItemId + " not found in this contract of id: "
                                         + contractId));
 

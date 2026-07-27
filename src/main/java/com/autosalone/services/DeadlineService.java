@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Deadline;
 import com.autosalone.repositories.DeadlineRepository;
 
@@ -22,7 +23,7 @@ public class DeadlineService {
 
     public Deadline getDeadlineById(UUID id) {
         return deadlineRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Deadline not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Deadline not found of id: " + id));
     }
 
     public List<Deadline> getDeadlinesByVehicleId(UUID vehicleId, boolean completed) {

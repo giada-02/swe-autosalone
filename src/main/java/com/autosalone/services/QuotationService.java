@@ -11,6 +11,7 @@ import com.autosalone.dtos.SalesDocumentCreateRequest;
 import com.autosalone.dtos.QuotationUpdateRequest;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Customer;
 import com.autosalone.models.Quotation;
@@ -50,7 +51,7 @@ public class QuotationService {
 
     public Quotation getQuotationById(UUID id) {
         return quotationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Quotation not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Quotation not found of id: " + id));
     }
 
     public List<Quotation> getQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
@@ -174,7 +175,7 @@ public class QuotationService {
                 .filter(applied -> applied.getItem().getId().equals(catalogItemId))
                 .findFirst()
                 .orElseThrow(
-                        () -> new IllegalArgumentException(
+                        () -> new ResourceNotFoundException(
                                 "Accessory of id: " + catalogItemId + " not found in this quotation of id: "
                                         + quotationId));
 

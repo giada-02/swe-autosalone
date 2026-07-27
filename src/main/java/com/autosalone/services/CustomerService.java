@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.CustomerRequest;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
 import com.autosalone.repositories.CustomerRepository;
 
@@ -21,7 +22,7 @@ public class CustomerService {
 
     public Customer getCustomerById(UUID id) {
         return customerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found of id: " + id));
     }
 
     public List<Customer> getCustomers(String keyword, Boolean isActive) {

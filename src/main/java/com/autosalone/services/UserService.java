@@ -3,6 +3,9 @@ package com.autosalone.services;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.autosalone.exceptions.ForbiddenException;
+import com.autosalone.exceptions.ResourceNotFoundException;
+import com.autosalone.exceptions.UnauthorizedException;
 import com.autosalone.models.User;
 import com.autosalone.repositories.UserRepository;
 
@@ -24,12 +27,12 @@ public class UserService {
 
     public User getUserById(UUID id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found of id: " + id));
     }
 
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found of email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found of email: " + email));
     }
 
     // write
@@ -99,23 +102,24 @@ public class UserService {
         Optional<User> optionalUser = userRepository.findByEmail(email);
 
         if (optionalUser.isEmpty()) {
-            throw new SecurityException("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         User user = optionalUser.get();
 
         if (!user.isActive()) {
-            throw new SecurityException("This user is not active");
+            throw new ForbiddenException("This user is not active");
         }
 
         if (user.getPassword() == null) {
-            throw new SecurityException("This user has not been configured, must activate and set a password to login");
+            throw new ForbiddenException(
+                    "This user has not been configured, must activate and set a password to login");
         }
 
         boolean isPasswordCorrect = verifyPassword(rawPassword, user.getPassword());
 
         if (!isPasswordCorrect) {
-            throw new SecurityException("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         return user;

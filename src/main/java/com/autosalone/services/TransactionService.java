@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.autosalone.enums.SortOrder;
 import com.autosalone.enums.TransactionType;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Transaction;
 import com.autosalone.models.TransactionFactory;
 import com.autosalone.repositories.TransactionRepository;
@@ -25,7 +26,7 @@ public class TransactionService {
 
     public Transaction getTransactionById(UUID id) {
         return transactionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Transaction not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found of id: " + id));
     }
 
     public List<Transaction> getTransactions(LocalDate dateFrom,
