@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.OwnerRequest;
+import com.autosalone.dtos.OwnerResponse;
 import com.autosalone.models.Owner;
 import com.autosalone.services.OwnerService;
 
@@ -27,14 +28,18 @@ public class OwnerController {
     @GET
     public Response getOwners(@QueryParam("isActive") Boolean isActive) {
         List<Owner> owners = ownerService.getOwners(isActive);
-        return Response.ok(owners).build(); // 200 OK
+        List<OwnerResponse> response = owners.stream()
+                .map(OwnerResponse::fromEntity)
+                .toList();
+        return Response.ok(response).build(); // 200 OK
     }
 
     @GET
     @Path("/{id}")
     public Response getOwnerById(@PathParam("id") UUID id) {
         Owner owner = ownerService.getOwnerById(id);
-        return Response.ok(owner).build(); // 200 OK
+        OwnerResponse response = OwnerResponse.fromEntity(owner);
+        return Response.ok(response).build(); // 200 OK
     }
 
     @POST

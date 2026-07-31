@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.CustomerRequest;
+import com.autosalone.dtos.CustomerResponse;
 import com.autosalone.models.Customer;
 import com.autosalone.services.CustomerService;
 
@@ -53,12 +54,21 @@ class CustomerControllerTest {
     @Test
     void getCustomerById_Returns200AndCustomer() {
         Customer mockCustomer = mock(Customer.class);
+        when(mockCustomer.getId()).thenReturn(customerId);
+        when(mockCustomer.getLastName()).thenReturn("Rossi");
+        when(mockCustomer.getResidenceCity()).thenReturn("Roma");
         when(customerService.getCustomerById(customerId)).thenReturn(mockCustomer);
 
         Response response = customerController.getCustomerById(customerId);
 
         assertEquals(200, response.getStatus());
-        assertEquals(mockCustomer, response.getEntity());
+
+        CustomerResponse customerResponse = (CustomerResponse) response.getEntity();
+        assertEquals(customerId, customerResponse.id());
+        assertEquals("Rossi", customerResponse.lastName());
+        assertEquals("Roma", customerResponse.residenceCity());
+
+        verify(customerService).getCustomerById(customerId);
     }
 
     @Test

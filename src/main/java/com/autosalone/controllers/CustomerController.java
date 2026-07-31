@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.CustomerRequest;
+import com.autosalone.dtos.CustomerResponse;
 import com.autosalone.models.Customer;
 import com.autosalone.services.CustomerService;
 
@@ -29,14 +30,18 @@ public class CustomerController {
             @QueryParam("keyword") String keyword,
             @QueryParam("isActive") Boolean isActive) {
         List<Customer> customers = customerService.getCustomers(keyword, isActive);
-        return Response.ok(customers).build(); // 200 OK
+        List<CustomerResponse> response = customers.stream()
+                .map(CustomerResponse::fromEntity)
+                .toList();
+        return Response.ok(response).build(); // 200 OK
     }
 
     @GET
     @Path("/{id}")
     public Response getCustomerById(@PathParam("id") UUID id) {
         Customer customer = customerService.getCustomerById(id);
-        return Response.ok(customer).build(); // 200 OK
+        CustomerResponse response = CustomerResponse.fromEntity(customer);
+        return Response.ok(response).build(); // 200 OK
     }
 
     @POST

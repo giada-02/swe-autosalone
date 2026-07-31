@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.OwnerRequest;
+import com.autosalone.dtos.OwnerResponse;
 import com.autosalone.models.Owner;
 import com.autosalone.services.OwnerService;
 
@@ -54,11 +55,18 @@ class OwnerControllerTest {
     void getOwnerById_Returns200AndOwner() {
         Owner mockOwner = mock(Owner.class);
         when(ownerService.getOwnerById(ownerId)).thenReturn(mockOwner);
+        when(mockOwner.getId()).thenReturn(ownerId);
+        when(mockOwner.getPhoneNumber()).thenReturn("3331234567");
 
         Response response = ownerController.getOwnerById(ownerId);
 
         assertEquals(200, response.getStatus());
-        assertEquals(mockOwner, response.getEntity());
+
+        OwnerResponse ownerResponse = (OwnerResponse) response.getEntity();
+        assertEquals(ownerId, ownerResponse.id());
+        assertEquals("3331234567", ownerResponse.phoneNumber());
+
+        verify(ownerService).getOwnerById(ownerId);
     }
 
     @Test
