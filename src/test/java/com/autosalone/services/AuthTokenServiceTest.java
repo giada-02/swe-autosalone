@@ -1,0 +1,108 @@
+package com.autosalone.services;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.autosalone.enums.TokenType;
+import com.autosalone.exceptions.ResourceNotFoundException;
+import com.autosalone.models.AuthToken;
+import com.autosalone.models.User;
+import com.autosalone.repositories.AuthTokenRepository;
+
+@ExtendWith(MockitoExtension.class)
+class AuthTokenServiceTest {
+
+    @Mock
+    private AuthTokenRepository tokenRepository;
+
+    @InjectMocks
+    private AuthTokenService tokenService;
+
+    private User mockUser;
+
+    @BeforeEach
+    void setUp() {
+        mockUser = mock(User.class);
+    }
+
+    @Test
+    void createRegistrationToken_ShouldGenerateValidTokenFor48Hours() {
+        AuthToken token = tokenService.createRegistrationToken(mockUser);
+
+        assertNotNull(token.getToken());
+        assertEquals(TokenType.REGISTRATION, token.getType());
+        assertEquals(mockUser, token.getUser());
+        verify(tokenRepository).save(any(AuthToken.class));
+    }
+
+    @Test
+    void createPasswordResetToken_ShouldGenerateValidTokenFor48Hours() {
+        AuthToken token = tokenService.createPasswordResetToken(mockUser);
+
+        assertNotNull(token.getToken());
+        assertEquals(TokenType.PASSWORD_RESET, token.getType());
+        assertEquals(mockUser, token.getUser());
+        verify(tokenRepository).save(any(AuthToken.class));
+    }
+
+    @Test
+    void validateToken_WhenValid_Success() {
+        String tokenString = "secure_token_123";
+        LocalDateTime futureDate = LocalDateTime.now().plusHours(1);
+        AuthToken validToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET, futureDate);
+
+        when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(validToken));
+
+        AuthToken result = tokenService.validateToken(tokenString, TokenType.PASSWORD_RESET);
+
+        assertEquals(validToken, result);
+    }
+
+    @Test
+    void validateToken_WhenInvalid_NotFound() {
+        String tokenString = "invalid_token";
+        when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> tokenService.validateToken(tokenString, TokenType.REGISTRATION));
+    }
+
+    @Test
+    void validateToken_FailsWithInvalidTokenType() {
+        String tokenString = "secure_token_123";
+        LocalDateTime futureDate = LocalDateTime.now().plusHours(1);
+        AuthToken resetToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET, futureDate);
+
+        when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(resetToken));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> tokenService.validateToken(tokenString, TokenType.REGISTRATION));
+    }
+
+    @Test
+    void validateToken_FailsWhenExpired() {
+        String tokenString = "secure_token_123";
+        LocalDateTime pastDate = LocalDateTime.now().minusHours(1);
+        AuthToken expiredToken = new AuthToken(tokenString, mockUser, TokenType.REGISTRATION, pastDate);
+
+        when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(expiredToken));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> tokenService.validateToken(tokenString, TokenType.REGISTRATION));
+    }
+}

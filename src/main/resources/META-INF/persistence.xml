@@ -22,6 +22,7 @@
         <class>com.autosalone.models.catalog.Accessory</class>
         <class>com.autosalone.models.catalog.AccessoryPackage</class>
         <class>com.autosalone.models.catalog.AuditableEntity</class>
+        <class>com.autosalone.models.AuthToken</class>
 
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
