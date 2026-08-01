@@ -67,31 +67,6 @@ public class CustomerRepositoryTest {
     }
 
     @Test
-    public void findByEmail_SuccessAndNotFound() {
-        em.getTransaction().begin();
-        Customer customer = new Customer.CustomerBuilder()
-                .setFirstName("Anna")
-                .setLastName("Neri")
-                .setEmail("anna.neri@example.com")
-                .setPhoneNumber("999888")
-                .setResidenceCity("Siena")
-                .build();
-        repository.save(customer);
-
-        em.getTransaction().commit();
-        em.clear();
-
-        // found
-        Optional<Customer> found = repository.findByEmail("anna.neri@example.com");
-        assertTrue(found.isPresent(), "Should find the customer by email");
-        assertEquals("Anna", found.get().getFirstName());
-
-        // not found
-        Optional<Customer> notFound = repository.findByEmail("non.esiste@example.com");
-        assertTrue(notFound.isEmpty(), "Should return empty Optional for non-existent email");
-    }
-
-    @Test
     public void findCustomers_WithDynamicFilters_ReturnsCorrectResults() {
         em.getTransaction().begin();
 

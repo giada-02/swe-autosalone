@@ -21,9 +21,13 @@ import com.autosalone.dtos.OwnerRequest;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Owner;
 import com.autosalone.repositories.OwnerRepository;
+import com.autosalone.repositories.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class OwnerServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private OwnerRepository ownerRepository;
@@ -79,7 +83,7 @@ class OwnerServiceTest {
 
     @Test
     void addOwner_Success() {
-        when(ownerRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.empty());
 
         ownerService.addOwner(ownerRequest);
 
@@ -94,7 +98,7 @@ class OwnerServiceTest {
 
     @Test
     void addOwner_FailsIfEmailAlreadyInUse() {
-        when(ownerRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.of(mockOwner));
+        when(userRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.of(mockOwner));
 
         assertThrows(IllegalStateException.class, () -> {
             ownerService.addOwner(ownerRequest);
@@ -110,7 +114,7 @@ class OwnerServiceTest {
 
         assertDoesNotThrow(() -> ownerService.updateOwner(ownerId, ownerRequest));
 
-        verify(ownerRepository, never()).findByEmail(anyString());
+        verify(userRepository, never()).findByEmail(anyString());
 
         verify(mockOwner).setFirstName("Mario");
         verify(mockOwner).setLastName("Rossi");
@@ -122,11 +126,11 @@ class OwnerServiceTest {
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
         when(mockOwner.getEmail()).thenReturn("vecchia.email@example.com");
 
-        when(ownerRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.empty());
 
         assertDoesNotThrow(() -> ownerService.updateOwner(ownerId, ownerRequest));
 
-        verify(ownerRepository).findByEmail(ownerRequest.email());
+        verify(userRepository).findByEmail(ownerRequest.email());
 
         verify(mockOwner).setEmail(ownerRequest.email());
         verify(ownerRepository).save(mockOwner);
@@ -138,7 +142,7 @@ class OwnerServiceTest {
         when(mockOwner.getEmail()).thenReturn("vecchia.email@example.com");
 
         Owner anotherOwner = mock(Owner.class);
-        when(ownerRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.of(anotherOwner));
+        when(userRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.of(anotherOwner));
 
         assertThrows(IllegalStateException.class, () -> {
             ownerService.updateOwner(ownerId, ownerRequest);

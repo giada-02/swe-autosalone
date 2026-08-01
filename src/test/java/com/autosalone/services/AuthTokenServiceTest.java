@@ -42,6 +42,7 @@ class AuthTokenServiceTest {
 
     @Test
     void createRegistrationToken_ShouldGenerateValidTokenFor48Hours() {
+        when(mockUser.getEmail()).thenReturn("test@email.com");
         AuthToken token = authTokenService.createRegistrationToken(mockUser);
 
         assertNotNull(token.getToken());

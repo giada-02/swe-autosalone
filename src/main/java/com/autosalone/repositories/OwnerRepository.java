@@ -22,13 +22,6 @@ public class OwnerRepository {
         return Optional.ofNullable(owner);
     }
 
-    public Optional<Owner> findByEmail(String email) {
-        return em.createQuery("SELECT o FROM Owner o WHERE o.email = :email", Owner.class)
-                .setParameter("email", email)
-                .getResultStream()
-                .findFirst();
-    }
-
     public List<Owner> findOwners(Boolean isActive) {
         StringBuilder jpql = new StringBuilder("SELECT o FROM Owner o WHERE 1=1");
 

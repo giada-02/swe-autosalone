@@ -13,6 +13,7 @@ public class QuotationExpirationScheduler {
     @Inject
     private QuotationService quotationService;
 
+    // Esecuzione: Tutti i giorni alle 00:01:00
     @Asynchronous(runAt = @Schedule(cron = "0 1 0 * * *"))
     public void checkExpiredQuotations() {
         System.out.println("Avvio job di background (Concurrency API): Verifica preventivi scaduti...");

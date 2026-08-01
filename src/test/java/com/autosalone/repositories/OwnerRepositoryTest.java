@@ -65,30 +65,6 @@ public class OwnerRepositoryTest {
     }
 
     @Test
-    public void findByEmail_SuccessAndNotFound() {
-        em.getTransaction().begin();
-        Owner owner = new Owner.OwnerBuilder()
-                .setFirstName("Anna")
-                .setLastName("Neri")
-                .setEmail("anna.neri@example.com")
-                .setPhoneNumber("999888")
-                .build();
-        repository.save(owner);
-
-        em.getTransaction().commit();
-        em.clear();
-
-        // found
-        Optional<Owner> found = repository.findByEmail("anna.neri@example.com");
-        assertTrue(found.isPresent(), "Should find the owner by email");
-        assertEquals("Anna", found.get().getFirstName());
-
-        // not found
-        Optional<Owner> notFound = repository.findByEmail("non.esiste@example.com");
-        assertTrue(notFound.isEmpty(), "Should return empty Optional for non-existent email");
-    }
-
-    @Test
     public void findOwners() {
         em.getTransaction().begin();
 

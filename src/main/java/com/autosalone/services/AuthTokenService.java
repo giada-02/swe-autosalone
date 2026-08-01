@@ -3,6 +3,7 @@ package com.autosalone.services;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Optional;
 
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
@@ -25,6 +26,27 @@ public class AuthTokenService {
 
     @Transactional
     public AuthToken createRegistrationToken(User user) {
+
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new IllegalStateException(
+                    "To send a registration invitation to the user, they must have an email address");
+        }
+
+        if (user.isActive() || user.getPassword() != null) {
+            throw new IllegalStateException("The user has already completed the registration in the past");
+        }
+
+        Optional<AuthToken> maybeExistingToken = authTokenRepository.findByUserAndType(user, TokenType.REGISTRATION);
+        if (maybeExistingToken.isPresent()) {
+            AuthToken existingToken = maybeExistingToken.get();
+            if (!existingToken.isExpired()) {
+                throw new IllegalStateException(
+                        "There's an active registration token already for this user, wait for its expiration");
+            } else {
+                authTokenRepository.delete(existingToken);
+            }
+        }
+
         String tokenString = generateSecureToken();
         LocalDateTime expiryDate = LocalDateTime.now().plusHours(REGISTRATION_TOKEN_EXPIRATION_HOURS);
 
@@ -63,6 +85,13 @@ public class AuthTokenService {
     @Transactional
     public void deleteToken(AuthToken token) {
         authTokenRepository.delete(token);
+    }
+
+    @Transactional
+    public void deleteExpiredAuthTokens() {
+        LocalDateTime now = LocalDateTime.now();
+        int deletedCount = authTokenRepository.deleteAllExpiredTokens(now);
+        System.out.println("Deleted " + deletedCount + " expired tokens");
     }
 
     /**

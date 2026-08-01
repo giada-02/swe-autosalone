@@ -102,8 +102,6 @@ class UserControllerTest {
     void sendRegistrationInvite_Returns204NoContent() {
         User mockUser = mock(User.class);
         when(mockUser.getEmail()).thenReturn("test@email.com");
-        when(mockUser.isActive()).thenReturn(false);
-        when(mockUser.getPassword()).thenReturn(null);
 
         AuthToken token = new AuthToken("token_123", mockUser, TokenType.REGISTRATION, null);
 

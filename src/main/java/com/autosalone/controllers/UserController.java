@@ -71,10 +71,6 @@ public class UserController {
     public Response sendRegistrationInvite(@PathParam("id") UUID id) {
         User user = userService.getUserById(id);
 
-        if (user.isActive() || user.getPassword() != null) {
-            throw new IllegalStateException("The user has already completed the registration in the past");
-        }
-
         AuthToken token = authTokenService.createRegistrationToken(user);
 
         emailService.sendRegistrationInvite(user.getEmail(), token.getToken());

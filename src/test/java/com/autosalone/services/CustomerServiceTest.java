@@ -21,9 +21,13 @@ import com.autosalone.dtos.CustomerRequest;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
 import com.autosalone.repositories.CustomerRepository;
+import com.autosalone.repositories.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private CustomerRepository customerRepository;
@@ -83,7 +87,7 @@ class CustomerServiceTest {
 
     @Test
     void addCustomer_Success() {
-        when(customerRepository.findByEmail(customerRequest.email())).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(customerRequest.email())).thenReturn(Optional.empty());
 
         customerService.addCustomer(customerRequest);
 
@@ -98,7 +102,7 @@ class CustomerServiceTest {
 
     @Test
     void addCustomer_FailsIfEmailAlreadyInUse() {
-        when(customerRepository.findByEmail(customerRequest.email())).thenReturn(Optional.of(mockCustomer));
+        when(userRepository.findByEmail(customerRequest.email())).thenReturn(Optional.of(mockCustomer));
 
         assertThrows(IllegalStateException.class, () -> {
             customerService.addCustomer(customerRequest);
@@ -114,7 +118,7 @@ class CustomerServiceTest {
 
         assertDoesNotThrow(() -> customerService.updateCustomer(customerId, customerRequest));
 
-        verify(customerRepository, never()).findByEmail(anyString());
+        verify(userRepository, never()).findByEmail(anyString());
 
         verify(mockCustomer).setFirstName("Mario");
         verify(mockCustomer).setLastName("Rossi");
@@ -126,11 +130,11 @@ class CustomerServiceTest {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
         when(mockCustomer.getEmail()).thenReturn("vecchia.email@example.com");
 
-        when(customerRepository.findByEmail(customerRequest.email())).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(customerRequest.email())).thenReturn(Optional.empty());
 
         assertDoesNotThrow(() -> customerService.updateCustomer(customerId, customerRequest));
 
-        verify(customerRepository).findByEmail(customerRequest.email());
+        verify(userRepository).findByEmail(customerRequest.email());
 
         verify(mockCustomer).setEmail(customerRequest.email());
         verify(customerRepository).save(mockCustomer);
@@ -142,7 +146,7 @@ class CustomerServiceTest {
         when(mockCustomer.getEmail()).thenReturn("vecchia.email@example.com");
 
         Customer anotherCustomer = mock(Customer.class);
-        when(customerRepository.findByEmail(customerRequest.email())).thenReturn(Optional.of(anotherCustomer));
+        when(userRepository.findByEmail(customerRequest.email())).thenReturn(Optional.of(anotherCustomer));
 
         assertThrows(IllegalStateException.class, () -> {
             customerService.updateCustomer(customerId, customerRequest);

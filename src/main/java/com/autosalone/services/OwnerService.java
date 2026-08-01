@@ -7,6 +7,7 @@ import com.autosalone.dtos.OwnerRequest;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Owner;
 import com.autosalone.repositories.OwnerRepository;
+import com.autosalone.repositories.UserRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,6 +18,9 @@ public class OwnerService {
 
     @Inject
     private OwnerRepository ownerRepository;
+
+    @Inject
+    private UserRepository userRepository;
 
     // read
 
@@ -34,7 +38,7 @@ public class OwnerService {
     @Transactional
     public UUID addOwner(OwnerRequest request) {
 
-        if (ownerRepository.findByEmail(request.email()).isPresent()) {
+        if (request.email() != null && userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalStateException("This email is already in use");
         }
 
@@ -53,8 +57,8 @@ public class OwnerService {
     public void updateOwner(UUID ownerId, OwnerRequest request) {
         Owner owner = getOwnerById(ownerId);
 
-        if (!owner.getEmail().equals(request.email())) {
-            ownerRepository.findByEmail(request.email()).ifPresent(existing -> {
+        if (owner.getEmail() != null && request.email() != null && !owner.getEmail().equals(request.email())) {
+            userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });
         }

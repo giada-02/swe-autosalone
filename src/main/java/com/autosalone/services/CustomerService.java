@@ -7,6 +7,7 @@ import com.autosalone.dtos.CustomerRequest;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
 import com.autosalone.repositories.CustomerRepository;
+import com.autosalone.repositories.UserRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,6 +18,9 @@ public class CustomerService {
 
     @Inject
     private CustomerRepository customerRepository;
+
+    @Inject
+    private UserRepository userRepository;
 
     // read
 
@@ -34,7 +38,7 @@ public class CustomerService {
     @Transactional
     public UUID addCustomer(CustomerRequest request) {
 
-        if (customerRepository.findByEmail(request.email()).isPresent()) {
+        if (request.email() != null && userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalStateException("This email is already in use");
         }
 
@@ -57,8 +61,8 @@ public class CustomerService {
     public void updateCustomer(UUID customerId, CustomerRequest request) {
         Customer customer = getCustomerById(customerId);
 
-        if (!customer.getEmail().equals(request.email())) {
-            customerRepository.findByEmail(request.email()).ifPresent(existing -> {
+        if (customer.getEmail() != null && request.email() != null && !customer.getEmail().equals(request.email())) {
+            userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });
         }

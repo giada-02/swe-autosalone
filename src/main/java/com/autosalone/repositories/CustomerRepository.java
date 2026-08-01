@@ -24,13 +24,6 @@ public class CustomerRepository {
         return Optional.ofNullable(customer);
     }
 
-    public Optional<Customer> findByEmail(String email) {
-        return em.createQuery("SELECT c FROM Customer c WHERE c.email = :email", Customer.class)
-                .setParameter("email", email)
-                .getResultStream()
-                .findFirst();
-    }
-
     public List<Customer> findCustomers(
             String keyword, Boolean isActive) {
 
