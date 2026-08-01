@@ -18,7 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.autosalone.dtos.EmailUpdateRequest;
 import com.autosalone.dtos.PasswordUpdateRequest;
 import com.autosalone.dtos.UserResponse;
+import com.autosalone.enums.TokenType;
+import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
+import com.autosalone.services.AuthTokenService;
+import com.autosalone.services.EmailService;
 import com.autosalone.services.UserService;
 
 import jakarta.ws.rs.core.Response;
@@ -28,6 +32,12 @@ class UserControllerTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private AuthTokenService authTokenService;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private UserController userController;
@@ -44,7 +54,7 @@ class UserControllerTest {
         User mockUser = mock(User.class);
         when(userService.getUserById(userId)).thenReturn(mockUser);
         when(mockUser.getId()).thenReturn(userId);
-        when(mockUser.getEmail()).thenReturn("test@test.com");
+        when(mockUser.getEmail()).thenReturn("test@email.com");
 
         Response response = userController.getUserById(userId);
 
@@ -52,7 +62,7 @@ class UserControllerTest {
 
         UserResponse userResponse = (UserResponse) response.getEntity();
         assertEquals(userId, userResponse.id());
-        assertEquals("test@test.com", userResponse.email());
+        assertEquals("test@email.com", userResponse.email());
 
         verify(userService).getUserById(userId);
     }
@@ -90,9 +100,23 @@ class UserControllerTest {
 
     @Test
     void sendRegistrationInvite_Returns204NoContent() {
+        User mockUser = mock(User.class);
+        when(mockUser.getEmail()).thenReturn("test@email.com");
+        when(mockUser.isActive()).thenReturn(false);
+        when(mockUser.getPassword()).thenReturn(null);
+
+        AuthToken token = new AuthToken("token_123", mockUser, TokenType.REGISTRATION, null);
+
+        when(userService.getUserById(userId)).thenReturn(mockUser);
+        when(authTokenService.createRegistrationToken(mockUser)).thenReturn(token);
+
         Response response = userController.sendRegistrationInvite(userId);
-        // TODO
+
         assertEquals(204, response.getStatus());
         assertNull(response.getEntity()); // no body
+
+        verify(userService).getUserById(userId);
+        verify(authTokenService).createRegistrationToken(mockUser);
+        verify(emailService).sendRegistrationInvite("test@email.com", "token_123");
     }
 }

@@ -5,7 +5,10 @@ import java.util.UUID;
 import com.autosalone.dtos.EmailUpdateRequest;
 import com.autosalone.dtos.PasswordUpdateRequest;
 import com.autosalone.dtos.UserResponse;
+import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
+import com.autosalone.services.AuthTokenService;
+import com.autosalone.services.EmailService;
 import com.autosalone.services.UserService;
 
 import jakarta.inject.Inject;
@@ -27,6 +30,12 @@ public class UserController {
 
     @Inject
     private UserService userService;
+
+    @Inject
+    private AuthTokenService authTokenService;
+
+    @Inject
+    private EmailService emailService;
 
     @GET
     @Path("/{id}")
@@ -60,7 +69,17 @@ public class UserController {
     @POST
     @Path("/{id}/invite")
     public Response sendRegistrationInvite(@PathParam("id") UUID id) {
-        // TODO
+        User user = userService.getUserById(id);
+
+        if (user.isActive() || user.getPassword() != null) {
+            throw new IllegalStateException("The user has already completed the registration in the past");
+        }
+
+        AuthToken token = authTokenService.createRegistrationToken(user);
+
+        emailService.sendRegistrationInvite(user.getEmail(), token.getToken());
+
         return Response.noContent().build(); // 204 No Content
     }
+
 }

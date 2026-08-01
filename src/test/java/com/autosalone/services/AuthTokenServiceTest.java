@@ -31,7 +31,7 @@ class AuthTokenServiceTest {
     private AuthTokenRepository tokenRepository;
 
     @InjectMocks
-    private AuthTokenService tokenService;
+    private AuthTokenService authTokenService;
 
     private User mockUser;
 
@@ -42,7 +42,7 @@ class AuthTokenServiceTest {
 
     @Test
     void createRegistrationToken_ShouldGenerateValidTokenFor48Hours() {
-        AuthToken token = tokenService.createRegistrationToken(mockUser);
+        AuthToken token = authTokenService.createRegistrationToken(mockUser);
 
         assertNotNull(token.getToken());
         assertEquals(TokenType.REGISTRATION, token.getType());
@@ -52,7 +52,7 @@ class AuthTokenServiceTest {
 
     @Test
     void createPasswordResetToken_ShouldGenerateValidTokenFor48Hours() {
-        AuthToken token = tokenService.createPasswordResetToken(mockUser);
+        AuthToken token = authTokenService.createPasswordResetToken(mockUser);
 
         assertNotNull(token.getToken());
         assertEquals(TokenType.PASSWORD_RESET, token.getType());
@@ -68,7 +68,7 @@ class AuthTokenServiceTest {
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(validToken));
 
-        AuthToken result = tokenService.validateToken(tokenString, TokenType.PASSWORD_RESET);
+        AuthToken result = authTokenService.validateToken(tokenString, TokenType.PASSWORD_RESET);
 
         assertEquals(validToken, result);
     }
@@ -79,7 +79,7 @@ class AuthTokenServiceTest {
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> tokenService.validateToken(tokenString, TokenType.REGISTRATION));
+                () -> authTokenService.validateToken(tokenString, TokenType.REGISTRATION));
     }
 
     @Test
@@ -91,7 +91,7 @@ class AuthTokenServiceTest {
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(resetToken));
 
         assertThrows(IllegalArgumentException.class,
-                () -> tokenService.validateToken(tokenString, TokenType.REGISTRATION));
+                () -> authTokenService.validateToken(tokenString, TokenType.REGISTRATION));
     }
 
     @Test
@@ -103,6 +103,6 @@ class AuthTokenServiceTest {
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(expiredToken));
 
         assertThrows(IllegalArgumentException.class,
-                () -> tokenService.validateToken(tokenString, TokenType.REGISTRATION));
+                () -> authTokenService.validateToken(tokenString, TokenType.REGISTRATION));
     }
 }
