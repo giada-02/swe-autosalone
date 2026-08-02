@@ -309,7 +309,7 @@ class UserServiceTest {
         when(mockToken.getUser()).thenReturn(mockUser);
 
         when(authTokenService.validateToken(tokenString, TokenType.PASSWORD_RESET)).thenReturn(mockToken);
-        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_password!");
+        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_password");
 
         userService.completePasswordReset(tokenString, "new_password");
 
