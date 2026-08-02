@@ -17,9 +17,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.dtos.CustomerListResponse;
 import com.autosalone.dtos.CustomerRequest;
+import com.autosalone.dtos.CustomerResponse;
+import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
+import com.autosalone.models.AuthToken;
 import com.autosalone.models.Customer;
+import com.autosalone.repositories.AuthTokenRepository;
 import com.autosalone.repositories.CustomerRepository;
 import com.autosalone.repositories.UserRepository;
 
@@ -28,6 +33,9 @@ class CustomerServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AuthTokenRepository authTokenRepository;
 
     @Mock
     private CustomerRepository customerRepository;
@@ -60,9 +68,9 @@ class CustomerServiceTest {
     @Test
     void getCustomerById_Success() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
-        Customer result = customerService.getCustomerById(customerId);
-        assertNotNull(result);
-        assertEquals(mockCustomer, result);
+        Customer response = customerService.getCustomerById(customerId);
+        assertNotNull(response);
+        assertEquals(mockCustomer, response);
     }
 
     @Test
@@ -74,12 +82,52 @@ class CustomerServiceTest {
     }
 
     @Test
+    void getCustomerResponseById_Success() {
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
+        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
+        when(mockCustomer.getId()).thenReturn(customerId);
+
+        CustomerResponse response = customerService.getCustomerResponseById(customerId);
+
+        assertNotNull(response);
+        assertEquals(customerId, response.id());
+        assertFalse(response.hasActiveInvitation());
+    }
+
+    @Test
+    void getCustomerResponseById_WithActiveInvitation_Success() {
+        AuthToken activeToken = mock(AuthToken.class);
+        when(activeToken.isExpired()).thenReturn(false);
+        when(mockCustomer.getId()).thenReturn(customerId);
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
+        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION))
+                .thenReturn(Optional.of(activeToken));
+
+        CustomerResponse response = customerService.getCustomerResponseById(customerId);
+
+        assertNotNull(response);
+        assertEquals(customerId, response.id());
+        assertTrue(response.hasActiveInvitation());
+    }
+
+    @Test
+    void getCustomerResponseById_NotFound() {
+        when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            customerService.getCustomerResponseById(customerId);
+        });
+    }
+
+    @Test
     void getCustomers_Success() {
         when(customerRepository.findCustomers("Mario", true)).thenReturn(List.of(mockCustomer));
+        when(mockCustomer.getId()).thenReturn(customerId);
 
-        List<Customer> results = customerService.getCustomers("Mario", true);
+        List<CustomerListResponse> responses = customerService.getCustomers("Mario", true);
 
-        assertEquals(1, results.size());
+        assertEquals(1, responses.size());
+        assertEquals(customerId, responses.get(0).id());
         verify(customerRepository).findCustomers("Mario", true);
     }
 
@@ -89,7 +137,7 @@ class CustomerServiceTest {
     void addCustomer_Success() {
         when(userRepository.findByEmail(customerRequest.email())).thenReturn(Optional.empty());
 
-        customerService.addCustomer(customerRequest);
+        CustomerResponse response = customerService.addCustomer(customerRequest);
 
         ArgumentCaptor<Customer> captor = ArgumentCaptor.forClass(Customer.class);
         verify(customerRepository).save(captor.capture());
@@ -98,6 +146,9 @@ class CustomerServiceTest {
         assertEquals("Mario", savedCustomer.getFirstName());
         assertEquals("Rossi", savedCustomer.getLastName());
         assertEquals("mario.rossi@example.com", savedCustomer.getEmail());
+
+        assertNotNull(response);
+        assertFalse(response.hasActiveInvitation());
     }
 
     @Test
@@ -114,6 +165,7 @@ class CustomerServiceTest {
     @Test
     void updateCustomer_Success_SameEmail() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
+        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
         when(mockCustomer.getEmail()).thenReturn(customerRequest.email());
 
         assertDoesNotThrow(() -> customerService.updateCustomer(customerId, customerRequest));
@@ -128,6 +180,7 @@ class CustomerServiceTest {
     @Test
     void updateCustomer_Success_DifferentEmail() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
+        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
         when(mockCustomer.getEmail()).thenReturn("vecchia.email@example.com");
 
         when(userRepository.findByEmail(customerRequest.email())).thenReturn(Optional.empty());
@@ -143,6 +196,7 @@ class CustomerServiceTest {
     @Test
     void updateCustomer_FailsIfDifferentEmailAlreadyInUse() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
+        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
         when(mockCustomer.getEmail()).thenReturn("vecchia.email@example.com");
 
         Customer anotherCustomer = mock(Customer.class);

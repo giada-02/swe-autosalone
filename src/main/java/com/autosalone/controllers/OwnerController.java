@@ -4,9 +4,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.autosalone.dtos.OwnerListResponse;
 import com.autosalone.dtos.OwnerRequest;
 import com.autosalone.dtos.OwnerResponse;
-import com.autosalone.models.Owner;
 import com.autosalone.services.OwnerService;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -27,35 +27,29 @@ public class OwnerController {
 
     @GET
     public Response getOwners(@QueryParam("isActive") Boolean isActive) {
-        List<Owner> owners = ownerService.getOwners(isActive);
-        List<OwnerResponse> response = owners.stream()
-                .map(OwnerResponse::fromEntity)
-                .toList();
-        return Response.ok(response).build(); // 200 OK
+        List<OwnerListResponse> owners = ownerService.getOwners(isActive);
+        return Response.ok(owners).build(); // 200 OK
     }
 
     @GET
     @Path("/{id}")
     public Response getOwnerById(@PathParam("id") UUID id) {
-        Owner owner = ownerService.getOwnerById(id);
-        OwnerResponse response = OwnerResponse.fromEntity(owner);
-        return Response.ok(response).build(); // 200 OK
+        OwnerResponse owner = ownerService.getOwnerResponseById(id);
+        return Response.ok(owner).build(); // 200 OK
     }
 
     @POST
     public Response addOwner(@Valid OwnerRequest request) {
-        UUID newOwnerId = ownerService.addOwner(request);
+        OwnerResponse owner = ownerService.addOwner(request);
 
-        URI location = URI.create("/owners/" + newOwnerId);
-        return Response.created(location)
-                .entity(java.util.Map.of("id", newOwnerId))
-                .build(); // 201 Created
+        URI location = URI.create("/owners/" + owner.id());
+        return Response.created(location).entity(owner).build(); // 201 Created
     }
 
     @PUT
     @Path("/{id}")
     public Response updateOwner(@PathParam("id") UUID id, @Valid OwnerRequest request) {
-        ownerService.updateOwner(id, request);
-        return Response.noContent().build(); // 204 No Content
+        OwnerResponse owner = ownerService.updateOwner(id, request);
+        return Response.ok(owner).build(); // 200 OK
     }
 }

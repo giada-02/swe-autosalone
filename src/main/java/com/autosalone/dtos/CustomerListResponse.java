@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.autosalone.models.Customer;
 
-public record CustomerResponse(
+public record CustomerListResponse(
         UUID id,
         String firstName,
         String lastName,
@@ -14,11 +14,10 @@ public record CustomerResponse(
         String residenceCity,
         String zipCode,
         String fiscalCode,
-        String vatNumber,
-        boolean hasActiveInvitation) {
+        String vatNumber) {
 
-    public static CustomerResponse fromEntity(Customer customer, boolean hasActiveInvitation) {
-        return new CustomerResponse(
+    public static CustomerListResponse fromEntity(Customer customer) {
+        return new CustomerListResponse(
                 customer.getId(),
                 customer.getFirstName(),
                 customer.getLastName(),
@@ -28,7 +27,6 @@ public record CustomerResponse(
                 customer.getResidenceCity(),
                 customer.getZipCode(),
                 customer.getFiscalCode(),
-                customer.getVatNumber(),
-                hasActiveInvitation);
+                customer.getVatNumber());
     }
 }

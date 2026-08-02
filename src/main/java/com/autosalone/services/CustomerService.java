@@ -3,9 +3,13 @@ package com.autosalone.services;
 import java.util.List;
 import java.util.UUID;
 
+import com.autosalone.dtos.CustomerListResponse;
 import com.autosalone.dtos.CustomerRequest;
+import com.autosalone.dtos.CustomerResponse;
+import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
+import com.autosalone.repositories.AuthTokenRepository;
 import com.autosalone.repositories.CustomerRepository;
 import com.autosalone.repositories.UserRepository;
 
@@ -22,6 +26,9 @@ public class CustomerService {
     @Inject
     private UserRepository userRepository;
 
+    @Inject
+    private AuthTokenRepository authTokenRepository;
+
     // read
 
     public Customer getCustomerById(UUID id) {
@@ -29,14 +36,29 @@ public class CustomerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found of id: " + id));
     }
 
-    public List<Customer> getCustomers(String keyword, Boolean isActive) {
-        return customerRepository.findCustomers(keyword, isActive);
+    private boolean hasActiveInvitation(Customer customer) {
+        return authTokenRepository
+                .findByUserAndType(customer, TokenType.REGISTRATION)
+                .map(token -> !token.isExpired())
+                .orElse(false);
+    }
+
+    public CustomerResponse getCustomerResponseById(UUID id) {
+        Customer customer = getCustomerById(id);
+        boolean hasActiveInvitation = hasActiveInvitation(customer);
+        return CustomerResponse.fromEntity(customer, hasActiveInvitation);
+    }
+
+    public List<CustomerListResponse> getCustomers(String keyword, Boolean isActive) {
+        return customerRepository.findCustomers(keyword, isActive).stream()
+                .map(CustomerListResponse::fromEntity)
+                .toList();
     }
 
     // write
 
     @Transactional
-    public UUID addCustomer(CustomerRequest request) {
+    public CustomerResponse addCustomer(CustomerRequest request) {
 
         if (request.email() != null && userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalStateException("This email is already in use");
@@ -54,12 +76,13 @@ public class CustomerService {
                 .build();
 
         customerRepository.save(customer);
-        return customer.getId();
+        return CustomerResponse.fromEntity(customer, false);
     }
 
     @Transactional
-    public void updateCustomer(UUID customerId, CustomerRequest request) {
-        Customer customer = getCustomerById(customerId);
+    public CustomerResponse updateCustomer(UUID id, CustomerRequest request) {
+        Customer customer = getCustomerById(id);
+        boolean hasActiveInvitation = hasActiveInvitation(customer);
 
         if (customer.getEmail() != null && request.email() != null && !customer.getEmail().equals(request.email())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
@@ -77,6 +100,6 @@ public class CustomerService {
         customer.setVatNumber(request.vatNumber());
 
         customerRepository.save(customer);
+        return CustomerResponse.fromEntity(customer, hasActiveInvitation);
     }
-
 }

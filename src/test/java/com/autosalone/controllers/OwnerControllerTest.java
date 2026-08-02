@@ -14,9 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.dtos.OwnerListResponse;
 import com.autosalone.dtos.OwnerRequest;
 import com.autosalone.dtos.OwnerResponse;
-import com.autosalone.models.Owner;
 import com.autosalone.services.OwnerService;
 
 import jakarta.ws.rs.core.Response;
@@ -41,8 +41,9 @@ class OwnerControllerTest {
 
     @Test
     void getOwners_Returns200AndList() {
-        Owner mockOwner = mock(Owner.class);
-        when(ownerService.getOwners(true)).thenReturn(List.of(mockOwner));
+        OwnerListResponse ownerListResponse = new OwnerListResponse(ownerId, "Mario", "Rossi", "12345", "test@test.com",
+                true);
+        when(ownerService.getOwners(true)).thenReturn(List.of(ownerListResponse));
 
         Response response = ownerController.getOwners(true);
 
@@ -53,10 +54,10 @@ class OwnerControllerTest {
 
     @Test
     void getOwnerById_Returns200AndOwner() {
-        Owner mockOwner = mock(Owner.class);
-        when(ownerService.getOwnerById(ownerId)).thenReturn(mockOwner);
-        when(mockOwner.getId()).thenReturn(ownerId);
-        when(mockOwner.getPhoneNumber()).thenReturn("3331234567");
+        OwnerResponse mockOwnerResponse = mock(OwnerResponse.class);
+        when(mockOwnerResponse.id()).thenReturn(ownerId);
+        when(mockOwnerResponse.phoneNumber()).thenReturn("3331234567");
+        when(ownerService.getOwnerResponseById(ownerId)).thenReturn(mockOwnerResponse);
 
         Response response = ownerController.getOwnerById(ownerId);
 
@@ -66,12 +67,14 @@ class OwnerControllerTest {
         assertEquals(ownerId, ownerResponse.id());
         assertEquals("3331234567", ownerResponse.phoneNumber());
 
-        verify(ownerService).getOwnerById(ownerId);
+        verify(ownerService).getOwnerResponseById(ownerId);
     }
 
     @Test
-    void addOwner_Returns201AndLocationHeader() {
-        when(ownerService.addOwner(ownerRequest)).thenReturn(ownerId);
+    void addOwner_Returns201AndLocationHeaderWithBody() {
+        OwnerResponse mockOwnerResponse = mock(OwnerResponse.class);
+        when(mockOwnerResponse.id()).thenReturn(ownerId);
+        when(ownerService.addOwner(ownerRequest)).thenReturn(mockOwnerResponse);
 
         Response response = ownerController.addOwner(ownerRequest);
 
@@ -80,14 +83,19 @@ class OwnerControllerTest {
         URI location = response.getLocation();
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/owners/" + ownerId));
+
+        assertEquals(mockOwnerResponse, response.getEntity());
     }
 
     @Test
-    void updateOwner_Returns204NoContent() {
+    void updateOwner_Returns200AndUpdatedOwner() {
+        OwnerResponse mockOwnerResponse = mock(OwnerResponse.class);
+        when(ownerService.updateOwner(ownerId, ownerRequest)).thenReturn(mockOwnerResponse);
+
         Response response = ownerController.updateOwner(ownerId, ownerRequest);
 
-        assertEquals(204, response.getStatus());
-        assertNull(response.getEntity()); // no body
+        assertEquals(200, response.getStatus());
+        assertEquals(mockOwnerResponse, response.getEntity());
         verify(ownerService).updateOwner(ownerId, ownerRequest);
     }
 }

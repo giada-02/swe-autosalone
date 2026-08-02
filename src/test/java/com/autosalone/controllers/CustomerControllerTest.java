@@ -14,9 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.dtos.CustomerListResponse;
 import com.autosalone.dtos.CustomerRequest;
 import com.autosalone.dtos.CustomerResponse;
-import com.autosalone.models.Customer;
 import com.autosalone.services.CustomerService;
 
 import jakarta.ws.rs.core.Response;
@@ -41,8 +41,10 @@ class CustomerControllerTest {
 
     @Test
     void getCustomers_Returns200AndList() {
-        Customer mockCustomer = mock(Customer.class);
-        when(customerService.getCustomers("Mario", true)).thenReturn(List.of(mockCustomer));
+        CustomerListResponse customerListResponse = new CustomerListResponse(
+                customerId, "Mario", "Rossi", "12345", "test@test.com",
+                true, "Roma", "00100", "CF", null);
+        when(customerService.getCustomers("Mario", true)).thenReturn(List.of(customerListResponse));
 
         Response response = customerController.getCustomers("Mario", true);
 
@@ -53,11 +55,11 @@ class CustomerControllerTest {
 
     @Test
     void getCustomerById_Returns200AndCustomer() {
-        Customer mockCustomer = mock(Customer.class);
-        when(mockCustomer.getId()).thenReturn(customerId);
-        when(mockCustomer.getLastName()).thenReturn("Rossi");
-        when(mockCustomer.getResidenceCity()).thenReturn("Roma");
-        when(customerService.getCustomerById(customerId)).thenReturn(mockCustomer);
+        CustomerResponse mockCustomerResponse = mock(CustomerResponse.class);
+        when(mockCustomerResponse.id()).thenReturn(customerId);
+        when(mockCustomerResponse.lastName()).thenReturn("Rossi");
+        when(mockCustomerResponse.residenceCity()).thenReturn("Roma");
+        when(customerService.getCustomerResponseById(customerId)).thenReturn(mockCustomerResponse);
 
         Response response = customerController.getCustomerById(customerId);
 
@@ -68,12 +70,14 @@ class CustomerControllerTest {
         assertEquals("Rossi", customerResponse.lastName());
         assertEquals("Roma", customerResponse.residenceCity());
 
-        verify(customerService).getCustomerById(customerId);
+        verify(customerService).getCustomerResponseById(customerId);
     }
 
     @Test
-    void addCustomer_Returns201AndLocationHeader() {
-        when(customerService.addCustomer(customerRequest)).thenReturn(customerId);
+    void addCustomer_Returns201AndLocationHeaderWithBody() {
+        CustomerResponse mockCustomerResponse = mock(CustomerResponse.class);
+        when(mockCustomerResponse.id()).thenReturn(customerId);
+        when(customerService.addCustomer(customerRequest)).thenReturn(mockCustomerResponse);
 
         Response response = customerController.addCustomer(customerRequest);
 
@@ -82,14 +86,19 @@ class CustomerControllerTest {
         URI location = response.getLocation();
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/customers/" + customerId));
+
+        assertEquals(mockCustomerResponse, response.getEntity());
     }
 
     @Test
-    void updateCustomer_Returns204NoContent() {
+    void updateCustomer_Returns200AndUpdatedCustomer() {
+        CustomerResponse mockCustomerResponse = mock(CustomerResponse.class);
+        when(customerService.updateCustomer(customerId, customerRequest)).thenReturn(mockCustomerResponse);
+
         Response response = customerController.updateCustomer(customerId, customerRequest);
 
-        assertEquals(204, response.getStatus());
-        assertNull(response.getEntity()); // no body
+        assertEquals(200, response.getStatus());
+        assertEquals(mockCustomerResponse, response.getEntity());
         verify(customerService).updateCustomer(customerId, customerRequest);
     }
 }

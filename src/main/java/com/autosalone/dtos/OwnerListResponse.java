@@ -4,23 +4,21 @@ import java.util.UUID;
 
 import com.autosalone.models.Owner;
 
-public record OwnerResponse(
+public record OwnerListResponse(
         UUID id,
         String firstName,
         String lastName,
         String phoneNumber,
         String email,
-        boolean isActive,
-        boolean hasActiveInvitation) {
+        boolean isActive) {
 
-    public static OwnerResponse fromEntity(Owner owner, boolean hasActiveInvitation) {
-        return new OwnerResponse(
+    public static OwnerListResponse fromEntity(Owner owner) {
+        return new OwnerListResponse(
                 owner.getId(),
                 owner.getFirstName(),
                 owner.getLastName(),
                 owner.getPhoneNumber(),
                 owner.getEmail(),
-                owner.isActive(),
-                hasActiveInvitation);
+                owner.isActive());
     }
 }

@@ -4,9 +4,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.autosalone.dtos.CustomerListResponse;
 import com.autosalone.dtos.CustomerRequest;
 import com.autosalone.dtos.CustomerResponse;
-import com.autosalone.models.Customer;
 import com.autosalone.services.CustomerService;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -29,35 +29,29 @@ public class CustomerController {
     public Response getCustomers(
             @QueryParam("keyword") String keyword,
             @QueryParam("isActive") Boolean isActive) {
-        List<Customer> customers = customerService.getCustomers(keyword, isActive);
-        List<CustomerResponse> response = customers.stream()
-                .map(CustomerResponse::fromEntity)
-                .toList();
-        return Response.ok(response).build(); // 200 OK
+        List<CustomerListResponse> customers = customerService.getCustomers(keyword, isActive);
+        return Response.ok(customers).build(); // 200 OK
     }
 
     @GET
     @Path("/{id}")
     public Response getCustomerById(@PathParam("id") UUID id) {
-        Customer customer = customerService.getCustomerById(id);
-        CustomerResponse response = CustomerResponse.fromEntity(customer);
-        return Response.ok(response).build(); // 200 OK
+        CustomerResponse customer = customerService.getCustomerResponseById(id);
+        return Response.ok(customer).build(); // 200 OK
     }
 
     @POST
     public Response addCustomer(@Valid CustomerRequest request) {
-        UUID newCustomerId = customerService.addCustomer(request);
+        CustomerResponse customer = customerService.addCustomer(request);
 
-        URI location = URI.create("/customers/" + newCustomerId);
-        return Response.created(location)
-                .entity(java.util.Map.of("id", newCustomerId))
-                .build(); // 201 Created
+        URI location = URI.create("/customers/" + customer.id());
+        return Response.created(location).entity(customer).build(); // 201 Created
     }
 
     @PUT
     @Path("/{id}")
     public Response updateCustomer(@PathParam("id") UUID id, @Valid CustomerRequest request) {
-        customerService.updateCustomer(id, request);
-        return Response.noContent().build(); // 204 No Content
+        CustomerResponse customer = customerService.updateCustomer(id, request);
+        return Response.ok(customer).build(); // 200 OK
     }
 }
