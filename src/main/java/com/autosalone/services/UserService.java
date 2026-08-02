@@ -117,7 +117,7 @@ public class UserService {
 
         if (!user.isActive()) {
             throw new ForbiddenException(
-                    "This user has not been configured yet, must activate to login");
+                    "This user is inactive, must activate to login");
         }
 
         return user;
