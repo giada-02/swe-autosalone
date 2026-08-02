@@ -4,7 +4,6 @@ import com.autosalone.dtos.ForgotPasswordRequest;
 import com.autosalone.dtos.LoginRequest;
 import com.autosalone.dtos.ResetPasswordRequest;
 import com.autosalone.dtos.SignUpRequest;
-import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
@@ -75,12 +74,7 @@ public class AuthController {
     @POST
     @Path("/reset-password")
     public Response resetPassword(@Valid ResetPasswordRequest request) {
-        AuthToken token = authTokenService.validateToken(request.token(), TokenType.PASSWORD_RESET);
-
-        userService.updatePassword(token.getUser().getId(), request.newPassword());
-
-        authTokenService.deleteToken(token);
-
+        userService.completePasswordReset(request.token(), request.newPassword());
         return Response.noContent().build(); // 204 No Content
     }
 }

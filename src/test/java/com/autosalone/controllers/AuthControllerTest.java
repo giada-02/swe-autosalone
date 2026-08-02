@@ -10,8 +10,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.UUID;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,11 +47,9 @@ class AuthControllerTest {
     private AuthController authController;
 
     private User mockUser;
-    private UUID userId;
 
     @BeforeEach
     void setUp() {
-        this.userId = UUID.randomUUID();
         this.mockUser = mock(User.class);
     }
 
@@ -128,17 +124,12 @@ class AuthControllerTest {
 
     @Test
     void resetPassword_WithValidToken_Success() {
-        when(mockUser.getId()).thenReturn(userId);
-
         ResetPasswordRequest request = new ResetPasswordRequest("reset_token", "new_password");
-        AuthToken token = new AuthToken("reset_token", mockUser, TokenType.PASSWORD_RESET, null);
-
-        when(authTokenService.validateToken(request.token(), TokenType.PASSWORD_RESET)).thenReturn(token);
 
         Response response = authController.resetPassword(request);
 
         assertEquals(204, response.getStatus());
-        verify(userService).updatePassword(userId, "new_password");
-        verify(authTokenService).deleteToken(token);
+        verify(userService).completePasswordReset("reset_token", "new_password");
     }
+
 }

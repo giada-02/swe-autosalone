@@ -1,6 +1,6 @@
 package com.autosalone.models;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import com.autosalone.enums.TokenType;
@@ -37,12 +37,12 @@ public class AuthToken extends AuditableEntity {
     private TokenType type;
 
     @Column(name = "expiry_date", nullable = false)
-    private LocalDateTime expiryDate;
+    private Instant expiryDate;
 
     protected AuthToken() {
     }
 
-    public AuthToken(String token, User user, TokenType type, LocalDateTime expiryDate) {
+    public AuthToken(String token, User user, TokenType type, Instant expiryDate) {
         this.token = token;
         this.user = user;
         this.type = type;
@@ -67,11 +67,11 @@ public class AuthToken extends AuditableEntity {
         return type;
     }
 
-    public LocalDateTime getExpiryDate() {
+    public Instant getExpiryDate() {
         return expiryDate;
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(this.expiryDate);
+        return Instant.now().isAfter(this.expiryDate);
     }
 }

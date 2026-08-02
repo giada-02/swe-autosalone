@@ -1,6 +1,6 @@
 package com.autosalone.repositories;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import com.autosalone.enums.TokenType;
@@ -44,7 +44,7 @@ public class AuthTokenRepository {
         em.remove(em.contains(token) ? token : em.merge(token));
     }
 
-    public int deleteAllExpiredTokens(LocalDateTime now) {
+    public int deleteAllExpiredTokens(Instant now) {
         return em.createQuery("DELETE FROM AuthToken t WHERE t.expiryDate < :now")
                 .setParameter("now", now)
                 .executeUpdate();

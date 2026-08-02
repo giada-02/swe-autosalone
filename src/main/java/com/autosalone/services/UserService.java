@@ -132,4 +132,14 @@ public class UserService {
 
         authTokenService.deleteToken(token);
     }
+
+    @Transactional
+    public void completePasswordReset(String tokenString, String newPassword) {
+
+        AuthToken token = authTokenService.validateToken(tokenString, TokenType.PASSWORD_RESET);
+
+        updatePassword(token.getUser().getId(), newPassword);
+
+        authTokenService.deleteToken(token);
+    }
 }

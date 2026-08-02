@@ -284,4 +284,24 @@ class UserServiceTest {
         verify(userRepository).save(mockUser);
         verify(authTokenService).deleteToken(mockToken);
     }
+
+    @Test
+    void completePasswordReset_Success() {
+        String tokenString = "valid_token";
+        when(mockUser.getId()).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+
+        AuthToken mockToken = mock(AuthToken.class);
+        when(mockToken.getUser()).thenReturn(mockUser);
+
+        when(authTokenService.validateToken(tokenString, TokenType.PASSWORD_RESET)).thenReturn(mockToken);
+        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_password!");
+
+        userService.completePasswordReset(tokenString, "new_password");
+
+        verify(authTokenService).validateToken(tokenString, TokenType.PASSWORD_RESET);
+        verify(mockUser).setPassword(anyString());
+        verify(userRepository).save(mockUser);
+        verify(authTokenService).deleteToken(mockToken);
+    }
 }

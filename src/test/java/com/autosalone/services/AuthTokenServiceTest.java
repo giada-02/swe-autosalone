@@ -8,7 +8,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -66,8 +67,8 @@ class AuthTokenServiceTest {
     @Test
     void validateToken_WhenValid_Success() {
         String tokenString = "secure_token_123";
-        LocalDateTime futureDate = LocalDateTime.now().plusHours(1);
-        AuthToken validToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET, futureDate);
+        AuthToken validToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET,
+                Instant.now().plus(2, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(validToken));
 
@@ -88,8 +89,8 @@ class AuthTokenServiceTest {
     @Test
     void validateToken_FailsWithInvalidTokenType() {
         String tokenString = "secure_token_123";
-        LocalDateTime futureDate = LocalDateTime.now().plusHours(1);
-        AuthToken resetToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET, futureDate);
+        AuthToken resetToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET,
+                Instant.now().plus(2, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(resetToken));
 
@@ -100,8 +101,8 @@ class AuthTokenServiceTest {
     @Test
     void validateToken_FailsWhenExpired() {
         String tokenString = "secure_token_123";
-        LocalDateTime pastDate = LocalDateTime.now().minusHours(1);
-        AuthToken expiredToken = new AuthToken(tokenString, mockUser, TokenType.REGISTRATION, pastDate);
+        AuthToken expiredToken = new AuthToken(tokenString, mockUser, TokenType.REGISTRATION,
+                Instant.now().minus(1, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(expiredToken));
 

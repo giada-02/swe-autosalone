@@ -2,7 +2,6 @@ package com.autosalone.services;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Optional;
@@ -51,7 +50,7 @@ public class AuthTokenService {
         }
 
         String tokenString = generateSecureToken();
-        LocalDateTime expiryDate = LocalDateTime.now().plusHours(REGISTRATION_TOKEN_EXPIRATION_HOURS);
+        Instant expiryDate = Instant.now().plus(REGISTRATION_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS);
 
         AuthToken token = new AuthToken(tokenString, user, TokenType.REGISTRATION, expiryDate);
         authTokenRepository.save(token);
@@ -79,7 +78,7 @@ public class AuthTokenService {
         }
 
         String tokenString = generateSecureToken();
-        LocalDateTime expiryDate = LocalDateTime.now().plusHours(RESET_TOKEN_EXPIRATION_HOURS);
+        Instant expiryDate = Instant.now().plus(RESET_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS);
 
         AuthToken token = new AuthToken(tokenString, user, TokenType.PASSWORD_RESET, expiryDate);
         authTokenRepository.save(token);
@@ -108,8 +107,7 @@ public class AuthTokenService {
 
     @Transactional
     public void deleteExpiredAuthTokens() {
-        LocalDateTime now = LocalDateTime.now();
-        int deletedCount = authTokenRepository.deleteAllExpiredTokens(now);
+        int deletedCount = authTokenRepository.deleteAllExpiredTokens(Instant.now());
         System.out.println("Deleted " + deletedCount + " expired tokens");
     }
 
