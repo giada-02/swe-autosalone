@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.enums.TokenType;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
@@ -132,16 +133,31 @@ class UserServiceTest {
 
     @Test
     void updatePassword_Success() {
-        String rawPassword = "password";
-        String hashedPassword = "hashed_password";
-
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(passwordHash.generate(any())).thenReturn(hashedPassword);
+        when(mockUser.getPassword()).thenReturn("hashed_current_password");
 
-        userService.updatePassword(userId, rawPassword);
+        when(passwordHash.verify(any(char[].class), eq("hashed_current_password"))).thenReturn(true);
+        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_new_password");
 
-        verify(mockUser).setPassword(hashedPassword);
+        userService.updatePassword(userId, "current_password", "new_password");
+
+        verify(mockUser).setPassword("hashed_new_password");
         verify(userRepository).save(mockUser);
+    }
+
+    @Test
+    void updatePassword_WrongCurrentPassword_ThrowsForbiddenException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(mockUser.getPassword()).thenReturn("hashed_current_password");
+
+        when(passwordHash.verify(any(char[].class), eq("hashed_current_password"))).thenReturn(false);
+
+        assertThrows(
+                ForbiddenException.class,
+                () -> userService.updatePassword(userId, "wrong_password", "new_password"));
+
+        verify(mockUser, never()).setPassword(anyString());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -288,8 +304,6 @@ class UserServiceTest {
     @Test
     void completePasswordReset_Success() {
         String tokenString = "valid_token";
-        when(mockUser.getId()).thenReturn(userId);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
         AuthToken mockToken = mock(AuthToken.class);
         when(mockToken.getUser()).thenReturn(mockUser);

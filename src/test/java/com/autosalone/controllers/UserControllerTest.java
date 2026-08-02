@@ -80,13 +80,13 @@ class UserControllerTest {
 
     @Test
     void updatePassword_Returns204NoContent() {
-        PasswordUpdateRequest request = new PasswordUpdateRequest("newPassword");
+        PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword", "newPassword");
 
         Response response = userController.updatePassword(userId, request);
 
         assertEquals(204, response.getStatus());
         assertNull(response.getEntity()); // no body
-        verify(userService).updatePassword(userId, "newPassword");
+        verify(userService).updatePassword(userId, "currentPassword", "newPassword");
     }
 
     @Test

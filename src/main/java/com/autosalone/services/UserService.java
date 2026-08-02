@@ -60,8 +60,15 @@ public class UserService {
     }
 
     @Transactional
-    public void updatePassword(UUID userId, String rawNewPassword) {
+    public void updatePassword(UUID userId, String rawCurrentPassword, String rawNewPassword) {
         User user = getUserById(userId);
+
+        boolean isCurrentPasswordCorrect = verifyPassword(rawCurrentPassword, user.getPassword());
+
+        if (!isCurrentPasswordCorrect) {
+            throw new ForbiddenException("The current password is wrong");
+        }
+
         String hashedPassword = passwordHash.generate(rawNewPassword.toCharArray());
         user.setPassword(hashedPassword);
         userRepository.save(user);
@@ -138,7 +145,10 @@ public class UserService {
 
         AuthToken token = authTokenService.validateToken(tokenString, TokenType.PASSWORD_RESET);
 
-        updatePassword(token.getUser().getId(), newPassword);
+        User user = token.getUser();
+        String hashedPassword = passwordHash.generate(newPassword.toCharArray());
+        user.setPassword(hashedPassword);
+        userRepository.save(user);
 
         authTokenService.deleteToken(token);
     }

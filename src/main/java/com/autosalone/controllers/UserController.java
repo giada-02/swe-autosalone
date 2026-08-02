@@ -55,7 +55,7 @@ public class UserController {
     @PUT
     @Path("/{id}/password")
     public Response updatePassword(@PathParam("id") UUID id, @Valid PasswordUpdateRequest request) {
-        userService.updatePassword(id, request.newPassword());
+        userService.updatePassword(id, request.currentPassword(), request.newPassword());
         return Response.noContent().build(); // 204 No Content
     }
 
