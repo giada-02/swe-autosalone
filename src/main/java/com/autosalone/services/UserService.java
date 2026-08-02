@@ -1,6 +1,5 @@
 package com.autosalone.services;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import com.autosalone.enums.TokenType;
@@ -78,8 +77,8 @@ public class UserService {
     public void activateUser(UUID userId, String rawNewPassword) {
         User user = getUserById(userId);
 
-        if (user.isActive()) {
-            throw new IllegalStateException("The user is active already");
+        if (user.getPassword() != null) {
+            throw new IllegalStateException("The user has already been configured");
         }
 
         String hashedPassword = passwordHash.generate(rawNewPassword.toCharArray());
@@ -104,27 +103,21 @@ public class UserService {
     }
 
     public User login(String email, String rawPassword) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-
-        if (optionalUser.isEmpty()) {
-            throw new UnauthorizedException("Invalid credentials");
-        }
-
-        User user = optionalUser.get();
-
-        if (!user.isActive()) {
-            throw new ForbiddenException("This user is not active");
-        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
         if (user.getPassword() == null) {
-            throw new ForbiddenException(
-                    "This user has not been configured, must activate and set a password to login");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         boolean isPasswordCorrect = verifyPassword(rawPassword, user.getPassword());
-
         if (!isPasswordCorrect) {
             throw new UnauthorizedException("Invalid credentials");
+        }
+
+        if (!user.isActive()) {
+            throw new ForbiddenException(
+                    "This user has not been configured yet, must activate to login");
         }
 
         return user;
