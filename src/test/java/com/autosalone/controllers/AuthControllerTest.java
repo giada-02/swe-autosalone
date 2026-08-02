@@ -72,18 +72,12 @@ class AuthControllerTest {
 
     @Test
     void signUp_withValidToken_Success() {
-        when(mockUser.getId()).thenReturn(userId);
-
         SignUpRequest request = new SignUpRequest("valid_token", "new_password");
-        AuthToken token = new AuthToken("valid_token", mockUser, TokenType.REGISTRATION, null);
-
-        when(authTokenService.validateToken(request.token(), TokenType.REGISTRATION)).thenReturn(token);
 
         Response response = authController.signUp(request);
 
         assertEquals(204, response.getStatus());
-        verify(userService).activateUser(userId, "new_password");
-        verify(authTokenService).deleteToken(token);
+        verify(userService).completeRegistration("valid_token", "new_password");
     }
 
     @Test

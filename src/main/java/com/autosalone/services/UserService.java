@@ -3,9 +3,11 @@ package com.autosalone.services;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.exceptions.UnauthorizedException;
+import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.repositories.UserRepository;
 
@@ -19,6 +21,9 @@ public class UserService {
 
     @Inject
     private UserRepository userRepository;
+
+    @Inject
+    private AuthTokenService authTokenService;
 
     @Inject
     private PasswordHash passwordHash;
@@ -57,11 +62,8 @@ public class UserService {
     @Transactional
     public void updatePassword(UUID userId, String rawNewPassword) {
         User user = getUserById(userId);
-
         String hashedPassword = passwordHash.generate(rawNewPassword.toCharArray());
-
         user.setPassword(hashedPassword);
-
         userRepository.save(user);
     }
 
@@ -74,9 +76,7 @@ public class UserService {
         }
 
         String hashedPassword = passwordHash.generate(rawNewPassword.toCharArray());
-
         user.setPassword(hashedPassword);
-
         user.activate();
 
         userRepository.save(user);
@@ -85,10 +85,8 @@ public class UserService {
     @Transactional
     public void deactivateUser(UUID userId) {
         User user = getUserById(userId);
-
         user.deactivate();
         user.setPassword(null);
-
         userRepository.save(user);
     }
 
@@ -123,5 +121,15 @@ public class UserService {
         }
 
         return user;
+    }
+
+    @Transactional
+    public void completeRegistration(String tokenString, String newPassword) {
+
+        AuthToken token = authTokenService.validateToken(tokenString, TokenType.REGISTRATION);
+
+        activateUser(token.getUser().getId(), newPassword);
+
+        authTokenService.deleteToken(token);
     }
 }

@@ -51,12 +51,7 @@ public class AuthController {
     @POST
     @Path("/signup")
     public Response signUp(@Valid SignUpRequest request) {
-        AuthToken token = authTokenService.validateToken(request.token(), TokenType.REGISTRATION);
-
-        userService.activateUser(token.getUser().getId(), request.newPassword());
-
-        authTokenService.deleteToken(token);
-
+        userService.completeRegistration(request.token(), request.newPassword());
         return Response.noContent().build(); // 204 No Content
     }
 

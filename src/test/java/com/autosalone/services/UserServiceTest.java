@@ -2,6 +2,7 @@ package com.autosalone.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -15,7 +16,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
+import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.repositories.UserRepository;
 
@@ -26,6 +29,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AuthTokenService authTokenService;
 
     @Mock
     private PasswordHash passwordHash;
@@ -255,5 +261,27 @@ class UserServiceTest {
         });
 
         assertEquals("Invalid credentials", exception.getMessage());
+    }
+
+    @Test
+    void completeRegistration_Success() {
+        String tokenString = "valid_token";
+        when(mockUser.getId()).thenReturn(userId);
+        when(mockUser.isActive()).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+
+        AuthToken mockToken = mock(AuthToken.class);
+        when(mockToken.getUser()).thenReturn(mockUser);
+
+        when(authTokenService.validateToken(tokenString, TokenType.REGISTRATION)).thenReturn(mockToken);
+        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_password!");
+
+        userService.completeRegistration(tokenString, "new_password");
+
+        verify(authTokenService).validateToken(tokenString, TokenType.REGISTRATION);
+        verify(mockUser).setPassword(anyString());
+        verify(mockUser).activate();
+        verify(userRepository).save(mockUser);
+        verify(authTokenService).deleteToken(mockToken);
     }
 }
