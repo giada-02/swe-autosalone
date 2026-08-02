@@ -62,7 +62,8 @@ public class AuthController {
             User user = userService.getUserByEmail(request.email());
             AuthToken token = authTokenService.createPasswordResetToken(user);
 
-            emailService.sendPasswordReset(user.getEmail(), token.getToken());
+            if (token != null)
+                emailService.sendPasswordReset(user.getEmail(), token.getToken());
 
         } catch (ResourceNotFoundException e) {
             // ignorato per sicurezza

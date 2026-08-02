@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -81,7 +81,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void forgotPassword_WithExistingUser_Success() {
+    void forgotPassword_Success() {
         ForgotPasswordRequest request = new ForgotPasswordRequest("test@email.com");
         AuthToken token = new AuthToken("reset_token", mockUser, TokenType.PASSWORD_RESET, null);
 
@@ -99,15 +99,31 @@ class AuthControllerTest {
     }
 
     @Test
-    void forgotPassword_WithNonExistingUser_FakesSuccess() {
+    void forgotPassword_UserNotFound_SilentlyIgnored() {
         ForgotPasswordRequest request = new ForgotPasswordRequest("fake@email.com");
 
-        doThrow(new ResourceNotFoundException("User not found")).when(userService).getUserByEmail(request.email());
+        when(userService.getUserByEmail(request.email()))
+                .thenThrow(new ResourceNotFoundException("User not found"));
 
         Response response = authController.forgotPassword(request);
 
         assertEquals(204, response.getStatus());
         verify(authTokenService, never()).createPasswordResetToken(any());
+        verify(emailService, never()).sendPasswordReset(anyString(), anyString());
+    }
+
+    @Test
+    void forgotPassword_CooldownActive_SilentlyIgnored() {
+        ForgotPasswordRequest request = new ForgotPasswordRequest("test@example.com");
+
+        when(userService.getUserByEmail(request.email())).thenReturn(mockUser);
+
+        when(authTokenService.createPasswordResetToken(mockUser)).thenReturn(null);
+
+        Response response = authController.forgotPassword(request);
+
+        assertEquals(204, response.getStatus());
+        verify(emailService, never()).sendPasswordReset(anyString(), anyString());
     }
 
     @Test

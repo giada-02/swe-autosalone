@@ -1,7 +1,9 @@
 package com.autosalone.services;
 
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -23,6 +25,7 @@ public class AuthTokenService {
 
     private static final int REGISTRATION_TOKEN_EXPIRATION_HOURS = 48;
     private static final int RESET_TOKEN_EXPIRATION_HOURS = 2;
+    private static final int COOLDOWN_MINUTES = 5;
 
     @Transactional
     public AuthToken createRegistrationToken(User user) {
@@ -58,12 +61,28 @@ public class AuthTokenService {
 
     @Transactional
     public AuthToken createPasswordResetToken(User user) {
+        if (user.getEmail() == null || !user.isActive()) {
+            return null;
+        }
+
+        Optional<AuthToken> maybeExistingToken = authTokenRepository.findByUserAndType(user, TokenType.PASSWORD_RESET);
+        if (maybeExistingToken.isPresent()) {
+            AuthToken existingToken = maybeExistingToken.get();
+
+            Instant cooldownEnd = existingToken.getCreatedAt().plus(COOLDOWN_MINUTES, ChronoUnit.MINUTES);
+
+            if (Instant.now().isBefore(cooldownEnd)) {
+                return null;
+            }
+
+            authTokenRepository.delete(existingToken);
+        }
+
         String tokenString = generateSecureToken();
         LocalDateTime expiryDate = LocalDateTime.now().plusHours(RESET_TOKEN_EXPIRATION_HOURS);
 
         AuthToken token = new AuthToken(tokenString, user, TokenType.PASSWORD_RESET, expiryDate);
         authTokenRepository.save(token);
-
         return token;
     }
 
