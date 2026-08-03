@@ -84,7 +84,11 @@ public class CustomerService {
         Customer customer = getCustomerById(id);
         boolean hasActiveInvitation = hasActiveInvitation(customer);
 
-        if (customer.getEmail() != null && request.email() != null && !customer.getEmail().equals(request.email())) {
+        if (request.email() == null && (customer.isActive() || customer.getPassword() != null)) {
+            throw new IllegalStateException("Cannot remove the email, the user is active");
+        }
+
+        if (customer.getEmail() != null && request.email() != null && !request.email().equals(customer.getEmail())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });

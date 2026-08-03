@@ -204,4 +204,22 @@ class OwnerServiceTest {
 
         verify(ownerRepository, never()).save(any());
     }
+
+    @Test
+    void updateOwner_FailsIfNullEmailToActiveOwner() {
+        when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
+        when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());
+        when(mockOwner.isActive()).thenReturn(true);
+        ownerRequest = new OwnerRequest(
+                "Mario",
+                "Rossi",
+                "3331234567",
+                null);
+
+        assertThrows(IllegalStateException.class, () -> {
+            ownerService.updateOwner(ownerId, ownerRequest);
+        });
+
+        verify(ownerRepository, never()).save(any());
+    }
 }

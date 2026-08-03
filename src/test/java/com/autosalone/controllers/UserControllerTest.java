@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.EmailUpdateRequest;
 import com.autosalone.dtos.PasswordUpdateRequest;
 import com.autosalone.dtos.UserResponse;
 import com.autosalone.enums.TokenType;
@@ -65,17 +64,6 @@ class UserControllerTest {
         assertEquals("test@email.com", userResponse.email());
 
         verify(userService).getUserById(userId);
-    }
-
-    @Test
-    void updateEmail_Returns204NoContent() {
-        EmailUpdateRequest request = new EmailUpdateRequest("new@test.com");
-
-        Response response = userController.updateEmail(userId, request);
-
-        assertEquals(204, response.getStatus());
-        assertNull(response.getEntity()); // no body
-        verify(userService).updateEmail(userId, "new@test.com");
     }
 
     @Test

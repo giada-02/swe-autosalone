@@ -8,6 +8,7 @@ import com.autosalone.enums.VehicleCondition;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 
 public record VehicleRequest(
@@ -19,7 +20,7 @@ public record VehicleRequest(
         LocalDate purchaseTransactionDate,
         @PositiveOrZero BigDecimal sellingPrice,
         LocalDate handoverDate,
-        String licensePlate,
+        @Size(min = 1, message = "cannot be blank") String licensePlate,
         LocalDate registrationDate,
         @PositiveOrZero Double kilometers,
         @NotNull boolean inShowroom) {

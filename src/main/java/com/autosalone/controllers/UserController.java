@@ -2,7 +2,6 @@ package com.autosalone.controllers;
 
 import java.util.UUID;
 
-import com.autosalone.dtos.EmailUpdateRequest;
 import com.autosalone.dtos.PasswordUpdateRequest;
 import com.autosalone.dtos.UserResponse;
 import com.autosalone.models.AuthToken;
@@ -43,13 +42,6 @@ public class UserController {
         User user = userService.getUserById(id);
         UserResponse response = UserResponse.fromEntity(user);
         return Response.ok(response).build(); // 200 OK
-    }
-
-    @PUT
-    @Path("/{id}/email")
-    public Response updateEmail(@PathParam("id") UUID id, @Valid EmailUpdateRequest request) {
-        userService.updateEmail(id, request.email());
-        return Response.noContent().build(); // 204 No Content
     }
 
     @PUT

@@ -208,4 +208,26 @@ class CustomerServiceTest {
 
         verify(customerRepository, never()).save(any());
     }
+
+    @Test
+    void updateCustomer_FailsIfNullEmailToActiveCustomer() {
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
+        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
+        when(mockCustomer.isActive()).thenReturn(true);
+        customerRequest = new CustomerRequest(
+                "Mario",
+                "Rossi",
+                "3331234567",
+                null,
+                "Roma",
+                "00100",
+                "RSSMRA80A01H501Z",
+                null);
+
+        assertThrows(IllegalStateException.class, () -> {
+            customerService.updateCustomer(customerId, customerRequest);
+        });
+
+        verify(customerRepository, never()).save(any());
+    }
 }

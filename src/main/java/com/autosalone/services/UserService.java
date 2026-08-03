@@ -42,23 +42,6 @@ public class UserService {
     // write
 
     @Transactional
-    public void updateEmail(UUID userId, String newEmail) {
-        User user = getUserById(userId);
-
-        if (user.getEmail().equals(newEmail)) {
-            return;
-        }
-
-        userRepository.findByEmail(newEmail).ifPresent(existing -> {
-            throw new IllegalStateException("Email is already in use by another account");
-        });
-
-        user.setEmail(newEmail);
-
-        userRepository.save(user);
-    }
-
-    @Transactional
     public void updatePassword(UUID userId, String rawCurrentPassword, String rawNewPassword) {
         User user = getUserById(userId);
 

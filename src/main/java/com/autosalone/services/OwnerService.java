@@ -80,7 +80,11 @@ public class OwnerService {
         Owner owner = getOwnerById(id);
         boolean hasActiveInvitation = hasActiveInvitation(owner);
 
-        if (owner.getEmail() != null && request.email() != null && !owner.getEmail().equals(request.email())) {
+        if (request.email() == null && (owner.isActive() || owner.getPassword() != null)) {
+            throw new IllegalStateException("Cannot remove the email, the user is active");
+        }
+
+        if (owner.getEmail() != null && request.email() != null && !request.email().equals(owner.getEmail())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });

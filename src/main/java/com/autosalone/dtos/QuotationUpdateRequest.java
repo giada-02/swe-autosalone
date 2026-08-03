@@ -9,6 +9,7 @@ import com.autosalone.enums.ExpirationPolicy;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 
 public record QuotationUpdateRequest(
         LocalDate expirationDate,
@@ -17,8 +18,8 @@ public record QuotationUpdateRequest(
         @NotNull UUID vehicleId,
         @NotNull UUID customerId,
         @PositiveOrZero BigDecimal additionalFees,
-        String publicNotes,
-        String internalNotes,
+        @Size(min = 1, message = "cannot be blank") String publicNotes,
+        @Size(min = 1, message = "cannot be blank") String internalNotes,
         @PositiveOrZero BigDecimal vehicleSellingPrice,
         DiscountType discountType,
         @PositiveOrZero BigDecimal discountValue) {
