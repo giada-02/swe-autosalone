@@ -68,7 +68,7 @@ public abstract class SalesDocument extends AuditableEntity {
 
     @PrePersist
     @PreUpdate
-    private void serializeDiscountStrategy() { // from Java to Database
+    private void serializeDiscountStrategyAndNormalizeData() { // from Java to Database
         if (this.discountStrategy instanceof FixedAmountDiscountStrategy fixed) {
             this.dbDiscountType = DiscountType.FIXED;
             this.dbDiscountValue = fixed.getDiscountAmount();
@@ -79,6 +79,9 @@ public abstract class SalesDocument extends AuditableEntity {
             this.dbDiscountType = DiscountType.NONE;
             this.dbDiscountValue = null;
         }
+        this.publicNotes = Utils.sanitizeText(this.publicNotes);
+        this.internalNotes = Utils.sanitizeText(this.internalNotes);
+
     }
 
     @PostLoad
@@ -149,13 +152,6 @@ public abstract class SalesDocument extends AuditableEntity {
             }
             this.items.add(new AppliedItem(originalItem, true)); // updated items price
         }
-    }
-
-    @PrePersist
-    @PreUpdate
-    protected void normalizeData() {
-        this.publicNotes = Utils.sanitizeText(this.publicNotes);
-        this.internalNotes = Utils.sanitizeText(this.internalNotes);
     }
 
     // getters

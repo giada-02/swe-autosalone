@@ -40,6 +40,7 @@ public class Customer extends User {
     @PrePersist
     @PreUpdate
     protected void normalizeData() {
+        super.normalizeData();
         this.residenceCity = Utils.sanitizeText(this.residenceCity);
         if (this.fiscalCode != null) {
             this.fiscalCode = this.fiscalCode.trim().toUpperCase();
