@@ -1,4 +1,4 @@
-package com.autosalone.dtos;
+package com.autosalone.dtos.requests;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

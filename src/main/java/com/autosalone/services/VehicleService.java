@@ -5,8 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.DeadlineRequest;
-import com.autosalone.dtos.VehicleRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
+import com.autosalone.dtos.requests.VehicleRequest;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;

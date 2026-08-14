@@ -15,8 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.PasswordUpdateRequest;
-import com.autosalone.dtos.UserResponse;
+import com.autosalone.dtos.requests.PasswordUpdateRequest;
+import com.autosalone.dtos.responses.UserResponse;
 import com.autosalone.enums.TokenType;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;

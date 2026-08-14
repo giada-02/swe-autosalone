@@ -1,9 +1,9 @@
 package com.autosalone.controllers;
 
-import com.autosalone.dtos.ForgotPasswordRequest;
-import com.autosalone.dtos.LoginRequest;
-import com.autosalone.dtos.ResetPasswordRequest;
-import com.autosalone.dtos.SignUpRequest;
+import com.autosalone.dtos.auth.ForgotPasswordRequest;
+import com.autosalone.dtos.auth.LoginRequest;
+import com.autosalone.dtos.auth.ResetPasswordRequest;
+import com.autosalone.dtos.auth.SignUpRequest;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;

@@ -1,4 +1,4 @@
-package com.autosalone.dtos;
+package com.autosalone.dtos.requests;
 
 import java.time.LocalDate;
 import java.time.Period;

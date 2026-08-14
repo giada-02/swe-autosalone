@@ -17,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Deadline;
 import com.autosalone.repositories.DeadlineRepository;

@@ -1,4 +1,4 @@
-package com.autosalone.dtos;
+package com.autosalone.dtos.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

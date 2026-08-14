@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Deadline;
 import com.autosalone.repositories.DeadlineRepository;

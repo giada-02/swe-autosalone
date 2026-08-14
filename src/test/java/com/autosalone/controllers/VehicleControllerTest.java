@@ -20,10 +20,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.DeadlineRequest;
-import com.autosalone.dtos.ExpenseRequest;
-import com.autosalone.dtos.VehicleRequest;
-import com.autosalone.dtos.VehicleWithdrawRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
+import com.autosalone.dtos.requests.ExpenseRequest;
+import com.autosalone.dtos.requests.VehicleRequest;
+import com.autosalone.dtos.requests.VehicleWithdrawRequest;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
 import com.autosalone.models.Deadline;

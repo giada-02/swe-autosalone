@@ -1,10 +1,10 @@
-package com.autosalone.dtos;
+package com.autosalone.dtos.responses;
 
 import java.util.UUID;
 
 import com.autosalone.models.Customer;
 
-public record CustomerListResponse(
+public record CustomerResponse(
         UUID id,
         String firstName,
         String lastName,
@@ -14,10 +14,11 @@ public record CustomerListResponse(
         String residenceCity,
         String zipCode,
         String fiscalCode,
-        String vatNumber) {
+        String vatNumber,
+        boolean hasActiveInvitation) {
 
-    public static CustomerListResponse fromEntity(Customer customer) {
-        return new CustomerListResponse(
+    public static CustomerResponse fromEntity(Customer customer, boolean hasActiveInvitation) {
+        return new CustomerResponse(
                 customer.getId(),
                 customer.getFirstName(),
                 customer.getLastName(),
@@ -27,6 +28,7 @@ public record CustomerListResponse(
                 customer.getResidenceCity(),
                 customer.getZipCode(),
                 customer.getFiscalCode(),
-                customer.getVatNumber());
+                customer.getVatNumber(),
+                hasActiveInvitation);
     }
 }

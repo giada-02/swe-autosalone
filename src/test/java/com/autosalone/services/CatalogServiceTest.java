@@ -21,10 +21,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.AccessoryRequest;
+import com.autosalone.dtos.requests.AccessoryPackageRequest;
+import com.autosalone.dtos.requests.AccessoryRequest;
 import com.autosalone.enums.CatalogItemType;
 import com.autosalone.exceptions.ResourceNotFoundException;
-import com.autosalone.dtos.AccessoryPackageRequest;
 import com.autosalone.models.catalog.Accessory;
 import com.autosalone.models.catalog.AccessoryPackage;
 import com.autosalone.models.catalog.PurchasableItem;

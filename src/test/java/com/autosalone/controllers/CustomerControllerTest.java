@@ -14,9 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.CustomerListResponse;
-import com.autosalone.dtos.CustomerRequest;
-import com.autosalone.dtos.CustomerResponse;
+import com.autosalone.dtos.requests.CustomerRequest;
+import com.autosalone.dtos.responses.CustomerListResponse;
+import com.autosalone.dtos.responses.CustomerResponse;
 import com.autosalone.services.CustomerService;
 
 import jakarta.ws.rs.core.Response;

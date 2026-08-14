@@ -2,8 +2,8 @@ package com.autosalone.controllers;
 
 import java.util.UUID;
 
-import com.autosalone.dtos.PasswordUpdateRequest;
-import com.autosalone.dtos.UserResponse;
+import com.autosalone.dtos.requests.PasswordUpdateRequest;
+import com.autosalone.dtos.responses.UserResponse;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.services.AuthTokenService;

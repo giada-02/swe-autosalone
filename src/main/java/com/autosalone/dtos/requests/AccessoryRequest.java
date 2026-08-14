@@ -1,13 +1,14 @@
-package com.autosalone.dtos;
+package com.autosalone.dtos.requests;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
-import java.util.Set;
-import java.util.UUID;
+import java.math.BigDecimal;
 
-public record AccessoryPackageRequest(
+public record AccessoryRequest(
         @NotBlank @Size(max = 255, message = "cannot exceed 255 characters") String name,
         @Size(max = 255, message = "cannot exceed 255 characters") String description,
-        Set<UUID> purchasableItemIds) {
+        @NotNull @PositiveOrZero BigDecimal basePrice) {
 }

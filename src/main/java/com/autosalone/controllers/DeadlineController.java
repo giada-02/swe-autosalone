@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.DeadlineCompletionRequest;
-import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.dtos.requests.DeadlineCompletionRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.models.Deadline;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.utils.Utils;

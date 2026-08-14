@@ -1,4 +1,4 @@
-package com.autosalone.dtos;
+package com.autosalone.dtos.requests;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

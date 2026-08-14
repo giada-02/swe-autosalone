@@ -4,9 +4,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.OwnerListResponse;
-import com.autosalone.dtos.OwnerRequest;
-import com.autosalone.dtos.OwnerResponse;
+import com.autosalone.dtos.requests.OwnerRequest;
+import com.autosalone.dtos.responses.OwnerListResponse;
+import com.autosalone.dtos.responses.OwnerResponse;
 import com.autosalone.services.OwnerService;
 
 import jakarta.enterprise.context.ApplicationScoped;

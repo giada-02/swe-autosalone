@@ -17,10 +17,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.ForgotPasswordRequest;
-import com.autosalone.dtos.LoginRequest;
-import com.autosalone.dtos.ResetPasswordRequest;
-import com.autosalone.dtos.SignUpRequest;
+import com.autosalone.dtos.auth.ForgotPasswordRequest;
+import com.autosalone.dtos.auth.LoginRequest;
+import com.autosalone.dtos.auth.ResetPasswordRequest;
+import com.autosalone.dtos.auth.SignUpRequest;
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;

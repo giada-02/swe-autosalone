@@ -16,9 +16,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.OwnerListResponse;
-import com.autosalone.dtos.OwnerRequest;
-import com.autosalone.dtos.OwnerResponse;
+import com.autosalone.dtos.requests.OwnerRequest;
+import com.autosalone.dtos.responses.OwnerListResponse;
+import com.autosalone.dtos.responses.OwnerResponse;
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;

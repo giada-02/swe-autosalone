@@ -21,8 +21,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.DeadlineRequest;
-import com.autosalone.dtos.VehicleRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
+import com.autosalone.dtos.requests.VehicleRequest;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
