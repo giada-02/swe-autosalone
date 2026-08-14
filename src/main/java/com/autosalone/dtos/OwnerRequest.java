@@ -8,5 +8,5 @@ public record OwnerRequest(
         @NotBlank String firstName,
         @NotBlank String lastName,
         @NotBlank String phoneNumber,
-        @Email(message = "must have a valid format") @Size(min = 1, message = "cannot be blank") String email) {
+        @Email(message = "must have a valid format") @Size(max = 255, message = "cannot exceed 255 characters") String email) {
 }

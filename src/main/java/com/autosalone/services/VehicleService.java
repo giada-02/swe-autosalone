@@ -22,6 +22,7 @@ import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.DeadlineRepository;
 import com.autosalone.repositories.QuotationRepository;
 import com.autosalone.repositories.VehicleRepository;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -51,7 +52,8 @@ public class VehicleService {
 
     public List<Vehicle> getVehicles(String keyword, String brand, VehicleCondition condition,
             BigDecimal maxPrice, Boolean isInShowroom, List<VehicleStatus> statusList) {
-        return vehicleRepository.findVehicles(keyword, brand, condition, maxPrice, isInShowroom, statusList);
+        String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
+        return vehicleRepository.findVehicles(sanitizedKeyword, brand, condition, maxPrice, isInShowroom, statusList);
     }
 
     public List<String> getAllBrands() {

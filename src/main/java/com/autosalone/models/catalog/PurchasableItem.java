@@ -39,7 +39,7 @@ public abstract class PurchasableItem extends AuditableEntity {
     @PreUpdate
     protected void normalizeData() {
         this.name = this.name.trim();
-        this.description = Utils.sanitizeText(description);
+        this.description = Utils.sanitizeText(this.description);
     }
 
     // getters

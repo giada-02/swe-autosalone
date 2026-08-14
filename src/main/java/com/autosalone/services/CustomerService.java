@@ -12,6 +12,7 @@ import com.autosalone.models.Customer;
 import com.autosalone.repositories.AuthTokenRepository;
 import com.autosalone.repositories.CustomerRepository;
 import com.autosalone.repositories.UserRepository;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -50,7 +51,8 @@ public class CustomerService {
     }
 
     public List<CustomerListResponse> getCustomers(String keyword, Boolean isActive) {
-        return customerRepository.findCustomers(keyword, isActive).stream()
+        String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
+        return customerRepository.findCustomers(sanitizedKeyword, isActive).stream()
                 .map(CustomerListResponse::fromEntity)
                 .toList();
     }

@@ -30,7 +30,7 @@ public class CustomerRepository {
         StringBuilder jpql = new StringBuilder("SELECT c FROM Customer c WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
 
-        if (keyword != null && !keyword.isEmpty()) {
+        if (keyword != null) {
             jpql.append(
                     " AND (LOWER(c.firstName) LIKE LOWER(:keyword) OR LOWER(c.lastName) LIKE LOWER(:keyword) OR LOWER(c.phoneNumber) LIKE LOWER(:keyword) OR LOWER(c.email) LIKE LOWER(:keyword))");
             parameters.put("keyword", "%" + keyword + "%");

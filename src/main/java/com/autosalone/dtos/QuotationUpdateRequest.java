@@ -18,8 +18,8 @@ public record QuotationUpdateRequest(
         @NotNull UUID vehicleId,
         @NotNull UUID customerId,
         @PositiveOrZero BigDecimal additionalFees,
-        @Size(min = 1, message = "cannot be blank") String publicNotes,
-        @Size(min = 1, message = "cannot be blank") String internalNotes,
+        @Size(max = 1000, message = "cannot exceed 1000 characters") String publicNotes,
+        @Size(max = 1000, message = "cannot exceed 1000 characters") String internalNotes,
         @PositiveOrZero BigDecimal vehicleSellingPrice,
         DiscountType discountType,
         @PositiveOrZero BigDecimal discountValue) {

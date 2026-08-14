@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.utils.PeriodStringConverter;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "deadlines")
@@ -68,6 +69,13 @@ public class Deadline extends AuditableEntity {
         this.recurrence = recurrence;
         this.recalculateFromCompletion = recalculateFromCompletion;
         this.vehicle = vehicle;
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.reason = this.reason.trim();
+        this.notes = Utils.sanitizeText(this.notes);
     }
 
     // getters

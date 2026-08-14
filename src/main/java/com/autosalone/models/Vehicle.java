@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "vehicles")
@@ -84,6 +85,17 @@ public class Vehicle extends AuditableEntity {
         this.kilometers = builder.kilometers;
         this.isInShowroom = builder.isInShowroom;
         this.status = VehicleStatus.AVAILABLE;
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.brand = this.brand.trim();
+        this.model = this.model.trim();
+        this.color = this.color.trim();
+        if (Utils.sanitizeText(this.licensePlate) != null) {
+            this.licensePlate = this.licensePlate.replaceAll("[\\s\\-]", "").toUpperCase();
+        }
     }
 
     // getters

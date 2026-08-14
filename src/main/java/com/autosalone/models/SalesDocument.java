@@ -15,6 +15,7 @@ import com.autosalone.models.discounts.DiscountStrategy;
 import com.autosalone.models.discounts.FixedAmountDiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
 import com.autosalone.models.discounts.PercentageDiscountStrategy;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "sales_documents")
@@ -148,6 +149,13 @@ public abstract class SalesDocument extends AuditableEntity {
             }
             this.items.add(new AppliedItem(originalItem, true)); // updated items price
         }
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.publicNotes = Utils.sanitizeText(this.publicNotes);
+        this.internalNotes = Utils.sanitizeText(this.internalNotes);
     }
 
     // getters

@@ -20,7 +20,7 @@ public record VehicleRequest(
         LocalDate purchaseTransactionDate,
         @PositiveOrZero BigDecimal sellingPrice,
         LocalDate handoverDate,
-        @Size(min = 1, message = "cannot be blank") String licensePlate,
+        @Size(max = 20, message = "cannot exceed 20 characters") String licensePlate,
         LocalDate registrationDate,
         @PositiveOrZero Double kilometers,
         @NotNull boolean inShowroom) {

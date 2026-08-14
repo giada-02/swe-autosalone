@@ -11,6 +11,7 @@ import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.TransactionType;
 import com.autosalone.enums.VehicleCondition;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "contracts")
@@ -63,6 +64,12 @@ public class Contract extends SalesDocument {
 
         this.status = ContractStatus.DRAFT;
         this.quotationReference = source;
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.cancelationReason = Utils.sanitizeText(this.cancelationReason);
     }
 
     // getters

@@ -12,6 +12,7 @@ import com.autosalone.services.CustomerService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -27,7 +28,7 @@ public class CustomerController {
 
     @GET
     public Response getCustomers(
-            @QueryParam("keyword") String keyword,
+            @QueryParam("keyword") @Size(max = 50, message = "The keyword must not be over 50 characters") String keyword,
             @QueryParam("isActive") Boolean isActive) {
         List<CustomerListResponse> customers = customerService.getCustomers(keyword, isActive);
         return Response.ok(customers).build(); // 200 OK
