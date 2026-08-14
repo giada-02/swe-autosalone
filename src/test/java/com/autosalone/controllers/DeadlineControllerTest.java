@@ -50,9 +50,10 @@ class DeadlineControllerTest {
     @Test
     void getUrgentDeadlines_WithDate_Returns200AndList() {
         LocalDate upToDate = LocalDate.now().plusDays(15);
+        String upToDateString = upToDate.toString();
         when(deadlineService.getUrgentDeadlines(upToDate)).thenReturn(List.of(mockDeadline));
 
-        Response response = deadlineController.getUrgentDeadlines(upToDate);
+        Response response = deadlineController.getUrgentDeadlines(upToDateString);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());

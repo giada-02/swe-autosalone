@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.dtos.ExpenseRequest;
 import com.autosalone.dtos.VehicleRequest;
 import com.autosalone.dtos.VehicleWithdrawRequest;
 import com.autosalone.enums.VehicleCondition;
@@ -164,9 +165,10 @@ class VehicleControllerTest {
         when(mockExpense.getId()).thenReturn(expenseId);
 
         LocalDate date = LocalDate.now();
+        ExpenseRequest expenseRequest = new ExpenseRequest("Carrozziere", new BigDecimal("500"), date);
         when(vehicleService.addExpense(vehicleId, "Carrozziere", new BigDecimal("500"), date)).thenReturn(mockExpense);
 
-        Response response = vehicleController.addExpense(vehicleId, "Carrozziere", new BigDecimal("500"), date);
+        Response response = vehicleController.addExpense(vehicleId, expenseRequest);
 
         assertEquals(201, response.getStatus());
         assertEquals(mockExpense, response.getEntity());
@@ -185,9 +187,10 @@ class VehicleControllerTest {
         when(mockDeadline.getId()).thenReturn(deadlineId);
 
         LocalDate lastInspection = LocalDate.now().minusYears(1);
+        String lastInspectionDateString = lastInspection.toString();
         when(vehicleService.generateStandardInspection(vehicleId, lastInspection)).thenReturn(mockDeadline);
 
-        Response response = vehicleController.generateStandardInspection(vehicleId, lastInspection);
+        Response response = vehicleController.generateStandardInspection(vehicleId, lastInspectionDateString);
 
         assertEquals(201, response.getStatus());
         assertEquals(mockDeadline, response.getEntity());
