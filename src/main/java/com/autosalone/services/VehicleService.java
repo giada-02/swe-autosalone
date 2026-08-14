@@ -63,9 +63,9 @@ public class VehicleService {
     // write
 
     @Transactional
-    public UUID addVehicle(VehicleRequest request) {
+    public Vehicle addVehicle(VehicleRequest request) {
 
-        Vehicle newVehicle = new Vehicle.VehicleBuilder()
+        Vehicle vehicle = new Vehicle.VehicleBuilder()
                 .setBrand(request.brand())
                 .setModel(request.model())
                 .setColor(request.color())
@@ -79,13 +79,13 @@ public class VehicleService {
                 .build();
 
         if (request.purchaseTransactionAmount() != null && request.purchaseTransactionDate() != null) {
-            Transaction purchase = TransactionFactory.createVehiclePurchase(newVehicle,
+            Transaction purchase = TransactionFactory.createVehiclePurchase(vehicle,
                     request.purchaseTransactionAmount(), request.purchaseTransactionDate());
-            newVehicle.setPurchaseTransaction(purchase);
+            vehicle.setPurchaseTransaction(purchase);
         }
 
-        vehicleRepository.save(newVehicle);
-        return newVehicle.getId();
+        vehicleRepository.save(vehicle);
+        return vehicle;
     }
 
     @Transactional
@@ -122,18 +122,18 @@ public class VehicleService {
     }
 
     @Transactional
-    public UUID addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
+    public Transaction addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         Transaction expense = TransactionFactory.createVehicleExpense(vehicle, description, amount, date);
         vehicle.addExpense(expense);
 
         vehicleRepository.save(vehicle);
-        return expense.getId();
+        return expense;
     }
 
     @Transactional
-    public UUID generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
+    public Deadline generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
         Vehicle vehicle = getVehicleById(vehicleId);
         Deadline inspectionDeadline;
 
@@ -144,18 +144,18 @@ public class VehicleService {
         }
 
         vehicleRepository.save(vehicle);
-        return inspectionDeadline.getId();
+        return inspectionDeadline;
     }
 
     @Transactional
-    public UUID addDeadline(UUID vehicleId, DeadlineRequest request) {
+    public Deadline addDeadline(UUID vehicleId, DeadlineRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
-        Deadline newDealine = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
+        Deadline deadline = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
 
         vehicleRepository.save(vehicle);
-        return newDealine.getId();
+        return deadline;
     }
 
     @Transactional
@@ -166,12 +166,11 @@ public class VehicleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Deadline not found of id: " + deadlineId));
 
         vehicle.removeDeadline(deadline);
-
         vehicleRepository.save(vehicle);
     }
 
     @Transactional
-    public void updateVehicle(UUID vehicleId, VehicleRequest request) {
+    public Vehicle updateVehicle(UUID vehicleId, VehicleRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         vehicle.setBrand(request.brand());
@@ -193,5 +192,6 @@ public class VehicleService {
         }
 
         vehicleRepository.save(vehicle);
+        return vehicle;
     }
 }

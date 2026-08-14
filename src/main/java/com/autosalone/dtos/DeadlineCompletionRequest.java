@@ -1,7 +1,11 @@
 package com.autosalone.dtos;
 
+import java.time.LocalDate;
+
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record DeadlineCompletionRequest(
-        @Size(max = 1000, message = "cannot exceed 1000 characters") String notes) {
+        @NotNull LocalDate completionDate,
+        @Size(max = 500, message = "cannot exceed 500 characters") String notes) {
 }

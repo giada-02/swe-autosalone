@@ -52,7 +52,7 @@ public class DeadlineService {
     }
 
     @Transactional
-    public void updateDeadline(UUID deadlineId, DeadlineRequest request) {
+    public Deadline updateDeadline(UUID deadlineId, DeadlineRequest request) {
         Deadline deadline = getDeadlineById(deadlineId);
 
         deadline.setReason(request.reason());
@@ -61,14 +61,6 @@ public class DeadlineService {
         deadline.setRecalculateFromCompletion(request.recalculateFromCompletion());
 
         deadlineRepository.save(deadline);
-    }
-
-    @Transactional
-    public void deleteDeadline(UUID deadlineId) {
-        Deadline deadline = getDeadlineById(deadlineId);
-
-        deadline.getVehicle().removeDeadline(deadline);
-
-        deadlineRepository.delete(deadline);
+        return deadline;
     }
 }
