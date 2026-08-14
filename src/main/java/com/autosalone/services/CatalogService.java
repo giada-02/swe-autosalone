@@ -7,12 +7,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.autosalone.dtos.AccessoryRequest;
+import com.autosalone.enums.CatalogItemType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.dtos.AccessoryPackageRequest;
 import com.autosalone.models.catalog.Accessory;
 import com.autosalone.models.catalog.AccessoryPackage;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.repositories.CatalogRepository;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -32,8 +34,10 @@ public class CatalogService {
     }
 
     public List<PurchasableItem> getPurchasableItems(String keyword, Boolean isArchived,
-            Class<? extends PurchasableItem> itemType) {
-        return catalogRepository.findPurchasableItems(keyword, isArchived, itemType);
+            CatalogItemType itemType) {
+        String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
+        Class<? extends PurchasableItem> entityClass = itemType != null ? itemType.getEntityClass() : null;
+        return catalogRepository.findPurchasableItems(sanitizedKeyword, isArchived, entityClass);
     }
 
     // write
@@ -41,14 +45,14 @@ public class CatalogService {
     // accessory
 
     @Transactional
-    public UUID addAccessory(AccessoryRequest request) {
+    public Accessory addAccessory(AccessoryRequest request) {
         Accessory accessory = new Accessory(request.name(), request.description(), request.basePrice());
         catalogRepository.save(accessory);
-        return accessory.getId();
+        return accessory;
     }
 
     @Transactional
-    public void updateAccessory(UUID accessoryId, AccessoryRequest request) {
+    public Accessory updateAccessory(UUID accessoryId, AccessoryRequest request) {
         PurchasableItem item = getItemById(accessoryId);
 
         if (!(item instanceof Accessory accessory)) {
@@ -60,17 +64,18 @@ public class CatalogService {
         accessory.setBasePrice(request.basePrice());
 
         catalogRepository.save(accessory);
+        return accessory;
     }
 
     // accessory package
 
     @Transactional
-    public UUID addAccessoryPackage(AccessoryPackageRequest request) {
+    public AccessoryPackage addAccessoryPackage(AccessoryPackageRequest request) {
         AccessoryPackage accessoryPackage = new AccessoryPackage(request.name(), request.description());
 
         if (request.purchasableItemIds() == null || request.purchasableItemIds().isEmpty()) {
             catalogRepository.save(accessoryPackage);
-            return accessoryPackage.getId();
+            return accessoryPackage;
         }
 
         for (UUID itemId : request.purchasableItemIds()) {
@@ -79,11 +84,11 @@ public class CatalogService {
         }
 
         catalogRepository.save(accessoryPackage);
-        return accessoryPackage.getId();
+        return accessoryPackage;
     }
 
     @Transactional
-    public void updateAccessoryPackage(UUID accessoryPackageId, AccessoryPackageRequest request) {
+    public AccessoryPackage updateAccessoryPackage(UUID accessoryPackageId, AccessoryPackageRequest request) {
         PurchasableItem item = getItemById(accessoryPackageId);
 
         if (!(item instanceof AccessoryPackage accessoryPackage)) {
@@ -103,7 +108,7 @@ public class CatalogService {
 
         if (safeNewItemIds.equals(currentItemIds)) {
             catalogRepository.save(accessoryPackage);
-            return;
+            return accessoryPackage;
         }
 
         // rimuovere gli elementi che non sono più nella nuova lista
@@ -125,6 +130,7 @@ public class CatalogService {
         }
 
         catalogRepository.save(accessoryPackage);
+        return accessoryPackage;
     }
 
     // delete

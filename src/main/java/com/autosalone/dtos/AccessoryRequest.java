@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record AccessoryRequest(
-        @NotBlank String name,
-        @Size(min = 1, message = "cannot be blank") String description,
+        @NotBlank @Size(max = 255, message = "cannot exceed 255 characters") String name,
+        @Size(max = 255, message = "cannot exceed 255 characters") String description,
         @NotNull @PositiveOrZero BigDecimal basePrice) {
 }

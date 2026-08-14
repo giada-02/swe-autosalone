@@ -29,7 +29,7 @@ public class CatalogRepository {
         StringBuilder jpql = new StringBuilder("SELECT p FROM PurchasableItem p WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
 
-        if (keyword != null && !keyword.isEmpty()) {
+        if (keyword != null) {
             jpql.append(" AND LOWER(p.name) LIKE LOWER(:keyword)");
             parameters.put("keyword", "%" + keyword + "%");
         }

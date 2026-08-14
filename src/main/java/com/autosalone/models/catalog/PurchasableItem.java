@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.models.AuditableEntity;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "purchasable_items")
@@ -32,6 +33,13 @@ public abstract class PurchasableItem extends AuditableEntity {
         Objects.requireNonNull(name, "Name is required");
         this.name = name;
         this.description = description;
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.name = this.name.trim();
+        this.description = Utils.sanitizeText(description);
     }
 
     // getters

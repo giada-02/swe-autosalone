@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.AccessoryRequest;
+import com.autosalone.enums.CatalogItemType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.dtos.AccessoryPackageRequest;
 import com.autosalone.models.catalog.Accessory;
@@ -76,10 +77,10 @@ class CatalogServiceTest {
         when(catalogRepository.findPurchasableItems(anyString(), anyBoolean(), any()))
                 .thenReturn(List.of(accessory, accessoryPackage));
 
-        List<PurchasableItem> results = catalogService.getPurchasableItems("Nav", false, PurchasableItem.class);
+        List<PurchasableItem> results = catalogService.getPurchasableItems("Nav", false, CatalogItemType.ACCESSORY);
 
         assertEquals(2, results.size());
-        verify(catalogRepository).findPurchasableItems("Nav", false, PurchasableItem.class);
+        verify(catalogRepository).findPurchasableItems("Nav", false, Accessory.class);
     }
 
     // write
@@ -90,9 +91,9 @@ class CatalogServiceTest {
     void addAccessory_Success() {
         AccessoryRequest request = new AccessoryRequest("Tetto Panoramico", null, BigDecimal.valueOf(1200));
 
-        UUID resultId = catalogService.addAccessory(request);
+        Accessory accessory = catalogService.addAccessory(request);
 
-        assertNull(resultId);
+        assertNotNull(accessory);
         verify(catalogRepository).save(any(Accessory.class));
     }
 
@@ -129,9 +130,9 @@ class CatalogServiceTest {
         AccessoryPackageRequest request = new AccessoryPackageRequest("Pacchetto Test", null, Set.of(accessoryId));
         when(catalogRepository.findById(accessoryId)).thenReturn(Optional.of(accessory));
 
-        UUID resultId = catalogService.addAccessoryPackage(request);
+        AccessoryPackage accessoryPackage = catalogService.addAccessoryPackage(request);
 
-        assertNull(resultId);
+        assertNotNull(accessoryPackage);
         verify(catalogRepository).save(any(AccessoryPackage.class));
     }
 
