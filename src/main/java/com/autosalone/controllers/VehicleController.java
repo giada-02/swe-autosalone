@@ -17,6 +17,7 @@ import com.autosalone.models.Vehicle;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.services.TransactionService;
 import com.autosalone.services.VehicleService;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -108,7 +109,8 @@ public class VehicleController {
             @PathParam("id") UUID id,
             @QueryParam("description") @NotBlank String description,
             @QueryParam("amount") @NotNull BigDecimal amount,
-            @QueryParam("date") @NotNull LocalDate date) {
+            @QueryParam("date") @NotBlank String dateString) {
+        LocalDate date = Utils.parseDate(dateString);
         Transaction expense = vehicleService.addExpense(id, description, amount, date);
         URI location = URI.create("/vehicles/" + id + "/expenses/" + expense.getId());
         return Response.created(location).entity(expense).build(); // 201 Created
@@ -120,7 +122,8 @@ public class VehicleController {
     @Path("/{id}/standard-inspections")
     public Response generateStandardInspection(
             @PathParam("id") UUID id,
-            @QueryParam("lastInspection") LocalDate lastInspection) {
+            @QueryParam("lastInspection") String lastInspectionDateString) {
+        LocalDate lastInspection = Utils.parseDate(lastInspectionDateString);
         Deadline deadline = vehicleService.generateStandardInspection(id, lastInspection);
         URI location = URI.create("/vehicles/" + id + "/deadlines/" + deadline.getId());
         return Response.created(location).entity(deadline).build(); // 201 Created

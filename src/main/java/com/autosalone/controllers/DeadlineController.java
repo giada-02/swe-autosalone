@@ -8,6 +8,7 @@ import com.autosalone.dtos.DeadlineCompletionRequest;
 import com.autosalone.dtos.DeadlineRequest;
 import com.autosalone.models.Deadline;
 import com.autosalone.services.DeadlineService;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -27,7 +28,8 @@ public class DeadlineController {
 
     @GET
     @Path("/urgent")
-    public Response getUrgentDeadlines(@QueryParam("upToDate") LocalDate upToDate) {
+    public Response getUrgentDeadlines(@QueryParam("upToDate") String upToDateString) {
+        LocalDate upToDate = Utils.parseDate(upToDateString);
         if (upToDate == null) {
             upToDate = LocalDate.now().plusDays(30); // default: scadenze dei prossimi 30 giorni
         }
