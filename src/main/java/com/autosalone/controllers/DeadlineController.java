@@ -47,7 +47,7 @@ public class DeadlineController {
     @POST
     @Path("/{id}/complete")
     public Response completeDeadline(
-            @PathParam("id") UUID id, DeadlineCompletionRequest request) {
+            @PathParam("id") UUID id, @Valid DeadlineCompletionRequest request) {
         deadlineService.completeDeadline(id, request.completionDate(), request.notes());
         return Response.ok().build(); // 200 OK
     }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.dtos.ExpenseRequest;
 import com.autosalone.dtos.VehicleRequest;
 import com.autosalone.dtos.VehicleWithdrawRequest;
 import com.autosalone.enums.VehicleCondition;
@@ -22,8 +23,6 @@ import com.autosalone.utils.Utils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -88,7 +87,7 @@ public class VehicleController {
     @PUT
     @Path("/{id}/withdraw")
     public Response withdrawVehicle(
-            @PathParam("id") UUID id, VehicleWithdrawRequest request) {
+            @PathParam("id") UUID id, @Valid VehicleWithdrawRequest request) {
         vehicleService.withdrawVehicle(id, request.reason());
         return Response.noContent().build(); // 204 No Content
     }
@@ -107,11 +106,8 @@ public class VehicleController {
     @Path("/{id}/expenses")
     public Response addExpense(
             @PathParam("id") UUID id,
-            @QueryParam("description") @NotBlank String description,
-            @QueryParam("amount") @NotNull BigDecimal amount,
-            @QueryParam("date") @NotBlank String dateString) {
-        LocalDate date = Utils.parseDate(dateString);
-        Transaction expense = vehicleService.addExpense(id, description, amount, date);
+            @Valid ExpenseRequest request) {
+        Transaction expense = vehicleService.addExpense(id, request.description(), request.amount(), request.date());
         URI location = URI.create("/vehicles/" + id + "/expenses/" + expense.getId());
         return Response.created(location).entity(expense).build(); // 201 Created
     }
