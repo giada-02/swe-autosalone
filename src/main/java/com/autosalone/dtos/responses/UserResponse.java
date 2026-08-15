@@ -13,6 +13,9 @@ public record UserResponse(
         boolean isActive) {
 
     public static UserResponse fromEntity(User user) {
+        if (user == null)
+            return null;
+
         return new UserResponse(
                 user.getId(),
                 user.getFirstName(),

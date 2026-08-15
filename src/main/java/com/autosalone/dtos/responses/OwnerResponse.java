@@ -14,6 +14,9 @@ public record OwnerResponse(
         boolean hasActiveInvitation) {
 
     public static OwnerResponse fromEntity(Owner owner, boolean hasActiveInvitation) {
+        if (owner == null)
+            return null;
+
         return new OwnerResponse(
                 owner.getId(),
                 owner.getFirstName(),

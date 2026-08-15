@@ -10,11 +10,11 @@ import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.requests.ExpenseRequest;
 import com.autosalone.dtos.requests.VehicleRequest;
 import com.autosalone.dtos.requests.VehicleWithdrawRequest;
+import com.autosalone.dtos.responses.DeadlineResponse;
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
-import com.autosalone.models.Deadline;
-import com.autosalone.models.Transaction;
-import com.autosalone.models.Vehicle;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.services.TransactionService;
 import com.autosalone.services.VehicleService;
@@ -51,7 +51,7 @@ public class VehicleController {
             @QueryParam("maxPrice") BigDecimal maxPrice,
             @QueryParam("isInShowroom") Boolean isInShowroom,
             @QueryParam("statusList") List<VehicleStatus> statusList) {
-        List<Vehicle> vehicles = vehicleService.getVehicles(keyword, brand, condition, maxPrice, isInShowroom,
+        List<VehicleResponse> vehicles = vehicleService.getVehicles(keyword, brand, condition, maxPrice, isInShowroom,
                 statusList);
         return Response.ok(vehicles).build(); // 200 OK
     }
@@ -66,21 +66,21 @@ public class VehicleController {
     @GET
     @Path("/{id}")
     public Response getVehicleById(@PathParam("id") UUID id) {
-        Vehicle vehicle = vehicleService.getVehicleById(id);
+        VehicleResponse vehicle = vehicleService.getVehicleResponseById(id);
         return Response.ok(vehicle).build(); // 200 OK
     }
 
     @POST
     public Response addVehicle(@Valid VehicleRequest request) {
-        Vehicle vehicle = vehicleService.addVehicle(request);
-        URI location = URI.create("/vehicles/" + vehicle.getId());
+        VehicleResponse vehicle = vehicleService.addVehicle(request);
+        URI location = URI.create("/vehicles/" + vehicle.id());
         return Response.created(location).entity(vehicle).build(); // 201 Created
     }
 
     @PUT
     @Path("/{id}")
     public Response updateVehicle(@PathParam("id") UUID id, @Valid VehicleRequest request) {
-        Vehicle vehicle = vehicleService.updateVehicle(id, request);
+        VehicleResponse vehicle = vehicleService.updateVehicle(id, request);
         return Response.ok(vehicle).build(); // 200 OK
     }
 
@@ -88,8 +88,8 @@ public class VehicleController {
     @Path("/{id}/withdraw")
     public Response withdrawVehicle(
             @PathParam("id") UUID id, @Valid VehicleWithdrawRequest request) {
-        vehicleService.withdrawVehicle(id, request.reason());
-        return Response.noContent().build(); // 204 No Content
+        VehicleResponse vehicle = vehicleService.withdrawVehicle(id, request.reason());
+        return Response.ok(vehicle).build(); // 200 OK
     }
 
     // expenses
@@ -98,7 +98,7 @@ public class VehicleController {
     @Path("/{id}/expenses")
     public Response getExpenses(
             @PathParam("id") UUID id) {
-        List<Transaction> expenses = transactionService.getExpensesByVehicleId(id);
+        List<ExpenseResponse> expenses = transactionService.getExpensesByVehicleId(id);
         return Response.ok(expenses).build(); // 200 OK
     }
 
@@ -107,8 +107,9 @@ public class VehicleController {
     public Response addExpense(
             @PathParam("id") UUID id,
             @Valid ExpenseRequest request) {
-        Transaction expense = vehicleService.addExpense(id, request.description(), request.amount(), request.date());
-        URI location = URI.create("/vehicles/" + id + "/expenses/" + expense.getId());
+        ExpenseResponse expense = vehicleService.addExpense(id, request.description(), request.amount(),
+                request.date());
+        URI location = URI.create("/vehicles/" + id + "/expenses/" + expense.id());
         return Response.created(location).entity(expense).build(); // 201 Created
     }
 
@@ -120,8 +121,8 @@ public class VehicleController {
             @PathParam("id") UUID id,
             @QueryParam("lastInspection") String lastInspectionDateString) {
         LocalDate lastInspection = Utils.parseDate(lastInspectionDateString);
-        Deadline deadline = vehicleService.generateStandardInspection(id, lastInspection);
-        URI location = URI.create("/vehicles/" + id + "/deadlines/" + deadline.getId());
+        DeadlineResponse deadline = vehicleService.generateStandardInspection(id, lastInspection);
+        URI location = URI.create("/vehicles/" + id + "/deadlines/" + deadline.id());
         return Response.created(location).entity(deadline).build(); // 201 Created
     }
 
@@ -130,15 +131,15 @@ public class VehicleController {
     public Response getDeadlines(
             @PathParam("id") UUID id,
             @QueryParam("completed") @DefaultValue("false") boolean completed) {
-        List<Deadline> deadlines = deadlineService.getDeadlinesByVehicleId(id, completed);
+        List<DeadlineResponse> deadlines = deadlineService.getDeadlinesByVehicleId(id, completed);
         return Response.ok(deadlines).build(); // 200 OK
     }
 
     @POST
     @Path("/{id}/deadlines")
     public Response addDeadline(@PathParam("id") UUID id, @Valid DeadlineRequest request) {
-        Deadline deadline = vehicleService.addDeadline(id, request);
-        URI location = URI.create("/vehicles/" + id + "/deadlines/" + deadline.getId());
+        DeadlineResponse deadline = vehicleService.addDeadline(id, request);
+        URI location = URI.create("/vehicles/" + id + "/deadlines/" + deadline.id());
         return Response.created(location).entity(deadline).build(); // 201 Created
     }
 

@@ -13,6 +13,9 @@ public record OwnerListResponse(
         boolean isActive) {
 
     public static OwnerListResponse fromEntity(Owner owner) {
+        if (owner == null)
+            return null;
+
         return new OwnerListResponse(
                 owner.getId(),
                 owner.getFirstName(),

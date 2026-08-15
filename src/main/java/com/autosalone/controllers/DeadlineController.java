@@ -6,7 +6,8 @@ import java.util.UUID;
 
 import com.autosalone.dtos.requests.DeadlineCompletionRequest;
 import com.autosalone.dtos.requests.DeadlineRequest;
-import com.autosalone.models.Deadline;
+import com.autosalone.dtos.responses.DeadlineCompletionResponse;
+import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.utils.Utils;
 
@@ -33,14 +34,14 @@ public class DeadlineController {
         if (upToDate == null) {
             upToDate = LocalDate.now().plusDays(30); // default: scadenze dei prossimi 30 giorni
         }
-        List<Deadline> deadlines = deadlineService.getUrgentDeadlines(upToDate);
+        List<DeadlineResponse> deadlines = deadlineService.getUrgentDeadlines(upToDate);
         return Response.ok(deadlines).build(); // 200 OK
     }
 
     @PUT
     @Path("/{id}")
     public Response updateDeadline(@PathParam("id") UUID id, @Valid DeadlineRequest request) {
-        Deadline deadline = deadlineService.updateDeadline(id, request);
+        DeadlineResponse deadline = deadlineService.updateDeadline(id, request);
         return Response.ok(deadline).build(); // 200 OK
     }
 
@@ -48,7 +49,8 @@ public class DeadlineController {
     @Path("/{id}/complete")
     public Response completeDeadline(
             @PathParam("id") UUID id, @Valid DeadlineCompletionRequest request) {
-        deadlineService.completeDeadline(id, request.completionDate(), request.notes());
-        return Response.ok().build(); // 200 OK
+        DeadlineCompletionResponse response = deadlineService.completeDeadline(id, request.completionDate(),
+                request.notes());
+        return Response.ok(response).build(); // 200 OK
     }
 }

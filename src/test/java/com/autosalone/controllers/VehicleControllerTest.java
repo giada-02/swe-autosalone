@@ -3,7 +3,6 @@ package com.autosalone.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,11 +23,11 @@ import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.requests.ExpenseRequest;
 import com.autosalone.dtos.requests.VehicleRequest;
 import com.autosalone.dtos.requests.VehicleWithdrawRequest;
+import com.autosalone.dtos.responses.DeadlineResponse;
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
-import com.autosalone.models.Deadline;
-import com.autosalone.models.Transaction;
-import com.autosalone.models.Vehicle;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.services.TransactionService;
 import com.autosalone.services.VehicleService;
@@ -50,33 +49,40 @@ class VehicleControllerTest {
     @InjectMocks
     private VehicleController vehicleController;
 
+    private LocalDate now;
+
     private UUID vehicleId;
-    private Vehicle mockVehicle;
     private VehicleRequest vehicleRequest;
+    private VehicleResponse vehicleResponse;
+
     private UUID deadlineId;
-    private Deadline mockDeadline;
+    private DeadlineResponse deadlineResponse;
     private UUID expenseId;
-    private Transaction mockExpense;
+    private ExpenseResponse expenseResponse;
 
     @BeforeEach
     void setUp() {
+        now = LocalDate.now();
         vehicleId = UUID.randomUUID();
-        mockVehicle = mock(Vehicle.class);
 
         vehicleRequest = new VehicleRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
                 null, null, new BigDecimal("45000"), null, null, null, null, true);
 
+        vehicleResponse = new VehicleResponse(vehicleId, "Fiat", "Panda", "Bianco", VehicleCondition.NEW,
+                null, new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null);
+
         deadlineId = UUID.randomUUID();
-        mockDeadline = mock(Deadline.class);
+        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", now.plusDays(10), vehicleId, null,
+                false, false, null, null, false);
+
         expenseId = UUID.randomUUID();
-        mockExpense = mock(Transaction.class);
+        expenseResponse = new ExpenseResponse(expenseId, "Carrozziere", new BigDecimal("500"), now, vehicleId);
     }
 
     @Test
     void getVehicles_Returns200AndList() {
         when(vehicleService.getVehicles("keyword", "Fiat", VehicleCondition.NEW, new BigDecimal("50000"), true,
-                List.of(VehicleStatus.AVAILABLE)))
-                .thenReturn(List.of(mockVehicle));
+                List.of(VehicleStatus.AVAILABLE))).thenReturn(List.of(vehicleResponse));
 
         Response response = vehicleController.getVehicles("keyword", "Fiat", VehicleCondition.NEW,
                 new BigDecimal("50000"), true, List.of(VehicleStatus.AVAILABLE));
@@ -100,50 +106,51 @@ class VehicleControllerTest {
 
     @Test
     void getVehicleById_Returns200AndVehicle() {
-        when(vehicleService.getVehicleById(vehicleId)).thenReturn(mockVehicle);
+        when(vehicleService.getVehicleResponseById(vehicleId)).thenReturn(vehicleResponse);
 
         Response response = vehicleController.getVehicleById(vehicleId);
 
         assertEquals(200, response.getStatus());
-        assertEquals(mockVehicle, response.getEntity());
-        verify(vehicleService).getVehicleById(vehicleId);
+        assertEquals(vehicleResponse, response.getEntity());
+        verify(vehicleService).getVehicleResponseById(vehicleId);
     }
 
     @Test
     void addVehicle_Returns201AndLocationHeaderWithBody() {
-        when(mockVehicle.getId()).thenReturn(vehicleId);
-        when(vehicleService.addVehicle(vehicleRequest)).thenReturn(mockVehicle);
+        when(vehicleService.addVehicle(vehicleRequest)).thenReturn(vehicleResponse);
 
         Response response = vehicleController.addVehicle(vehicleRequest);
 
         assertEquals(201, response.getStatus());
-        assertEquals(mockVehicle, response.getEntity());
+        assertEquals(vehicleResponse, response.getEntity());
 
         URI location = response.getLocation();
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/vehicles/" + vehicleId));
 
-        assertEquals(mockVehicle, response.getEntity());
+        assertEquals(vehicleResponse, response.getEntity());
     }
 
     @Test
     void updateVehicle_Returns200AndUpdatedVehicle() {
-        when(vehicleService.updateVehicle(vehicleId, vehicleRequest)).thenReturn(mockVehicle);
+        when(vehicleService.updateVehicle(vehicleId, vehicleRequest)).thenReturn(vehicleResponse);
 
         Response response = vehicleController.updateVehicle(vehicleId, vehicleRequest);
 
         assertEquals(200, response.getStatus());
-        assertEquals(mockVehicle, response.getEntity());
+        assertEquals(vehicleResponse, response.getEntity());
         verify(vehicleService).updateVehicle(vehicleId, vehicleRequest);
     }
 
     @Test
     void withdrawVehicle_Returns204NoContent() {
         VehicleWithdrawRequest withdrawRequest = new VehicleWithdrawRequest("Danneggiata");
+        when(vehicleService.withdrawVehicle(vehicleId, withdrawRequest.reason())).thenReturn(vehicleResponse);
 
         Response response = vehicleController.withdrawVehicle(vehicleId, withdrawRequest);
 
-        assertEquals(204, response.getStatus());
+        assertEquals(200, response.getStatus());
+        assertEquals(vehicleResponse, response.getEntity());
         verify(vehicleService).withdrawVehicle(vehicleId, "Danneggiata");
     }
 
@@ -151,7 +158,7 @@ class VehicleControllerTest {
 
     @Test
     void getExpenses_Returns200AndList() {
-        when(transactionService.getExpensesByVehicleId(vehicleId)).thenReturn(List.of(mockExpense));
+        when(transactionService.getExpensesByVehicleId(vehicleId)).thenReturn(List.of(expenseResponse));
 
         Response response = vehicleController.getExpenses(vehicleId);
 
@@ -162,49 +169,41 @@ class VehicleControllerTest {
 
     @Test
     void addExpense_Returns201AndLocationHeaderWithBody() {
-        when(mockExpense.getId()).thenReturn(expenseId);
-
-        LocalDate date = LocalDate.now();
-        ExpenseRequest expenseRequest = new ExpenseRequest("Carrozziere", new BigDecimal("500"), date);
-        when(vehicleService.addExpense(vehicleId, "Carrozziere", new BigDecimal("500"), date)).thenReturn(mockExpense);
+        ExpenseRequest expenseRequest = new ExpenseRequest("Carrozziere", new BigDecimal("500"), now);
+        when(vehicleService.addExpense(vehicleId, "Carrozziere", new BigDecimal("500"), now))
+                .thenReturn(expenseResponse);
 
         Response response = vehicleController.addExpense(vehicleId, expenseRequest);
 
         assertEquals(201, response.getStatus());
-        assertEquals(mockExpense, response.getEntity());
+        assertEquals(expenseResponse, response.getEntity());
 
         URI location = response.getLocation();
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/vehicles/" + vehicleId + "/expenses/" + expenseId));
-
-        assertEquals(mockExpense, response.getEntity());
     }
 
     // inspections and deadlines
 
     @Test
     void generateStandardInspection_Returns201AndLocationHeaderWithBody() {
-        when(mockDeadline.getId()).thenReturn(deadlineId);
-
-        LocalDate lastInspection = LocalDate.now().minusYears(1);
+        LocalDate lastInspection = now.minusYears(1);
         String lastInspectionDateString = lastInspection.toString();
-        when(vehicleService.generateStandardInspection(vehicleId, lastInspection)).thenReturn(mockDeadline);
+        when(vehicleService.generateStandardInspection(vehicleId, lastInspection)).thenReturn(deadlineResponse);
 
         Response response = vehicleController.generateStandardInspection(vehicleId, lastInspectionDateString);
 
         assertEquals(201, response.getStatus());
-        assertEquals(mockDeadline, response.getEntity());
+        assertEquals(deadlineResponse, response.getEntity());
 
         URI location = response.getLocation();
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/vehicles/" + vehicleId + "/deadlines/" + deadlineId));
-
-        assertEquals(mockDeadline, response.getEntity());
     }
 
     @Test
     void getDeadlines_Returns200AndList() {
-        when(deadlineService.getDeadlinesByVehicleId(vehicleId, false)).thenReturn(List.of(mockDeadline));
+        when(deadlineService.getDeadlinesByVehicleId(vehicleId, false)).thenReturn(List.of(deadlineResponse));
 
         Response response = vehicleController.getDeadlines(vehicleId, false);
 
@@ -215,21 +214,17 @@ class VehicleControllerTest {
 
     @Test
     void addDeadline_Returns201AndLocationHeaderWithBody() {
-        when(mockDeadline.getId()).thenReturn(deadlineId);
-
-        DeadlineRequest deadlineRequest = new DeadlineRequest("Tagliando", LocalDate.now(), null, false);
-        when(vehicleService.addDeadline(vehicleId, deadlineRequest)).thenReturn(mockDeadline);
+        DeadlineRequest deadlineRequest = new DeadlineRequest("Tagliando", now, null, false);
+        when(vehicleService.addDeadline(vehicleId, deadlineRequest)).thenReturn(deadlineResponse);
 
         Response response = vehicleController.addDeadline(vehicleId, deadlineRequest);
 
         assertEquals(201, response.getStatus());
-        assertEquals(mockDeadline, response.getEntity());
+        assertEquals(deadlineResponse, response.getEntity());
 
         URI location = response.getLocation();
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/vehicles/" + vehicleId + "/deadlines/" + deadlineId));
-
-        assertEquals(mockDeadline, response.getEntity());
     }
 
     @Test

@@ -23,6 +23,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.requests.VehicleRequest;
+import com.autosalone.dtos.responses.DeadlineResponse;
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
@@ -98,6 +101,25 @@ class VehicleServiceTest {
     }
 
     @Test
+    void getVehicleResponseById_Success() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+
+        VehicleResponse response = vehicleService.getVehicleResponseById(vehicleId);
+
+        assertNotNull(response);
+        assertEquals(vehicleId, response.id());
+    }
+
+    @Test
+    void getVehicleResponseById_NotFound() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            vehicleService.getVehicleResponseById(vehicleId);
+        });
+    }
+
+    @Test
     void getVehicles_Success() {
         String keyword = "Panda";
         String brand = "Fiat";
@@ -111,11 +133,11 @@ class VehicleServiceTest {
         when(vehicleRepository.findVehicles(keyword, brand, condition, maxPrice, isInShowroom, statusList))
                 .thenReturn(List.of(mockVehicle));
 
-        List<Vehicle> responses = vehicleService.getVehicles(
+        List<VehicleResponse> responses = vehicleService.getVehicles(
                 keyword, brand, condition, maxPrice, isInShowroom, statusList);
 
         assertEquals(1, responses.size());
-        assertEquals(vehicleId, responses.get(0).getId());
+        assertEquals(vehicleId, responses.get(0).id());
         verify(vehicleRepository).findVehicles(
                 keyword, brand, condition, maxPrice, isInShowroom, statusList);
     }
@@ -137,11 +159,11 @@ class VehicleServiceTest {
 
     @Test
     void addVehicle_Success_WithPurchaseTransaction() {
-        Vehicle vehicle = vehicleService.addVehicle(vehicleRequest);
+        VehicleResponse response = vehicleService.addVehicle(vehicleRequest);
 
-        assertNotNull(vehicle);
-        assertNotNull(vehicle.getPurchaseTransaction());
-        verify(vehicleRepository).save(vehicle);
+        assertNotNull(response);
+        assertNotNull(response.purchaseTransaction());
+        verify(vehicleRepository).save(any(Vehicle.class));
     }
 
     @Test
@@ -150,11 +172,11 @@ class VehicleServiceTest {
                 "BMW", "X5", "Nero", VehicleCondition.SECONDHAND, null, null,
                 BigDecimal.valueOf(30000), null, "ZA999ZZ", LocalDate.now(), 50000.0, true);
 
-        Vehicle vehicle = vehicleService.addVehicle(requestNoPurchase);
+        VehicleResponse response = vehicleService.addVehicle(requestNoPurchase);
 
-        assertNotNull(vehicle);
-        assertNull(vehicle.getPurchaseTransaction());
-        verify(vehicleRepository).save(vehicle);
+        assertNotNull(response);
+        assertNull(response.purchaseTransaction());
+        verify(vehicleRepository).save(any(Vehicle.class));
     }
 
     @Test
@@ -196,10 +218,10 @@ class VehicleServiceTest {
         when(mockVehicle.getBrand()).thenReturn("Audi");
         when(mockVehicle.getModel()).thenReturn("A3");
 
-        Transaction expense = vehicleService.addExpense(vehicleId, "Cambio gomme", BigDecimal.valueOf(400),
+        ExpenseResponse response = vehicleService.addExpense(vehicleId, "Cambio gomme", BigDecimal.valueOf(400),
                 LocalDate.now());
 
-        assertNotNull(expense);
+        assertNotNull(response);
         verify(mockVehicle).addExpense(any(Transaction.class));
         verify(vehicleRepository).save(mockVehicle);
     }
@@ -210,10 +232,11 @@ class VehicleServiceTest {
 
         Deadline mockDeadline = mock(Deadline.class);
         when(mockVehicle.generateStandardInspectionDeadline()).thenReturn(mockDeadline);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        Deadline deadline = vehicleService.generateStandardInspection(vehicleId, null);
+        DeadlineResponse response = vehicleService.generateStandardInspection(vehicleId, null);
 
-        assertNotNull(deadline);
+        assertNotNull(response);
         verify(mockVehicle).generateStandardInspectionDeadline();
         verify(vehicleRepository).save(mockVehicle);
     }
@@ -225,10 +248,11 @@ class VehicleServiceTest {
         Deadline mockDeadline = mock(Deadline.class);
         LocalDate lastDate = LocalDate.now().minusYears(2);
         when(mockVehicle.generateInspectionFromLastDate(lastDate)).thenReturn(mockDeadline);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        Deadline deadline = vehicleService.generateStandardInspection(vehicleId, lastDate);
+        DeadlineResponse response = vehicleService.generateStandardInspection(vehicleId, lastDate);
 
-        assertNotNull(deadline);
+        assertNotNull(response);
         verify(mockVehicle).generateInspectionFromLastDate(lastDate);
         verify(vehicleRepository).save(mockVehicle);
     }
@@ -236,16 +260,18 @@ class VehicleServiceTest {
     @Test
     void addDeadline_Success() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+
         Deadline mockDeadline = mock(Deadline.class);
 
         DeadlineRequest request = new DeadlineRequest("Bollo", LocalDate.now(), Period.ofYears(1), false);
 
         when(mockVehicle.addDeadline(anyString(), any(LocalDate.class), any(Period.class), anyBoolean()))
                 .thenReturn(mockDeadline);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        Deadline deadline = vehicleService.addDeadline(vehicleId, request);
+        DeadlineResponse response = vehicleService.addDeadline(vehicleId, request);
 
-        assertNotNull(deadline);
+        assertNotNull(response);
         verify(mockVehicle).addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
         verify(vehicleRepository).save(mockVehicle);

@@ -1,6 +1,7 @@
 package com.autosalone.services;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -12,15 +13,17 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.SortOrder;
 import com.autosalone.enums.TransactionType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Transaction;
+import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.TransactionRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,7 +74,8 @@ class TransactionServiceTest {
         when(transactionRepository.findTransactions(from, to, TransactionType.IN, SortOrder.DESC))
                 .thenReturn(List.of(mockTransaction));
 
-        List<Transaction> results = transactionService.getTransactions(from, to, TransactionType.IN, SortOrder.DESC);
+        List<TransactionResponse> results = transactionService.getTransactions(from, to, TransactionType.IN,
+                SortOrder.DESC);
 
         assertEquals(1, results.size());
         verify(transactionRepository).findTransactions(from, to, TransactionType.IN, SortOrder.DESC);
@@ -80,8 +84,10 @@ class TransactionServiceTest {
     @Test
     void getExpensesByVehicleId_Success() {
         when(transactionRepository.findAllExpenses(vehicleId)).thenReturn(List.of(mockTransaction));
+        Vehicle mockVehicle = mock(Vehicle.class);
+        when(mockTransaction.getVehicle()).thenReturn(mockVehicle);
 
-        List<Transaction> results = transactionService.getExpensesByVehicleId(vehicleId);
+        List<ExpenseResponse> results = transactionService.getExpensesByVehicleId(vehicleId);
 
         assertEquals(1, results.size());
         verify(transactionRepository).findAllExpenses(vehicleId);
@@ -91,7 +97,7 @@ class TransactionServiceTest {
     void getPaymentsByContractId_Success() {
         when(transactionRepository.findAllPayments(contractId)).thenReturn(List.of(mockTransaction));
 
-        List<Transaction> results = transactionService.getPaymentsByContractId(contractId);
+        List<TransactionResponse> results = transactionService.getPaymentsByContractId(contractId);
 
         assertEquals(1, results.size());
         verify(transactionRepository).findAllPayments(contractId);
@@ -133,17 +139,14 @@ class TransactionServiceTest {
         BigDecimal amount = BigDecimal.valueOf(250.50);
         LocalDate date = LocalDate.now();
 
-        transactionService.createGeneralExpense(reason, amount, date);
+        TransactionResponse response = transactionService.createGeneralExpense(reason, amount, date);
 
-        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
-        verify(transactionRepository).save(captor.capture());
+        assertEquals(reason, response.reason());
+        assertEquals(amount, response.amount());
+        assertEquals(date, response.date());
+        assertEquals(TransactionType.OUT, response.type());
 
-        Transaction savedTransaction = captor.getValue();
-
-        assertEquals(reason, savedTransaction.getReason());
-        assertEquals(amount, savedTransaction.getAmount());
-        assertEquals(date, savedTransaction.getDate());
-        assertEquals(TransactionType.OUT, savedTransaction.getType());
+        verify(transactionRepository).save(any(Transaction.class));
     }
 
     @Test
@@ -152,16 +155,13 @@ class TransactionServiceTest {
         BigDecimal amount = BigDecimal.valueOf(1000.00);
         LocalDate date = LocalDate.now();
 
-        transactionService.createGeneralIncome(reason, amount, date);
+        TransactionResponse response = transactionService.createGeneralIncome(reason, amount, date);
 
-        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
-        verify(transactionRepository).save(captor.capture());
+        assertEquals(reason, response.reason());
+        assertEquals(amount, response.amount());
+        assertEquals(date, response.date());
+        assertEquals(TransactionType.IN, response.type());
 
-        Transaction savedTransaction = captor.getValue();
-
-        assertEquals(reason, savedTransaction.getReason());
-        assertEquals(amount, savedTransaction.getAmount());
-        assertEquals(date, savedTransaction.getDate());
-        assertEquals(TransactionType.IN, savedTransaction.getType());
+        verify(transactionRepository).save(any(Transaction.class));
     }
 }

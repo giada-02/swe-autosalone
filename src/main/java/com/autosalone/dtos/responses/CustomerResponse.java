@@ -18,6 +18,9 @@ public record CustomerResponse(
         boolean hasActiveInvitation) {
 
     public static CustomerResponse fromEntity(Customer customer, boolean hasActiveInvitation) {
+        if (customer == null)
+            return null;
+
         return new CustomerResponse(
                 customer.getId(),
                 customer.getFirstName(),

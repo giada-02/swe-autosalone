@@ -7,6 +7,9 @@ import java.util.UUID;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.requests.VehicleRequest;
+import com.autosalone.dtos.responses.DeadlineResponse;
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
@@ -50,10 +53,16 @@ public class VehicleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found of id: " + id));
     }
 
-    public List<Vehicle> getVehicles(String keyword, String brand, VehicleCondition condition,
+    public VehicleResponse getVehicleResponseById(UUID id) {
+        Vehicle vehicle = getVehicleById(id);
+        return VehicleResponse.fromEntity(vehicle);
+    }
+
+    public List<VehicleResponse> getVehicles(String keyword, String brand, VehicleCondition condition,
             BigDecimal maxPrice, Boolean isInShowroom, List<VehicleStatus> statusList) {
         String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
-        return vehicleRepository.findVehicles(sanitizedKeyword, brand, condition, maxPrice, isInShowroom, statusList);
+        return vehicleRepository.findVehicles(sanitizedKeyword, brand, condition, maxPrice, isInShowroom, statusList)
+                .stream().map(VehicleResponse::fromEntity).toList();
     }
 
     public List<String> getAllBrands() {
@@ -63,7 +72,7 @@ public class VehicleService {
     // write
 
     @Transactional
-    public Vehicle addVehicle(VehicleRequest request) {
+    public VehicleResponse addVehicle(VehicleRequest request) {
 
         Vehicle vehicle = new Vehicle.VehicleBuilder()
                 .setBrand(request.brand())
@@ -85,11 +94,11 @@ public class VehicleService {
         }
 
         vehicleRepository.save(vehicle);
-        return vehicle;
+        return VehicleResponse.fromEntity(vehicle);
     }
 
     @Transactional
-    public void withdrawVehicle(UUID vehicleId, String reason) {
+    public VehicleResponse withdrawVehicle(UUID vehicleId, String reason) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         vehicle.withdraw(reason);
@@ -119,21 +128,23 @@ public class VehicleService {
             }
             contractRepository.save(contract);
         }
+
+        return VehicleResponse.fromEntity(vehicle);
     }
 
     @Transactional
-    public Transaction addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
+    public ExpenseResponse addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
         Vehicle vehicle = getVehicleById(vehicleId);
         String sanitizedDescription = Utils.sanitizeText(description);
         Transaction expense = TransactionFactory.createVehicleExpense(vehicle, sanitizedDescription, amount, date);
         vehicle.addExpense(expense);
 
         vehicleRepository.save(vehicle);
-        return expense;
+        return ExpenseResponse.fromEntity(expense);
     }
 
     @Transactional
-    public Deadline generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
+    public DeadlineResponse generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
         Vehicle vehicle = getVehicleById(vehicleId);
         Deadline inspectionDeadline;
 
@@ -144,18 +155,18 @@ public class VehicleService {
         }
 
         vehicleRepository.save(vehicle);
-        return inspectionDeadline;
+        return DeadlineResponse.fromEntity(inspectionDeadline);
     }
 
     @Transactional
-    public Deadline addDeadline(UUID vehicleId, DeadlineRequest request) {
+    public DeadlineResponse addDeadline(UUID vehicleId, DeadlineRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         Deadline deadline = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
 
         vehicleRepository.save(vehicle);
-        return deadline;
+        return DeadlineResponse.fromEntity(deadline);
     }
 
     @Transactional
@@ -170,7 +181,7 @@ public class VehicleService {
     }
 
     @Transactional
-    public Vehicle updateVehicle(UUID vehicleId, VehicleRequest request) {
+    public VehicleResponse updateVehicle(UUID vehicleId, VehicleRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         vehicle.setBrand(request.brand());
@@ -192,6 +203,6 @@ public class VehicleService {
         }
 
         vehicleRepository.save(vehicle);
-        return vehicle;
+        return VehicleResponse.fromEntity(vehicle);
     }
 }

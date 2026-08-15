@@ -17,6 +17,9 @@ public record CustomerListResponse(
         String vatNumber) {
 
     public static CustomerListResponse fromEntity(Customer customer) {
+        if (customer == null)
+            return null;
+
         return new CustomerListResponse(
                 customer.getId(),
                 customer.getFirstName(),
