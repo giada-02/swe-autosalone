@@ -72,11 +72,12 @@ class VehicleControllerTest {
                 null, new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null);
 
         deadlineId = UUID.randomUUID();
-        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", now.plusDays(10), vehicleId, null,
+        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", now.plusDays(10).toString(), vehicleId, null,
                 false, false, null, null, false);
 
         expenseId = UUID.randomUUID();
-        expenseResponse = new ExpenseResponse(expenseId, "Carrozziere", new BigDecimal("500"), now, vehicleId);
+        expenseResponse = new ExpenseResponse(expenseId, "Carrozziere", new BigDecimal("500"), now.toString(),
+                vehicleId);
     }
 
     @Test

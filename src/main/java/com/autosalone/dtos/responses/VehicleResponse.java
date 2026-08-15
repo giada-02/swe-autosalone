@@ -1,7 +1,6 @@
 package com.autosalone.dtos.responses;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.UUID;
 
 import com.autosalone.enums.VehicleCondition;
@@ -16,9 +15,9 @@ public record VehicleResponse(
         VehicleCondition condition,
         TransactionResponse purchaseTransaction,
         BigDecimal sellingPrice,
-        LocalDate handoverDate,
+        String handoverDate,
         String licensePlate,
-        LocalDate registrationDate,
+        String registrationDate,
         Double kilometers,
         boolean isInShowroom,
         VehicleStatus status,
@@ -40,9 +39,9 @@ public record VehicleResponse(
                 vehicle.getCondition(),
                 transactionResponse,
                 vehicle.getSellingPrice(),
-                vehicle.getHandoverDate(),
+                vehicle.getHandoverDate() != null ? vehicle.getHandoverDate().toString() : null,
                 vehicle.getLicensePlate(),
-                vehicle.getRegistrationDate(),
+                vehicle.getRegistrationDate() != null ? vehicle.getRegistrationDate().toString() : null,
                 vehicle.getKilometers(),
                 vehicle.isInShowroom(),
                 vehicle.getStatus(),

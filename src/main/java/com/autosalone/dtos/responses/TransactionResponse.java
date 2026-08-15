@@ -1,7 +1,6 @@
 package com.autosalone.dtos.responses;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.UUID;
 
 import com.autosalone.enums.TransactionType;
@@ -11,7 +10,7 @@ public record TransactionResponse(
         UUID id,
         String reason,
         BigDecimal amount,
-        LocalDate date,
+        String date,
         TransactionType type,
         UUID vehicleId,
         UUID contractId) {
@@ -27,7 +26,7 @@ public record TransactionResponse(
                 transaction.getId(),
                 transaction.getReason(),
                 transaction.getAmount(),
-                transaction.getDate(),
+                transaction.getDate() != null ? transaction.getDate().toString() : null,
                 transaction.getType(),
                 vehicleId,
                 contractId);

@@ -46,7 +46,7 @@ class DeadlineControllerTest {
         completionRequest = new DeadlineCompletionRequest(LocalDate.now(), null);
 
         UUID vehicleId = UUID.randomUUID();
-        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", LocalDate.now().plusDays(10),
+        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", LocalDate.now().plusDays(10).toString(),
                 vehicleId, null, false, false, null, null, false);
     }
 

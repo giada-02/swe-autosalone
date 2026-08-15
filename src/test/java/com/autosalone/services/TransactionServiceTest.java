@@ -143,7 +143,7 @@ class TransactionServiceTest {
 
         assertEquals(reason, response.reason());
         assertEquals(amount, response.amount());
-        assertEquals(date, response.date());
+        assertEquals(date.toString(), response.date());
         assertEquals(TransactionType.OUT, response.type());
 
         verify(transactionRepository).save(any(Transaction.class));
@@ -159,7 +159,7 @@ class TransactionServiceTest {
 
         assertEquals(reason, response.reason());
         assertEquals(amount, response.amount());
-        assertEquals(date, response.date());
+        assertEquals(date.toString(), response.date());
         assertEquals(TransactionType.IN, response.type());
 
         verify(transactionRepository).save(any(Transaction.class));
