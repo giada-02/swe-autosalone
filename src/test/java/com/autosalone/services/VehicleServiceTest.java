@@ -177,7 +177,7 @@ class VehicleServiceTest {
     }
 
     @Test
-    void withdrawVehicle_Success_VoidsQuotationsAndCancelsContracts() {
+    void withdrawVehicle_Success_VoidsQuotationsCancelsContractsAndRemovesDeadlines() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 
         Quotation mockQuotation = mock(Quotation.class);
@@ -193,20 +193,28 @@ class VehicleServiceTest {
         when(contractRepository.findContracts(any(), any(), anyBoolean(), eq(vehicleId), any(), any()))
                 .thenReturn(List.of(mockDraftContract, mockConfirmedContract));
 
+        Deadline mockPendingDeadline = mock(Deadline.class);
+        when(deadlineRepository.findPendingByVehicleId(vehicleId))
+                .thenReturn(List.of(mockPendingDeadline));
+
         vehicleService.withdrawVehicle(vehicleId, "Danno irreparabile");
 
         verify(mockVehicle).withdraw("Danno irreparabile");
         verify(vehicleRepository).save(mockVehicle);
 
-        // verifica preventivi
+        // verifica Preventivi
         verify(mockQuotation).voidDocument();
         verify(quotationRepository).save(mockQuotation);
 
-        // verifica contratti
+        // verifica Contratti
         verify(mockDraftContract).voidDocument(); // Draft -> Void
         verify(mockConfirmedContract).cancel("Danno irreparabile"); // Confirmed -> Cancel
         verify(contractRepository).save(mockDraftContract);
         verify(contractRepository).save(mockConfirmedContract);
+
+        // verifica Scadenze
+        verify(deadlineRepository).findPendingByVehicleId(vehicleId);
+        verify(deadlineRepository).delete(mockPendingDeadline);
     }
 
     @Test

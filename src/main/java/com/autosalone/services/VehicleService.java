@@ -150,6 +150,11 @@ public class VehicleService {
             contractRepository.save(contract);
         }
 
+        List<Deadline> pendingDeadlines = deadlineRepository.findPendingByVehicleId(vehicleId);
+        for (Deadline deadline : pendingDeadlines) {
+            deadlineRepository.delete(deadline);
+        }
+
         return VehicleResponse.fromEntity(vehicle);
     }
 
