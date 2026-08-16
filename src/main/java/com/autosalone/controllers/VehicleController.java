@@ -8,7 +8,9 @@ import java.util.UUID;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.requests.ExpenseRequest;
-import com.autosalone.dtos.requests.VehicleRequest;
+import com.autosalone.dtos.requests.PurchaseTransactionRequest;
+import com.autosalone.dtos.requests.VehicleCreateRequest;
+import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.requests.VehicleWithdrawRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
@@ -71,15 +73,24 @@ public class VehicleController {
     }
 
     @POST
-    public Response addVehicle(@Valid VehicleRequest request) {
+    public Response addVehicle(@Valid VehicleCreateRequest request) {
         VehicleResponse vehicle = vehicleService.addVehicle(request);
         URI location = URI.create("/vehicles/" + vehicle.id());
         return Response.created(location).entity(vehicle).build(); // 201 Created
     }
 
+    @POST
+    @Path("/{id}/purchase-transaction")
+    public Response addPurchaseTransaction(
+            @PathParam("id") UUID vehicleId,
+            @Valid PurchaseTransactionRequest request) {
+        VehicleResponse vehicle = vehicleService.addPurchaseTransaction(vehicleId, request);
+        return Response.ok(vehicle).build(); // 200 OK
+    }
+
     @PUT
     @Path("/{id}")
-    public Response updateVehicle(@PathParam("id") UUID id, @Valid VehicleRequest request) {
+    public Response updateVehicle(@PathParam("id") UUID id, @Valid VehicleUpdateRequest request) {
         VehicleResponse vehicle = vehicleService.updateVehicle(id, request);
         return Response.ok(vehicle).build(); // 200 OK
     }

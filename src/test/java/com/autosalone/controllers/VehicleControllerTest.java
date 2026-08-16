@@ -21,7 +21,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.requests.ExpenseRequest;
-import com.autosalone.dtos.requests.VehicleRequest;
+import com.autosalone.dtos.requests.PurchaseTransactionRequest;
+import com.autosalone.dtos.requests.VehicleCreateRequest;
+import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.requests.VehicleWithdrawRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
@@ -52,7 +54,8 @@ class VehicleControllerTest {
     private LocalDate now;
 
     private UUID vehicleId;
-    private VehicleRequest vehicleRequest;
+    private VehicleCreateRequest vehicleCreateRequest;
+    private VehicleUpdateRequest vehicleUpdateRequest;
     private VehicleResponse vehicleResponse;
 
     private UUID deadlineId;
@@ -65,8 +68,11 @@ class VehicleControllerTest {
         now = LocalDate.now();
         vehicleId = UUID.randomUUID();
 
-        vehicleRequest = new VehicleRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
-                null, null, new BigDecimal("45000"), null, null, null, null, true);
+        vehicleCreateRequest = new VehicleCreateRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
+                new BigDecimal("45000"), null, null, null, null, true, null);
+
+        vehicleUpdateRequest = new VehicleUpdateRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
+                new BigDecimal("45000"), null, null, null, null, true);
 
         vehicleResponse = new VehicleResponse(vehicleId, "Fiat", "Panda", "Bianco", VehicleCondition.NEW,
                 null, new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null);
@@ -118,9 +124,9 @@ class VehicleControllerTest {
 
     @Test
     void addVehicle_Returns201AndLocationHeaderWithBody() {
-        when(vehicleService.addVehicle(vehicleRequest)).thenReturn(vehicleResponse);
+        when(vehicleService.addVehicle(vehicleCreateRequest)).thenReturn(vehicleResponse);
 
-        Response response = vehicleController.addVehicle(vehicleRequest);
+        Response response = vehicleController.addVehicle(vehicleCreateRequest);
 
         assertEquals(201, response.getStatus());
         assertEquals(vehicleResponse, response.getEntity());
@@ -133,14 +139,26 @@ class VehicleControllerTest {
     }
 
     @Test
-    void updateVehicle_Returns200AndUpdatedVehicle() {
-        when(vehicleService.updateVehicle(vehicleId, vehicleRequest)).thenReturn(vehicleResponse);
+    void addPurchaseTransaction_Returns200AndVehicle() {
+        PurchaseTransactionRequest purchaseRequest = new PurchaseTransactionRequest(new BigDecimal("10000"), now);
+        when(vehicleService.addPurchaseTransaction(vehicleId, purchaseRequest)).thenReturn(vehicleResponse);
 
-        Response response = vehicleController.updateVehicle(vehicleId, vehicleRequest);
+        Response response = vehicleController.addPurchaseTransaction(vehicleId, purchaseRequest);
 
         assertEquals(200, response.getStatus());
         assertEquals(vehicleResponse, response.getEntity());
-        verify(vehicleService).updateVehicle(vehicleId, vehicleRequest);
+        verify(vehicleService).addPurchaseTransaction(vehicleId, purchaseRequest);
+    }
+
+    @Test
+    void updateVehicle_Returns200AndUpdatedVehicle() {
+        when(vehicleService.updateVehicle(vehicleId, vehicleUpdateRequest)).thenReturn(vehicleResponse);
+
+        Response response = vehicleController.updateVehicle(vehicleId, vehicleUpdateRequest);
+
+        assertEquals(200, response.getStatus());
+        assertEquals(vehicleResponse, response.getEntity());
+        verify(vehicleService).updateVehicle(vehicleId, vehicleUpdateRequest);
     }
 
     @Test

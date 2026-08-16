@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
-import com.autosalone.dtos.requests.VehicleRequest;
+import com.autosalone.dtos.requests.PurchaseTransactionRequest;
+import com.autosalone.dtos.requests.VehicleCreateRequest;
+import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
@@ -72,7 +74,7 @@ public class VehicleService {
     // write
 
     @Transactional
-    public VehicleResponse addVehicle(VehicleRequest request) {
+    public VehicleResponse addVehicle(VehicleCreateRequest request) {
 
         Vehicle vehicle = new Vehicle.VehicleBuilder()
                 .setBrand(request.brand())
@@ -87,13 +89,27 @@ public class VehicleService {
                 .setIsInShowroom(request.inShowroom())
                 .build();
 
-        if (request.purchaseTransactionAmount() != null && request.purchaseTransactionDate() != null) {
+        if (request.purchaseTransaction() != null) {
             Transaction purchase = TransactionFactory.createVehiclePurchase(vehicle,
-                    request.purchaseTransactionAmount(), request.purchaseTransactionDate());
+                    request.purchaseTransaction().amount(), request.purchaseTransaction().date());
             vehicle.setPurchaseTransaction(purchase);
         }
 
         vehicleRepository.save(vehicle);
+        return VehicleResponse.fromEntity(vehicle);
+    }
+
+    @Transactional
+    public VehicleResponse addPurchaseTransaction(UUID vehicleId, PurchaseTransactionRequest request) {
+        Vehicle vehicle = getVehicleById(vehicleId);
+
+        if (vehicle.getPurchaseTransaction() != null)
+            throw new IllegalStateException("A purchase transaction already exists for this vehicle");
+
+        Transaction purchase = TransactionFactory.createVehiclePurchase(vehicle,
+                request.amount(), request.date());
+        vehicle.setPurchaseTransaction(purchase);
+
         return VehicleResponse.fromEntity(vehicle);
     }
 
@@ -181,7 +197,7 @@ public class VehicleService {
     }
 
     @Transactional
-    public VehicleResponse updateVehicle(UUID vehicleId, VehicleRequest request) {
+    public VehicleResponse updateVehicle(UUID vehicleId, VehicleUpdateRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         vehicle.setBrand(request.brand());
@@ -194,13 +210,6 @@ public class VehicleService {
         vehicle.setRegistrationDate(request.registrationDate());
         vehicle.setKilometers(request.kilometers());
         vehicle.setIsInShowroom(request.inShowroom());
-
-        if (request.purchaseTransactionAmount() != null && request.purchaseTransactionDate() != null
-                && vehicle.getPurchaseTransaction() == null) {
-            Transaction transaction = TransactionFactory.createVehiclePurchase(vehicle,
-                    request.purchaseTransactionAmount(), request.purchaseTransactionDate());
-            vehicle.setPurchaseTransaction(transaction);
-        }
 
         vehicleRepository.save(vehicle);
         return VehicleResponse.fromEntity(vehicle);

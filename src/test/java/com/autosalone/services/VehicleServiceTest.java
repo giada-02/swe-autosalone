@@ -22,7 +22,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
-import com.autosalone.dtos.requests.VehicleRequest;
+import com.autosalone.dtos.requests.PurchaseTransactionRequest;
+import com.autosalone.dtos.requests.VehicleCreateRequest;
+import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
@@ -60,26 +62,11 @@ class VehicleServiceTest {
 
     private UUID vehicleId;
     private Vehicle mockVehicle;
-    private VehicleRequest vehicleRequest;
 
     @BeforeEach
     void setUp() {
         vehicleId = UUID.randomUUID();
         mockVehicle = mock(Vehicle.class);
-
-        vehicleRequest = new VehicleRequest(
-                "Fiat",
-                "Panda",
-                "Rosso",
-                VehicleCondition.NEW,
-                BigDecimal.valueOf(10000),
-                LocalDate.now(),
-                BigDecimal.valueOf(12000),
-                null,
-                "AB123CD",
-                LocalDate.now(),
-                0.0,
-                true);
     }
 
     // read
@@ -159,7 +146,13 @@ class VehicleServiceTest {
 
     @Test
     void addVehicle_Success_WithPurchaseTransaction() {
-        VehicleResponse response = vehicleService.addVehicle(vehicleRequest);
+        VehicleCreateRequest request = new VehicleCreateRequest("Fiat", "Panda", "Rosso", VehicleCondition.NEW,
+                BigDecimal.valueOf(12000), null, "AB123CD", LocalDate.now(), 0.0, true,
+                new PurchaseTransactionRequest(
+                        BigDecimal.valueOf(10000),
+                        LocalDate.now()));
+
+        VehicleResponse response = vehicleService.addVehicle(request);
 
         assertNotNull(response);
         assertNotNull(response.purchaseTransaction());
@@ -168,9 +161,9 @@ class VehicleServiceTest {
 
     @Test
     void addVehicle_Success_WithoutPurchaseTransaction() {
-        VehicleRequest requestNoPurchase = new VehicleRequest(
-                "BMW", "X5", "Nero", VehicleCondition.SECONDHAND, null, null,
-                BigDecimal.valueOf(30000), null, "ZA999ZZ", LocalDate.now(), 50000.0, true);
+        VehicleCreateRequest requestNoPurchase = new VehicleCreateRequest(
+                "BMW", "X5", "Nero", VehicleCondition.SECONDHAND, BigDecimal.valueOf(30000), null,
+                "ZA999ZZ", LocalDate.now(), 50000.0, true, null);
 
         VehicleResponse response = vehicleService.addVehicle(requestNoPurchase);
 
@@ -292,30 +285,44 @@ class VehicleServiceTest {
     }
 
     @Test
-    void updateVehicle_Success_WithoutOverwritingExistingPurchase() {
+    void addPurchaseTransaction_Success() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+        when(mockVehicle.getPurchaseTransaction()).thenReturn(null);
+
+        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), LocalDate.now());
+
+        assertDoesNotThrow(() -> vehicleService.addPurchaseTransaction(vehicleId, request));
+
+        verify(mockVehicle).setPurchaseTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void addPurchaseTransaction_AlreadyExists_ThrowsException() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 
-        Transaction existingPurchase = mock(Transaction.class);
-        when(mockVehicle.getPurchaseTransaction()).thenReturn(existingPurchase);
+        Transaction existingTransaction = mock(Transaction.class);
+        when(mockVehicle.getPurchaseTransaction()).thenReturn(existingTransaction);
 
-        assertDoesNotThrow(() -> vehicleService.updateVehicle(vehicleId, vehicleRequest));
+        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), LocalDate.now());
+
+        assertThrows(IllegalStateException.class, () -> vehicleService.addPurchaseTransaction(vehicleId, request));
+
+        verify(mockVehicle, never()).setPurchaseTransaction(any());
+    }
+
+    @Test
+    void updateVehicle_Success_OnlyUpdatesBaseFields() {
+        VehicleUpdateRequest request = new VehicleUpdateRequest("Fiat", "Panda", "Rosso", VehicleCondition.NEW,
+                BigDecimal.valueOf(12000), null, "AB123CD", LocalDate.now(), 0.0, true);
+
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+
+        assertDoesNotThrow(() -> vehicleService.updateVehicle(vehicleId, request));
 
         verify(mockVehicle).setBrand("Fiat");
         verify(mockVehicle).setSellingPrice(BigDecimal.valueOf(12000));
 
         verify(mockVehicle, never()).setPurchaseTransaction(any());
-        verify(vehicleRepository).save(mockVehicle);
-    }
-
-    @Test
-    void updateVehicle_Success_AddingNewPurchaseTransaction() {
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
-
-        when(mockVehicle.getPurchaseTransaction()).thenReturn(null);
-
-        assertDoesNotThrow(() -> vehicleService.updateVehicle(vehicleId, vehicleRequest));
-
-        verify(mockVehicle).setPurchaseTransaction(any(Transaction.class));
         verify(vehicleRepository).save(mockVehicle);
     }
 }
