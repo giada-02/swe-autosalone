@@ -1,6 +1,5 @@
 package com.autosalone.dtos.responses;
 
-import java.time.Period;
 import java.util.UUID;
 
 import com.autosalone.models.Deadline;
@@ -10,7 +9,7 @@ public record DeadlineResponse(
         String reason,
         String dueDate,
         UUID vehicleId,
-        Period recurrence,
+        String recurrence,
         boolean recalculateFromCompletion,
         boolean isCompleted,
         String completionDate,
@@ -26,7 +25,7 @@ public record DeadlineResponse(
                 deadline.getReason(),
                 deadline.getDueDate() != null ? deadline.getDueDate().toString() : null,
                 deadline.getVehicle().getId(),
-                deadline.getRecurrence(),
+                deadline.getRecurrence() != null ? deadline.getRecurrence().toString() : null,
                 deadline.isRecalculatedFromCompletion(),
                 deadline.isCompleted(),
                 deadline.getCompletionDate() != null ? deadline.getCompletionDate().toString() : null,

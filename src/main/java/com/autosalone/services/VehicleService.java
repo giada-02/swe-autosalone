@@ -175,7 +175,7 @@ public class VehicleService {
             inspectionDeadline = vehicle.generateStandardInspectionDeadline();
         }
 
-        vehicleRepository.save(vehicle);
+        deadlineRepository.save(inspectionDeadline);
         return DeadlineResponse.fromEntity(inspectionDeadline);
     }
 
@@ -186,7 +186,7 @@ public class VehicleService {
         Deadline deadline = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
 
-        vehicleRepository.save(vehicle);
+        deadlineRepository.save(deadline);
         return DeadlineResponse.fromEntity(deadline);
     }
 
@@ -198,7 +198,7 @@ public class VehicleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Deadline not found of id: " + deadlineId));
 
         vehicle.removeDeadline(deadline);
-        vehicleRepository.save(vehicle);
+        deadlineRepository.save(deadline);
     }
 
     @Transactional

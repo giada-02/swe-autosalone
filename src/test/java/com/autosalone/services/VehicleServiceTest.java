@@ -235,7 +235,7 @@ class VehicleServiceTest {
 
         assertNotNull(response);
         verify(mockVehicle).generateStandardInspectionDeadline();
-        verify(vehicleRepository).save(mockVehicle);
+        verify(deadlineRepository).save(mockDeadline);
     }
 
     @Test
@@ -251,7 +251,7 @@ class VehicleServiceTest {
 
         assertNotNull(response);
         verify(mockVehicle).generateInspectionFromLastDate(lastDate);
-        verify(vehicleRepository).save(mockVehicle);
+        verify(deadlineRepository).save(mockDeadline);
     }
 
     @Test
@@ -271,7 +271,7 @@ class VehicleServiceTest {
         assertNotNull(response);
         verify(mockVehicle).addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
-        verify(vehicleRepository).save(mockVehicle);
+        verify(deadlineRepository).save(mockDeadline);
     }
 
     @Test
@@ -285,7 +285,7 @@ class VehicleServiceTest {
         vehicleService.removeDeadline(vehicleId, deadlineId);
 
         verify(mockVehicle).removeDeadline(mockDeadline);
-        verify(vehicleRepository).save(mockVehicle);
+        verify(deadlineRepository).save(mockDeadline);
     }
 
     @Test
