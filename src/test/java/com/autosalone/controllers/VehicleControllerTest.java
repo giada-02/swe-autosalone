@@ -245,12 +245,4 @@ class VehicleControllerTest {
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/vehicles/" + vehicleId + "/deadlines/" + deadlineId));
     }
-
-    @Test
-    void removeDeadline_Returns204NoContent() {
-        Response response = vehicleController.removeDeadline(vehicleId, deadlineId);
-
-        assertEquals(204, response.getStatus());
-        verify(vehicleService).removeDeadline(vehicleId, deadlineId);
-    }
 }

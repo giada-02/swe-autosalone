@@ -153,11 +153,4 @@ public class VehicleController {
         URI location = URI.create("/vehicles/" + id + "/deadlines/" + deadline.id());
         return Response.created(location).entity(deadline).build(); // 201 Created
     }
-
-    @DELETE
-    @Path("/{id}/deadlines/{deadlineId}")
-    public Response removeDeadline(@PathParam("id") UUID id, @PathParam("deadlineId") UUID deadlineId) {
-        vehicleService.removeDeadline(id, deadlineId);
-        return Response.noContent().build(); // 204 No Content
-    }
 }

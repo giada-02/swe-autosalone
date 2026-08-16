@@ -283,20 +283,6 @@ class VehicleServiceTest {
     }
 
     @Test
-    void removeDeadline_Success() {
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
-
-        UUID deadlineId = UUID.randomUUID();
-        Deadline mockDeadline = mock(Deadline.class);
-        when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
-
-        vehicleService.removeDeadline(vehicleId, deadlineId);
-
-        verify(mockVehicle).removeDeadline(mockDeadline);
-        verify(deadlineRepository).save(mockDeadline);
-    }
-
-    @Test
     void addPurchaseTransaction_Success() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
         when(mockVehicle.getPurchaseTransaction()).thenReturn(null);

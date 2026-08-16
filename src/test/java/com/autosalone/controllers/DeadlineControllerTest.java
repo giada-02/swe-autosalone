@@ -96,4 +96,12 @@ class DeadlineControllerTest {
         verify(deadlineService).completeDeadline(deadlineId, completionRequest.completionDate(),
                 completionRequest.notes());
     }
+
+    @Test
+    void deleteDeadline_Returns204NoContent() {
+        Response response = deadlineController.deleteDeadline(deadlineId);
+
+        assertEquals(204, response.getStatus());
+        verify(deadlineService).deleteDeadline(deadlineId);
+    }
 }

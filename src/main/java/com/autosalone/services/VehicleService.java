@@ -196,17 +196,6 @@ public class VehicleService {
     }
 
     @Transactional
-    public void removeDeadline(UUID vehicleId, UUID deadlineId) {
-        Vehicle vehicle = getVehicleById(vehicleId);
-
-        Deadline deadline = deadlineRepository.findById(deadlineId)
-                .orElseThrow(() -> new ResourceNotFoundException("Deadline not found of id: " + deadlineId));
-
-        vehicle.removeDeadline(deadline);
-        deadlineRepository.save(deadline);
-    }
-
-    @Transactional
     public VehicleResponse updateVehicle(UUID vehicleId, VehicleUpdateRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 

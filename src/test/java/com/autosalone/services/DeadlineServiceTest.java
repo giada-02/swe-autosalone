@@ -176,4 +176,11 @@ class DeadlineServiceTest {
 
         verify(deadlineRepository).save(mockDeadline);
     }
+
+    @Test
+    void deleteDeadline_Success() {
+        when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
+        deadlineService.deleteDeadline(deadlineId);
+        verify(deadlineRepository).delete(mockDeadline);
+    }
 }

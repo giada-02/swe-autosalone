@@ -53,4 +53,11 @@ public class DeadlineController {
                 request.notes());
         return Response.ok(response).build(); // 200 OK
     }
+
+    @DELETE
+    @Path("/{id}")
+    public Response deleteDeadline(@PathParam("id") UUID id) {
+        deadlineService.deleteDeadline(id);
+        return Response.noContent().build(); // 204 No Content
+    }
 }

@@ -71,4 +71,10 @@ public class DeadlineService {
         deadlineRepository.save(deadline);
         return DeadlineResponse.fromEntity(deadline);
     }
+
+    @Transactional
+    public void deleteDeadline(UUID id) {
+        Deadline deadline = getDeadlineById(id);
+        deadlineRepository.delete(deadline);
+    }
 }
