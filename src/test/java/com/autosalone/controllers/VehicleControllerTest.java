@@ -75,7 +75,7 @@ class VehicleControllerTest {
                 new BigDecimal("45000"), null, null, null, null, true);
 
         vehicleResponse = new VehicleResponse(vehicleId, "Fiat", "Panda", "Bianco", VehicleCondition.NEW,
-                null, new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null);
+                new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null, null);
 
         deadlineId = UUID.randomUUID();
         deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", now.plusDays(10).toString(), vehicleId, null,

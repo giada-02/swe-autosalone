@@ -13,7 +13,6 @@ public record VehicleResponse(
         String model,
         String color,
         VehicleCondition condition,
-        TransactionResponse purchaseTransaction,
         BigDecimal sellingPrice,
         String handoverDate,
         String licensePlate,
@@ -21,7 +20,8 @@ public record VehicleResponse(
         Double kilometers,
         boolean isInShowroom,
         VehicleStatus status,
-        String withdrawalReason) {
+        String withdrawalReason,
+        TransactionResponse purchaseTransaction) {
 
     public static VehicleResponse fromEntity(Vehicle vehicle) {
         if (vehicle == null)
@@ -37,7 +37,6 @@ public record VehicleResponse(
                 vehicle.getModel(),
                 vehicle.getColor(),
                 vehicle.getCondition(),
-                transactionResponse,
                 vehicle.getSellingPrice(),
                 vehicle.getHandoverDate() != null ? vehicle.getHandoverDate().toString() : null,
                 vehicle.getLicensePlate(),
@@ -45,6 +44,7 @@ public record VehicleResponse(
                 vehicle.getKilometers(),
                 vehicle.isInShowroom(),
                 vehicle.getStatus(),
-                vehicle.getWithdrawalReason());
+                vehicle.getWithdrawalReason(),
+                transactionResponse);
     }
 }
