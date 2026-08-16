@@ -40,6 +40,7 @@ import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.DeadlineRepository;
 import com.autosalone.repositories.QuotationRepository;
+import com.autosalone.repositories.TransactionRepository;
 import com.autosalone.repositories.VehicleRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +51,9 @@ class VehicleServiceTest {
 
     @Mock
     private DeadlineRepository deadlineRepository;
+
+    @Mock
+    private TransactionRepository transactionRepository;
 
     @Mock
     private QuotationRepository quotationRepository;
@@ -216,7 +220,7 @@ class VehicleServiceTest {
 
         assertNotNull(response);
         verify(mockVehicle).addExpense(any(Transaction.class));
-        verify(vehicleRepository).save(mockVehicle);
+        verify(transactionRepository).save(any(Transaction.class));
     }
 
     @Test
@@ -294,6 +298,7 @@ class VehicleServiceTest {
         assertDoesNotThrow(() -> vehicleService.addPurchaseTransaction(vehicleId, request));
 
         verify(mockVehicle).setPurchaseTransaction(any(Transaction.class));
+        verify(vehicleRepository).save(mockVehicle);
     }
 
     @Test

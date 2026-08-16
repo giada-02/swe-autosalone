@@ -26,6 +26,7 @@ import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.DeadlineRepository;
 import com.autosalone.repositories.QuotationRepository;
+import com.autosalone.repositories.TransactionRepository;
 import com.autosalone.repositories.VehicleRepository;
 import com.autosalone.utils.Utils;
 
@@ -41,6 +42,9 @@ public class VehicleService {
 
     @Inject
     private DeadlineRepository deadlineRepository;
+
+    @Inject
+    private TransactionRepository transactionRepository;
 
     @Inject
     private QuotationRepository quotationRepository;
@@ -110,6 +114,7 @@ public class VehicleService {
                 request.amount(), request.date());
         vehicle.setPurchaseTransaction(purchase);
 
+        vehicleRepository.save(vehicle);
         return VehicleResponse.fromEntity(vehicle);
     }
 
@@ -155,7 +160,7 @@ public class VehicleService {
         Transaction expense = TransactionFactory.createVehicleExpense(vehicle, sanitizedDescription, amount, date);
         vehicle.addExpense(expense);
 
-        vehicleRepository.save(vehicle);
+        transactionRepository.save(expense);
         return ExpenseResponse.fromEntity(expense);
     }
 
