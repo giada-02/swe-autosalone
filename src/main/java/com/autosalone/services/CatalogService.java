@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.autosalone.dtos.requests.AccessoryPackageRequest;
 import com.autosalone.dtos.requests.AccessoryRequest;
+import com.autosalone.dtos.responses.CatalogItemResponse;
 import com.autosalone.enums.CatalogItemType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.catalog.Accessory;
@@ -33,11 +34,17 @@ public class CatalogService {
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found of id: " + id));
     }
 
-    public List<PurchasableItem> getPurchasableItems(String keyword, Boolean isArchived,
+    public CatalogItemResponse getItemResponseById(UUID id) {
+        PurchasableItem item = getItemById(id);
+        return CatalogItemResponse.fromEntity(item);
+    }
+
+    public List<CatalogItemResponse> getPurchasableItems(String keyword, Boolean isArchived,
             CatalogItemType itemType) {
         String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
         Class<? extends PurchasableItem> entityClass = itemType != null ? itemType.getEntityClass() : null;
-        return catalogRepository.findPurchasableItems(sanitizedKeyword, isArchived, entityClass);
+        return catalogRepository.findPurchasableItems(sanitizedKeyword, isArchived, entityClass).stream()
+                .map(CatalogItemResponse::fromEntity).toList();
     }
 
     // write
@@ -45,14 +52,14 @@ public class CatalogService {
     // accessory
 
     @Transactional
-    public Accessory addAccessory(AccessoryRequest request) {
+    public CatalogItemResponse addAccessory(AccessoryRequest request) {
         Accessory accessory = new Accessory(request.name(), request.description(), request.basePrice());
         catalogRepository.save(accessory);
-        return accessory;
+        return CatalogItemResponse.fromEntity(accessory);
     }
 
     @Transactional
-    public Accessory updateAccessory(UUID accessoryId, AccessoryRequest request) {
+    public CatalogItemResponse updateAccessory(UUID accessoryId, AccessoryRequest request) {
         PurchasableItem item = getItemById(accessoryId);
 
         if (!(item instanceof Accessory accessory)) {
@@ -64,18 +71,18 @@ public class CatalogService {
         accessory.setBasePrice(request.basePrice());
 
         catalogRepository.save(accessory);
-        return accessory;
+        return CatalogItemResponse.fromEntity(accessory);
     }
 
     // accessory package
 
     @Transactional
-    public AccessoryPackage addAccessoryPackage(AccessoryPackageRequest request) {
+    public CatalogItemResponse addAccessoryPackage(AccessoryPackageRequest request) {
         AccessoryPackage accessoryPackage = new AccessoryPackage(request.name(), request.description());
 
         if (request.purchasableItemIds() == null || request.purchasableItemIds().isEmpty()) {
             catalogRepository.save(accessoryPackage);
-            return accessoryPackage;
+            return CatalogItemResponse.fromEntity(accessoryPackage);
         }
 
         for (UUID itemId : request.purchasableItemIds()) {
@@ -84,11 +91,11 @@ public class CatalogService {
         }
 
         catalogRepository.save(accessoryPackage);
-        return accessoryPackage;
+        return CatalogItemResponse.fromEntity(accessoryPackage);
     }
 
     @Transactional
-    public AccessoryPackage updateAccessoryPackage(UUID accessoryPackageId, AccessoryPackageRequest request) {
+    public CatalogItemResponse updateAccessoryPackage(UUID accessoryPackageId, AccessoryPackageRequest request) {
         PurchasableItem item = getItemById(accessoryPackageId);
 
         if (!(item instanceof AccessoryPackage accessoryPackage)) {
@@ -108,7 +115,7 @@ public class CatalogService {
 
         if (safeNewItemIds.equals(currentItemIds)) {
             catalogRepository.save(accessoryPackage);
-            return accessoryPackage;
+            return CatalogItemResponse.fromEntity(accessoryPackage);
         }
 
         // rimuovere gli elementi che non sono più nella nuova lista
@@ -130,7 +137,7 @@ public class CatalogService {
         }
 
         catalogRepository.save(accessoryPackage);
-        return accessoryPackage;
+        return CatalogItemResponse.fromEntity(accessoryPackage);
     }
 
     // delete

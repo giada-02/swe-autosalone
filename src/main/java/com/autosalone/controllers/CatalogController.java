@@ -6,10 +6,8 @@ import java.util.UUID;
 
 import com.autosalone.dtos.requests.AccessoryPackageRequest;
 import com.autosalone.dtos.requests.AccessoryRequest;
+import com.autosalone.dtos.responses.CatalogItemResponse;
 import com.autosalone.enums.CatalogItemType;
-import com.autosalone.models.catalog.Accessory;
-import com.autosalone.models.catalog.AccessoryPackage;
-import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.services.CatalogService;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -34,14 +32,14 @@ public class CatalogController {
             @QueryParam("keyword") @Size(max = 50, message = "The keyword must not be over 50 characters") String keyword,
             @QueryParam("isArchived") Boolean isArchived,
             @QueryParam("itemType") CatalogItemType itemType) {
-        List<PurchasableItem> items = catalogService.getPurchasableItems(keyword, isArchived, itemType);
+        List<CatalogItemResponse> items = catalogService.getPurchasableItems(keyword, isArchived, itemType);
         return Response.ok(items).build(); // 200 OK
     }
 
     @GET
     @Path("/{id}")
     public Response getCatalogItemById(@PathParam("id") UUID id) {
-        PurchasableItem item = catalogService.getItemById(id);
+        CatalogItemResponse item = catalogService.getItemResponseById(id);
         return Response.ok(item).build(); // 200 OK
     }
 
@@ -50,16 +48,16 @@ public class CatalogController {
     @POST
     @Path("/accessories")
     public Response addAccessory(@Valid AccessoryRequest request) {
-        Accessory accessory = catalogService.addAccessory(request);
+        CatalogItemResponse accessory = catalogService.addAccessory(request);
 
-        URI location = URI.create("/catalog/" + accessory.getId());
+        URI location = URI.create("/catalog/" + accessory.id());
         return Response.created(location).entity(accessory).build(); // 201 Created
     }
 
     @PUT
     @Path("/accessories/{id}")
     public Response updateAccessory(@PathParam("id") UUID id, @Valid AccessoryRequest request) {
-        Accessory accessory = catalogService.updateAccessory(id, request);
+        CatalogItemResponse accessory = catalogService.updateAccessory(id, request);
         return Response.ok(accessory).build(); // 200 OK
     }
 
@@ -68,16 +66,16 @@ public class CatalogController {
     @POST
     @Path("/accessory-packages")
     public Response addAccessoryPackage(@Valid AccessoryPackageRequest request) {
-        AccessoryPackage accessoryPackage = catalogService.addAccessoryPackage(request);
+        CatalogItemResponse accessoryPackage = catalogService.addAccessoryPackage(request);
 
-        URI location = URI.create("/catalog/" + accessoryPackage.getId());
+        URI location = URI.create("/catalog/" + accessoryPackage.id());
         return Response.created(location).entity(accessoryPackage).build(); // 201 Created
     }
 
     @PUT
     @Path("/accessory-packages/{id}")
     public Response updateAccessoryPackage(@PathParam("id") UUID id, @Valid AccessoryPackageRequest request) {
-        AccessoryPackage accessoryPackage = catalogService.updateAccessoryPackage(id, request);
+        CatalogItemResponse accessoryPackage = catalogService.updateAccessoryPackage(id, request);
         return Response.ok(accessoryPackage).build(); // 200 OK
     }
 

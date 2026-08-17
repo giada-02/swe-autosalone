@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.AccessoryPackageRequest;
 import com.autosalone.dtos.requests.AccessoryRequest;
+import com.autosalone.dtos.responses.CatalogItemResponse;
 import com.autosalone.enums.CatalogItemType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.catalog.Accessory;
@@ -50,8 +51,8 @@ class CatalogServiceTest {
         accessoryId = UUID.randomUUID();
         packageId = UUID.randomUUID();
 
-        accessory = new Accessory("Navigatore", "GPS Integrato", BigDecimal.valueOf(500));
-        accessoryPackage = new AccessoryPackage("Pacchetto Sport", "Estetica sportiva");
+        accessory = spy(new Accessory("Navigatore", "GPS Integrato", BigDecimal.valueOf(500)));
+        accessoryPackage = spy(new AccessoryPackage("Pacchetto Sport", "Estetica sportiva"));
     }
 
     // read
@@ -73,13 +74,38 @@ class CatalogServiceTest {
     }
 
     @Test
+    void getItemResponseById_Success() {
+        doReturn(accessoryId).when(accessory).getId();
+
+        when(catalogRepository.findById(accessoryId)).thenReturn(Optional.of(accessory));
+
+        CatalogItemResponse response = catalogService.getItemResponseById(accessoryId);
+
+        assertNotNull(response);
+        assertEquals(accessoryId, response.id());
+        assertEquals("Navigatore", response.name());
+    }
+
+    @Test
+    void getItemResponseById_NotFound() {
+        when(catalogRepository.findById(accessoryId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            catalogService.getItemResponseById(accessoryId);
+        });
+    }
+
+    @Test
     void getPurchasableItems_Success() {
+        doReturn(accessoryId).when(accessory).getId();
+        doReturn(packageId).when(accessoryPackage).getId();
+
         when(catalogRepository.findPurchasableItems(anyString(), anyBoolean(), any()))
                 .thenReturn(List.of(accessory, accessoryPackage));
 
-        List<PurchasableItem> results = catalogService.getPurchasableItems("Nav", false, CatalogItemType.ACCESSORY);
+        List<CatalogItemResponse> response = catalogService.getPurchasableItems("Nav", false,
+                CatalogItemType.ACCESSORY);
 
-        assertEquals(2, results.size());
+        assertEquals(2, response.size());
         verify(catalogRepository).findPurchasableItems("Nav", false, Accessory.class);
     }
 
@@ -91,7 +117,7 @@ class CatalogServiceTest {
     void addAccessory_Success() {
         AccessoryRequest request = new AccessoryRequest("Tetto Panoramico", null, BigDecimal.valueOf(1200));
 
-        Accessory accessory = catalogService.addAccessory(request);
+        CatalogItemResponse accessory = catalogService.addAccessory(request);
 
         assertNotNull(accessory);
         verify(catalogRepository).save(any(Accessory.class));
@@ -99,6 +125,8 @@ class CatalogServiceTest {
 
     @Test
     void updateAccessory_Success() {
+        doReturn(accessoryId).when(accessory).getId();
+
         AccessoryRequest request = new AccessoryRequest("Navigatore Pro", "Schermo 12 pollici",
                 BigDecimal.valueOf(800));
         when(catalogRepository.findById(accessoryId)).thenReturn(Optional.of(accessory));
@@ -127,17 +155,21 @@ class CatalogServiceTest {
 
     @Test
     void addAccessoryPackage_Success() {
+        doReturn(accessoryId).when(accessory).getId();
+
         AccessoryPackageRequest request = new AccessoryPackageRequest("Pacchetto Test", null, Set.of(accessoryId));
         when(catalogRepository.findById(accessoryId)).thenReturn(Optional.of(accessory));
 
-        AccessoryPackage accessoryPackage = catalogService.addAccessoryPackage(request);
+        CatalogItemResponse response = catalogService.addAccessoryPackage(request);
 
-        assertNotNull(accessoryPackage);
+        assertNotNull(response);
         verify(catalogRepository).save(any(AccessoryPackage.class));
     }
 
     @Test
     void addAccessoryPackage_WithItems_Success() {
+        doReturn(accessoryId).when(accessory).getId();
+
         AccessoryPackageRequest request = new AccessoryPackageRequest("Pacchetto Test", null, Set.of(accessoryId));
         when(catalogRepository.findById(accessoryId)).thenReturn(Optional.of(accessory));
 
@@ -169,10 +201,13 @@ class CatalogServiceTest {
         UUID oldChildId = UUID.randomUUID();
         UUID newChildId = UUID.randomUUID();
 
-        Accessory oldChild = mock(Accessory.class);
-        when(oldChild.getId()).thenReturn(oldChildId);
+        Accessory oldChild = spy(new Accessory("Vecchio", "Desc", BigDecimal.TEN));
+        doReturn(oldChildId).when(oldChild).getId();
 
-        Accessory newChild = mock(Accessory.class);
+        Accessory newChild = spy(new Accessory("Nuovo", "Desc", BigDecimal.TEN));
+        doReturn(newChildId).when(newChild).getId();
+
+        doReturn(packageId).when(accessoryPackage).getId();
 
         accessoryPackage.getItems().add(oldChild);
 

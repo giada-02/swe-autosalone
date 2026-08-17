@@ -98,6 +98,21 @@ class QuotationServiceTest {
     }
 
     @Test
+    void getQuotationResponseById_Success() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
+        QuotationResponse response = quotationService.getQuotationResponseById(quotationId);
+        assertNotNull(response);
+    }
+
+    @Test
+    void getQuotationResponseById_NotFound() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            quotationService.getQuotationResponseById(quotationId);
+        });
+    }
+
+    @Test
     void getQuotations_Success() {
         when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(quotation));

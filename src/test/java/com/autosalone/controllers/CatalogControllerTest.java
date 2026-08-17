@@ -3,7 +3,6 @@ package com.autosalone.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,9 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.AccessoryPackageRequest;
 import com.autosalone.dtos.requests.AccessoryRequest;
+import com.autosalone.dtos.responses.CatalogItemResponse;
 import com.autosalone.enums.CatalogItemType;
-import com.autosalone.models.catalog.Accessory;
-import com.autosalone.models.catalog.AccessoryPackage;
 import com.autosalone.services.CatalogService;
 
 import jakarta.ws.rs.core.Response;
@@ -41,6 +39,8 @@ class CatalogControllerTest {
     private UUID accessoryPackageId;
     private AccessoryRequest accessoryRequest;
     private AccessoryPackageRequest accessoryPackageRequest;
+    private CatalogItemResponse accessoryResponse;
+    private CatalogItemResponse accessoryPackageResponse;
 
     @BeforeEach
     void setUp() {
@@ -48,13 +48,16 @@ class CatalogControllerTest {
         accessoryPackageId = UUID.randomUUID();
         accessoryRequest = new AccessoryRequest("Accessorio", null, new BigDecimal("50.00"));
         accessoryPackageRequest = new AccessoryPackageRequest("Pacchetto", "Descrizione", null);
+        accessoryResponse = new CatalogItemResponse(accessoryId, CatalogItemType.ACCESSORY, "Accessorio", null,
+                new BigDecimal("50.00"), false, null);
+        accessoryPackageResponse = new CatalogItemResponse(accessoryPackageId, CatalogItemType.PACKAGE, "Pacchetto",
+                "Descrizione", null, false, null);
     }
 
     @Test
     void getCatalogItems_Returns200AndList() {
-        Accessory mockAccessory = mock(Accessory.class);
         when(catalogService.getPurchasableItems(null, false, CatalogItemType.ACCESSORY))
-                .thenReturn(List.of(mockAccessory));
+                .thenReturn(List.of(accessoryResponse));
 
         Response response = catalogController.getCatalogItems(null, false, CatalogItemType.ACCESSORY);
 
@@ -65,29 +68,20 @@ class CatalogControllerTest {
 
     @Test
     void getCatalogItemById_Returns200AndItem() {
-        Accessory mockAccessory = mock(Accessory.class);
-        when(catalogService.getItemById(accessoryId)).thenReturn(mockAccessory);
-        when(mockAccessory.getId()).thenReturn(accessoryId);
-        when(mockAccessory.getName()).thenReturn("Accessorio");
+        when(catalogService.getItemResponseById(accessoryId)).thenReturn(accessoryResponse);
 
         Response response = catalogController.getCatalogItemById(accessoryId);
 
         assertEquals(200, response.getStatus());
-
-        Accessory catalogResponse = (Accessory) response.getEntity();
-        assertEquals(accessoryId, catalogResponse.getId());
-        assertEquals("Accessorio", catalogResponse.getName());
-
-        verify(catalogService).getItemById(accessoryId);
+        assertEquals(accessoryResponse, response.getEntity());
+        verify(catalogService).getItemResponseById(accessoryId);
     }
 
     // accessory
 
     @Test
     void addAccessory_Returns201AndLocationHeaderWithBody() {
-        Accessory mockAccessory = mock(Accessory.class);
-        when(mockAccessory.getId()).thenReturn(accessoryId);
-        when(catalogService.addAccessory(accessoryRequest)).thenReturn(mockAccessory);
+        when(catalogService.addAccessory(accessoryRequest)).thenReturn(accessoryResponse);
 
         Response response = catalogController.addAccessory(accessoryRequest);
 
@@ -97,18 +91,17 @@ class CatalogControllerTest {
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/catalog/" + accessoryId));
 
-        assertEquals(mockAccessory, response.getEntity());
+        assertEquals(accessoryResponse, response.getEntity());
     }
 
     @Test
     void updateAccessory_Returns200AndUpdatedAccessory() {
-        Accessory mockAccessory = mock(Accessory.class);
-        when(catalogService.updateAccessory(accessoryId, accessoryRequest)).thenReturn(mockAccessory);
+        when(catalogService.updateAccessory(accessoryId, accessoryRequest)).thenReturn(accessoryResponse);
 
         Response response = catalogController.updateAccessory(accessoryId, accessoryRequest);
 
         assertEquals(200, response.getStatus());
-        assertEquals(mockAccessory, response.getEntity());
+        assertEquals(accessoryResponse, response.getEntity());
         verify(catalogService).updateAccessory(accessoryId, accessoryRequest);
     }
 
@@ -116,10 +109,8 @@ class CatalogControllerTest {
 
     @Test
     void addAccessoryPackage_Returns201AndLocationHeaderWithBody() {
-        AccessoryPackage mockAccessoryPackage = mock(AccessoryPackage.class);
-        when(mockAccessoryPackage.getId()).thenReturn(accessoryPackageId);
         when(catalogService.addAccessoryPackage(accessoryPackageRequest))
-                .thenReturn(mockAccessoryPackage);
+                .thenReturn(accessoryPackageResponse);
 
         Response response = catalogController.addAccessoryPackage(accessoryPackageRequest);
 
@@ -129,20 +120,19 @@ class CatalogControllerTest {
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/catalog/" + accessoryPackageId));
 
-        assertEquals(mockAccessoryPackage, response.getEntity());
+        assertEquals(accessoryPackageResponse, response.getEntity());
     }
 
     @Test
     void updateAccessoryPackage_Returns200AndUpdatedAccessoryPackage() {
-        AccessoryPackage mockAccessoryPackage = mock(AccessoryPackage.class);
         when(catalogService.updateAccessoryPackage(accessoryPackageId, accessoryPackageRequest))
-                .thenReturn(mockAccessoryPackage);
+                .thenReturn(accessoryPackageResponse);
 
         Response response = catalogController.updateAccessoryPackage(accessoryPackageId,
                 accessoryPackageRequest);
 
         assertEquals(200, response.getStatus());
-        assertEquals(mockAccessoryPackage, response.getEntity());
+        assertEquals(accessoryPackageResponse, response.getEntity());
         verify(catalogService).updateAccessoryPackage(accessoryPackageId, accessoryPackageRequest);
     }
 

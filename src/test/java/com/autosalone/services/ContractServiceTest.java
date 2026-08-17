@@ -103,6 +103,25 @@ class ContractServiceTest {
     }
 
     @Test
+    void getContractResponseById_Success() {
+        when(contractRepository.findById(contractId)).thenReturn(Optional.of(mockContract));
+        when(mockContract.getId()).thenReturn(contractId);
+
+        ContractResponse response = contractService.getContractResponseById(contractId);
+
+        assertNotNull(response);
+        assertEquals(contractId, response.id());
+    }
+
+    @Test
+    void getContractResponseById_NotFound() {
+        when(contractRepository.findById(contractId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contractService.getContractResponseById(contractId);
+        });
+    }
+
+    @Test
     void getContracts_Success() {
         when(contractRepository.findContracts(any(), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(mockContract));
