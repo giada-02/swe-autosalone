@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import com.autosalone.dtos.SalesDocumentCreateRequest;
-import com.autosalone.dtos.QuotationUpdateRequest;
+import com.autosalone.dtos.requests.QuotationUpdateRequest;
+import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleStatus;
 import com.autosalone.exceptions.ResourceNotFoundException;
@@ -54,36 +55,44 @@ public class QuotationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Quotation not found of id: " + id));
     }
 
-    public List<Quotation> getQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
-            UUID customerId, List<QuotationStatus> statusList) {
-        return quotationRepository.findQuotations(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList);
+    public QuotationResponse getQuotationResponseById(UUID id) {
+        Quotation quotation = getQuotationById(id);
+        return QuotationResponse.fromEntity(quotation);
     }
 
-    public List<Quotation> getVisibleQuotationsForCustomer(UUID customerId) {
-        return quotationRepository.findVisibleQuotationsByCustomerId(customerId);
+    public List<QuotationResponse> getQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived,
+            UUID vehicleId,
+            UUID customerId, List<QuotationStatus> statusList) {
+        return quotationRepository.findQuotations(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+                .stream().map(QuotationResponse::fromEntity).toList();
+    }
+
+    public List<QuotationResponse> getVisibleQuotationsForCustomer(UUID customerId) {
+        return quotationRepository.findVisibleQuotationsByCustomerId(customerId)
+                .stream().map(QuotationResponse::fromEntity).toList();
     }
 
     // write
 
     @Transactional
-    public UUID addQuotation(SalesDocumentCreateRequest request) {
+    public QuotationResponse addQuotation(SalesDocumentCreateRequest request) {
         Vehicle vehicle = vehicleService.getVehicleById(request.vehicleId());
         Customer customer = customerService.getCustomerById(request.customerId());
 
-        Quotation newQuotation = new Quotation(vehicle, customer);
+        Quotation quotation = new Quotation(vehicle, customer);
 
-        quotationRepository.save(newQuotation);
-        return newQuotation.getId();
+        quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 
     @Transactional
-    public UUID cloneQuotation(UUID quotationId) {
+    public QuotationResponse cloneQuotation(UUID quotationId) {
         Quotation quotation = getQuotationById(quotationId);
 
-        Quotation newQuotation = new Quotation(quotation);
+        Quotation clonedQuotation = new Quotation(quotation);
 
-        quotationRepository.save(newQuotation);
-        return newQuotation.getId();
+        quotationRepository.save(clonedQuotation);
+        return QuotationResponse.fromEntity(clonedQuotation);
     }
 
     @Transactional
@@ -119,7 +128,7 @@ public class QuotationService {
     }
 
     @Transactional
-    public void issueQuotation(UUID quotationId) {
+    public QuotationResponse issueQuotation(UUID quotationId) {
         Quotation quotation = getQuotationById(quotationId);
 
         quotation.issue();
@@ -131,32 +140,35 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 
     @Transactional
-    public void archiveQuotation(UUID quotationId) {
+    public QuotationResponse archiveQuotation(UUID quotationId) {
         Quotation quotation = getQuotationById(quotationId);
 
         quotation.archive();
 
         quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 
     @Transactional
-    public void unarchiveQuotation(UUID quotationId) {
+    public QuotationResponse unarchiveQuotation(UUID quotationId) {
         Quotation quotation = getQuotationById(quotationId);
 
         quotation.unarchive();
 
         quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 
     @Transactional
-    public void addItemsToQuotation(UUID quotationId, Set<UUID> catalogItemIds) {
-        if (catalogItemIds == null || catalogItemIds.isEmpty())
-            return;
-
+    public QuotationResponse addItemsToQuotation(UUID quotationId, Set<UUID> catalogItemIds) {
         Quotation quotation = getQuotationById(quotationId);
+
+        if (catalogItemIds == null || catalogItemIds.isEmpty())
+            return QuotationResponse.fromEntity(quotation);
 
         for (UUID itemId : catalogItemIds) {
             PurchasableItem item = catalogService.getItemById(itemId);
@@ -165,10 +177,11 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 
     @Transactional
-    public void updateAppliedItemPrice(UUID quotationId, UUID catalogItemId, BigDecimal newPrice) {
+    public QuotationResponse updateAppliedItemPrice(UUID quotationId, UUID catalogItemId, BigDecimal newPrice) {
         Quotation quotation = getQuotationById(quotationId);
 
         AppliedItem targetItem = quotation.getItems().stream()
@@ -182,14 +195,15 @@ public class QuotationService {
         quotation.setAppliedItemPrice(targetItem, newPrice);
 
         quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 
     @Transactional
-    public void removeItemsFromQuotation(UUID quotationId, Set<UUID> catalogItemIds) {
-        if (catalogItemIds == null || catalogItemIds.isEmpty())
-            return;
-
+    public QuotationResponse removeItemsFromQuotation(UUID quotationId, Set<UUID> catalogItemIds) {
         Quotation quotation = getQuotationById(quotationId);
+
+        if (catalogItemIds == null || catalogItemIds.isEmpty())
+            return QuotationResponse.fromEntity(quotation);
 
         List<AppliedItem> itemsToRemove = quotation.getItems().stream()
                 .filter(applied -> catalogItemIds.contains(applied.getItem().getId()))
@@ -200,10 +214,11 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 
     @Transactional
-    public void updateQuotation(UUID quotationId, QuotationUpdateRequest request) {
+    public QuotationResponse updateQuotation(UUID quotationId, QuotationUpdateRequest request) {
         Quotation quotation = getQuotationById(quotationId);
 
         quotation.updateExpiration(request.expirationPolicy(), request.expirationDate());
@@ -231,5 +246,6 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
+        return QuotationResponse.fromEntity(quotation);
     }
 }

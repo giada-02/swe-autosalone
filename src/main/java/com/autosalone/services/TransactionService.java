@@ -31,6 +31,11 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found of id: " + id));
     }
 
+    public TransactionResponse getTransactionResponseById(UUID id) {
+        Transaction transaction = getTransactionById(id);
+        return TransactionResponse.fromEntity(transaction);
+    }
+
     public List<TransactionResponse> getTransactions(LocalDate dateFrom,
             LocalDate dateTo,
             TransactionType type,

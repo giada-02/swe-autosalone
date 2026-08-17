@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import com.autosalone.dtos.SalesDocumentCreateRequest;
-import com.autosalone.dtos.ContractUpdateRequest;
+import com.autosalone.dtos.requests.ContractUpdateRequest;
+import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.ContractResponse;
+import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
@@ -23,6 +25,7 @@ import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.models.discounts.DiscountStrategy;
 import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.QuotationRepository;
+import com.autosalone.repositories.TransactionRepository;
 import com.autosalone.repositories.VehicleRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -31,6 +34,9 @@ import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class ContractService {
+
+    @Inject
+    private TransactionRepository transactionRepository;
 
     @Inject
     private ContractRepository contractRepository;
@@ -58,44 +64,51 @@ public class ContractService {
                 .orElseThrow(() -> new ResourceNotFoundException("Contract not found of id: " + id));
     }
 
-    public List<Contract> getContracts(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
-            UUID customerId, List<ContractStatus> statusList) {
-        return contractRepository.findContracts(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList);
+    public ContractResponse getContractResponseById(UUID id) {
+        Contract contract = getContractById(id);
+        return ContractResponse.fromEntity(contract);
     }
 
-    public List<Contract> getVisibleContractsForCustomer(UUID customerId) {
-        return contractRepository.findVisibleContractsByCustomerId(customerId);
+    public List<ContractResponse> getContracts(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
+            UUID customerId, List<ContractStatus> statusList) {
+        return contractRepository.findContracts(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+                .stream().map(ContractResponse::fromEntity).toList();
+    }
+
+    public List<ContractResponse> getVisibleContractsForCustomer(UUID customerId) {
+        return contractRepository.findVisibleContractsByCustomerId(customerId)
+                .stream().map(ContractResponse::fromEntity).toList();
     }
 
     // write
 
     @Transactional
-    public UUID addContract(SalesDocumentCreateRequest request) {
+    public ContractResponse addContract(SalesDocumentCreateRequest request) {
         Vehicle vehicle = vehicleService.getVehicleById(request.vehicleId());
         Customer customer = customerService.getCustomerById(request.customerId());
 
-        Contract newContract = new Contract(vehicle, customer);
+        Contract contract = new Contract(vehicle, customer);
 
-        contractRepository.save(newContract);
-        return newContract.getId();
+        contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public UUID createContractFromQuotation(UUID quotationId) {
+    public ContractResponse createContractFromQuotation(UUID quotationId) {
         Quotation quotation = quotationService.getQuotationById(quotationId);
 
-        Contract newContract = new Contract(quotation);
+        Contract contract = new Contract(quotation);
 
-        contractRepository.save(newContract);
-        return newContract.getId();
+        contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public void confirmContract(UUID contractId, BigDecimal depositAmount, LocalDate depositDate) {
+    public ContractResponse confirmContract(UUID contractId, BigDecimal depositAmount, LocalDate depositDate) {
         Contract contract = getContractById(contractId);
 
         Transaction deposit = null;
-        if (depositAmount != null || depositDate != null)
+        if (depositAmount != null && depositDate != null)
             deposit = TransactionFactory.createContractDeposit(contract, depositAmount, depositDate);
 
         contract.confirm(deposit);
@@ -127,10 +140,11 @@ public class ContractService {
         }
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public void completeContract(UUID contractId) {
+    public ContractResponse completeContract(UUID contractId) {
         Contract contract = getContractById(contractId);
 
         contract.complete();
@@ -143,10 +157,11 @@ public class ContractService {
         vehicleRepository.save(vehicle);
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public void cancelContract(UUID contractId, String reason) {
+    public ContractResponse cancelContract(UUID contractId, String reason) {
         Contract contract = getContractById(contractId);
 
         contract.cancel(reason);
@@ -156,28 +171,34 @@ public class ContractService {
         vehicleRepository.save(vehicle);
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public void archiveContract(UUID contractId) {
+    public ContractResponse archiveContract(UUID contractId) {
         Contract contract = getContractById(contractId);
 
         contract.archive();
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public void unarchiveContract(UUID contractId) {
+    public ContractResponse unarchiveContract(UUID contractId) {
         Contract contract = getContractById(contractId);
 
         contract.unarchive();
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
+    // payments
+
     @Transactional
-    public UUID addPaymentToContract(UUID contractId, String paymentDescription, BigDecimal paymentAmount,
+    public TransactionResponse addPaymentToContract(UUID contractId, String paymentDescription,
+            BigDecimal paymentAmount,
             LocalDate paymentDate) {
         Contract contract = getContractById(contractId);
 
@@ -185,12 +206,12 @@ public class ContractService {
                 paymentDate);
         contract.registerPayment(payment);
 
-        contractRepository.save(contract);
-        return payment.getId();
+        transactionRepository.save(payment);
+        return TransactionResponse.fromEntity(payment);
     }
 
     @Transactional
-    public UUID addRefundToContract(UUID contractId, String refundDescription, BigDecimal refundAmount,
+    public TransactionResponse addRefundToContract(UUID contractId, String refundDescription, BigDecimal refundAmount,
             LocalDate refundDate) {
         Contract contract = getContractById(contractId);
 
@@ -198,16 +219,16 @@ public class ContractService {
                 refundDate);
         contract.registerRefund(refund);
 
-        contractRepository.save(contract);
-        return refund.getId();
+        transactionRepository.save(refund);
+        return TransactionResponse.fromEntity(refund);
     }
 
     @Transactional
-    public void addItemsToContract(UUID contractId, Set<UUID> catalogItemIds) {
-        if (catalogItemIds == null || catalogItemIds.isEmpty())
-            return;
-
+    public ContractResponse addItemsToContract(UUID contractId, Set<UUID> catalogItemIds) {
         Contract contract = getContractById(contractId);
+
+        if (catalogItemIds == null || catalogItemIds.isEmpty())
+            return ContractResponse.fromEntity(contract);
 
         for (UUID itemId : catalogItemIds) {
             PurchasableItem item = catalogService.getItemById(itemId);
@@ -216,10 +237,12 @@ public class ContractService {
         }
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
+
     }
 
     @Transactional
-    public void updateAppliedItemPrice(UUID contractId, UUID catalogItemId, BigDecimal newPrice) {
+    public ContractResponse updateAppliedItemPrice(UUID contractId, UUID catalogItemId, BigDecimal newPrice) {
         Contract contract = getContractById(contractId);
 
         AppliedItem targetItem = contract.getItems().stream()
@@ -233,14 +256,15 @@ public class ContractService {
         contract.setAppliedItemPrice(targetItem, newPrice);
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public void removeItemsFromContract(UUID contractId, Set<UUID> catalogItemIds) {
-        if (catalogItemIds == null || catalogItemIds.isEmpty())
-            return;
-
+    public ContractResponse removeItemsFromContract(UUID contractId, Set<UUID> catalogItemIds) {
         Contract contract = getContractById(contractId);
+
+        if (catalogItemIds == null || catalogItemIds.isEmpty())
+            return ContractResponse.fromEntity(contract);
 
         List<AppliedItem> itemsToRemove = contract.getItems().stream()
                 .filter(applied -> catalogItemIds.contains(applied.getItem().getId()))
@@ -251,10 +275,11 @@ public class ContractService {
         }
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 
     @Transactional
-    public void updateContract(UUID contractId, ContractUpdateRequest request) {
+    public ContractResponse updateContract(UUID contractId, ContractUpdateRequest request) {
         Contract contract = getContractById(contractId);
 
         contract.setEstimatedHandoverDate(request.estimatedHandoverDate());
@@ -282,5 +307,6 @@ public class ContractService {
         }
 
         contractRepository.save(contract);
+        return ContractResponse.fromEntity(contract);
     }
 }

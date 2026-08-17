@@ -1,4 +1,4 @@
-package com.autosalone.dtos;
+package com.autosalone.dtos.requests;
 
 import java.util.UUID;
 

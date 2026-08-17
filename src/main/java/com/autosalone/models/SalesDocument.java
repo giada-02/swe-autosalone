@@ -199,17 +199,26 @@ public abstract class SalesDocument extends AuditableEntity {
         return vehicleSellingPriceSnapshot;
     }
 
+    public DiscountType getDiscountType() {
+        return dbDiscountType;
+    }
+
+    public BigDecimal getDiscountValue() {
+        return dbDiscountValue;
+    }
+
     public DiscountStrategy getDiscountStrategy() {
         return discountStrategy;
     }
 
     public BigDecimal getDiscountAmount() {
         BigDecimal subtotal = getSubtotal();
-        return this.discountStrategy.calculateDiscountAmount(subtotal);
+        return this.discountStrategy != null ? this.discountStrategy.calculateDiscountAmount(subtotal)
+                : BigDecimal.ZERO;
     }
 
     public BigDecimal getSubtotal() {
-        BigDecimal total = this.vehicle.getSellingPrice();
+        BigDecimal total = this.vehicle.getSellingPrice() != null ? this.vehicle.getSellingPrice() : BigDecimal.ZERO;
         for (AppliedItem item : items) {
             total = total.add(item.getAppliedPrice());
         }
@@ -218,7 +227,7 @@ public abstract class SalesDocument extends AuditableEntity {
 
     public BigDecimal getFinalPrice() {
         BigDecimal subtotal = getSubtotal();
-        BigDecimal discount = this.discountStrategy.calculateDiscountAmount(subtotal);
+        BigDecimal discount = getDiscountAmount();
         BigDecimal discountedTotal = subtotal.subtract(discount);
         return discountedTotal.add(this.additionalFees);
     }

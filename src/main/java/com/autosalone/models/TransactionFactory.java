@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.autosalone.enums.TransactionType;
+import com.autosalone.utils.Utils;
 
 // static factory method
 public class TransactionFactory {
@@ -22,7 +23,7 @@ public class TransactionFactory {
             LocalDate date) {
         String reason = String.format("Spesa - %s %s", vehicle.getBrand(), vehicle.getModel());
         if (description != null)
-            reason = reason + ": " + description;
+            reason = reason + ": " + Utils.sanitizeText(description);
         return new Transaction(reason, amount, date, TransactionType.OUT, vehicle);
     }
 
@@ -39,7 +40,7 @@ public class TransactionFactory {
                 contract.getCustomer().getLastName(), contract.getVehicle().getBrand(),
                 contract.getVehicle().getModel());
         if (description != null)
-            reason = reason + ": " + description;
+            reason = reason + ": " + Utils.sanitizeText(description);
         return new Transaction(reason, amount, date, TransactionType.IN, contract);
     }
 
@@ -49,7 +50,7 @@ public class TransactionFactory {
                 contract.getCustomer().getLastName(), contract.getVehicle().getBrand(),
                 contract.getVehicle().getModel());
         if (description != null)
-            reason = reason + ": " + description;
+            reason = reason + ": " + Utils.sanitizeText(description);
         return new Transaction(reason, amount, date, TransactionType.OUT, contract);
     }
 

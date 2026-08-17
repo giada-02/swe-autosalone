@@ -19,8 +19,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.ContractUpdateRequest;
-import com.autosalone.dtos.SalesDocumentCreateRequest;
+import com.autosalone.dtos.requests.ContractUpdateRequest;
+import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.ContractResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
 import com.autosalone.exceptions.ResourceNotFoundException;
@@ -33,10 +34,14 @@ import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.QuotationRepository;
+import com.autosalone.repositories.TransactionRepository;
 import com.autosalone.repositories.VehicleRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ContractServiceTest {
+
+    @Mock
+    private TransactionRepository transactionRepository;
 
     @Mock
     private ContractRepository contractRepository;
@@ -102,7 +107,7 @@ class ContractServiceTest {
         when(contractRepository.findContracts(any(), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(mockContract));
 
-        List<Contract> results = contractService.getContracts(null, null, null, null, null, null);
+        List<ContractResponse> results = contractService.getContracts(null, null, null, null, null, null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         verify(contractRepository).findContracts(null, null, null, null, null, null);
@@ -113,7 +118,7 @@ class ContractServiceTest {
         when(contractRepository.findVisibleContractsByCustomerId(customerId))
                 .thenReturn(List.of(mockContract));
 
-        List<Contract> results = contractService.getVisibleContractsForCustomer(customerId);
+        List<ContractResponse> results = contractService.getVisibleContractsForCustomer(customerId);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         verify(contractRepository).findVisibleContractsByCustomerId(customerId);
@@ -129,8 +134,8 @@ class ContractServiceTest {
         when(customerService.getCustomerById(customerId)).thenReturn(mockCustomer);
         when(mockVehicle.getSellingPrice()).thenReturn(BigDecimal.valueOf(10000));
 
-        UUID resultId = contractService.addContract(request);
-        assertNull(resultId);
+        ContractResponse response = contractService.addContract(request);
+        assertNotNull(response);
         verify(contractRepository).save(any(Contract.class));
     }
 
@@ -272,7 +277,7 @@ class ContractServiceTest {
         contractService.addPaymentToContract(contractId, "Bonifico", BigDecimal.TEN, LocalDate.now());
 
         verify(mockContract).registerPayment(any(Transaction.class));
-        verify(contractRepository).save(mockContract);
+        verify(transactionRepository).save(any(Transaction.class));
     }
 
     @Test
@@ -287,7 +292,7 @@ class ContractServiceTest {
         contractService.addRefundToContract(contractId, "Rimborso", BigDecimal.TEN, LocalDate.now());
 
         verify(mockContract).registerRefund(any(Transaction.class));
-        verify(contractRepository).save(mockContract);
+        verify(transactionRepository).save(any(Transaction.class));
     }
 
     @Test
@@ -308,10 +313,12 @@ class ContractServiceTest {
 
     @Test
     void addItemsToContract_NullOrEmptySet_DoesNothing() {
+        Contract contract = getContract();
+        when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+
         contractService.addItemsToContract(contractId, null);
         contractService.addItemsToContract(contractId, Collections.emptySet());
 
-        verify(contractRepository, never()).findById(any());
         verify(contractRepository, never()).save(any());
     }
 
@@ -334,10 +341,12 @@ class ContractServiceTest {
 
     @Test
     void removeItemsFromContract_NullOrEmptySet_DoesNothing() {
+        Contract contract = getContract();
+        when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+
         contractService.removeItemsFromContract(contractId, null);
         contractService.removeItemsFromContract(contractId, Collections.emptySet());
 
-        verify(contractRepository, never()).findById(any());
         verify(contractRepository, never()).save(any());
     }
 
