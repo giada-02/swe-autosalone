@@ -1,0 +1,233 @@
+package com.autosalone.controllers;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.net.URI;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.autosalone.dtos.requests.CatalogItemIdsRequest;
+import com.autosalone.dtos.requests.CatalogItemPriceUpdateRequest;
+import com.autosalone.dtos.requests.ContractCancelRequest;
+import com.autosalone.dtos.requests.ContractConfirmRequest;
+import com.autosalone.dtos.requests.ContractUpdateRequest;
+import com.autosalone.dtos.requests.PaymentRecordRequest;
+import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.ContractResponse;
+import com.autosalone.dtos.responses.TransactionResponse;
+import com.autosalone.enums.ContractStatus;
+import com.autosalone.enums.TransactionType;
+import com.autosalone.services.ContractService;
+
+import jakarta.ws.rs.core.Response;
+
+@ExtendWith(MockitoExtension.class)
+class ContractControllerTest {
+
+    @Mock
+    private ContractService contractService;
+
+    @InjectMocks
+    private ContractController contractController;
+
+    private UUID contractId;
+    private UUID quotationId;
+    private UUID vehicleId;
+    private UUID customerId;
+    private UUID transactionId;
+    private UUID itemId;
+    private LocalDate now;
+
+    private ContractResponse contractResponse;
+    private TransactionResponse transactionResponse;
+
+    @BeforeEach
+    void setUp() {
+        now = LocalDate.now();
+        contractId = UUID.randomUUID();
+        quotationId = UUID.randomUUID();
+        vehicleId = UUID.randomUUID();
+        customerId = UUID.randomUUID();
+        transactionId = UUID.randomUUID();
+        itemId = UUID.randomUUID();
+
+        contractResponse = new ContractResponse(contractId, null, null, null, null, null, null, false, null, null, null,
+                null, null, null, null, null, null, null, null, null, null);
+        transactionResponse = new TransactionResponse(transactionId, "Pagamento", BigDecimal.TEN, now.toString(),
+                TransactionType.IN, null, contractId);
+    }
+
+    @Test
+    void getContracts_Returns200AndList() {
+        when(contractService.getContracts(now, now, false, vehicleId, customerId, List.of(ContractStatus.DRAFT)))
+                .thenReturn(List.of(contractResponse));
+
+        Response response = contractController.getContracts(now.toString(), now.toString(), false, vehicleId,
+                customerId, List.of(ContractStatus.DRAFT));
+
+        assertEquals(200, response.getStatus());
+        assertEquals(1, ((List<?>) response.getEntity()).size());
+    }
+
+    @Test
+    void getContractById_Returns200AndContract() {
+        when(contractService.getContractResponseById(contractId)).thenReturn(contractResponse);
+
+        Response response = contractController.getContractById(contractId);
+
+        assertEquals(200, response.getStatus());
+        assertEquals(contractResponse, response.getEntity());
+    }
+
+    @Test
+    void addContract_Returns201AndLocationHeader() {
+        SalesDocumentCreateRequest request = new SalesDocumentCreateRequest(vehicleId, customerId);
+        when(contractService.addContract(request)).thenReturn(contractResponse);
+
+        Response response = contractController.addContract(request);
+
+        assertEquals(201, response.getStatus());
+        URI location = response.getLocation();
+        assertNotNull(location);
+        assertTrue(location.toString().endsWith("/contracts/" + contractId));
+    }
+
+    @Test
+    void createContractFromQuotation_Returns201AndLocationHeader() {
+        when(contractService.createContractFromQuotation(quotationId)).thenReturn(contractResponse);
+
+        Response response = contractController.createContractFromQuotation(quotationId);
+
+        assertEquals(201, response.getStatus());
+        URI location = response.getLocation();
+        assertNotNull(location);
+        assertTrue(location.toString().endsWith("/contracts/" + contractId));
+    }
+
+    @Test
+    void updateContract_Returns200() {
+        ContractUpdateRequest request = new ContractUpdateRequest(now, now, vehicleId, customerId, BigDecimal.ZERO,
+                "Pub", "Int", BigDecimal.TEN, null, null);
+        when(contractService.updateContract(contractId, request)).thenReturn(contractResponse);
+
+        Response response = contractController.updateContract(contractId, request);
+
+        assertEquals(200, response.getStatus());
+        verify(contractService).updateContract(contractId, request);
+    }
+
+    @Test
+    void confirmContract_Returns200() {
+        ContractConfirmRequest request = new ContractConfirmRequest(BigDecimal.TEN, now);
+        when(contractService.confirmContract(contractId, BigDecimal.TEN, now)).thenReturn(contractResponse);
+
+        Response response = contractController.confirmContract(contractId, request);
+
+        assertEquals(200, response.getStatus());
+        verify(contractService).confirmContract(contractId, BigDecimal.TEN, now);
+    }
+
+    @Test
+    void completeContract_Returns200() {
+        when(contractService.completeContract(contractId)).thenReturn(contractResponse);
+        Response response = contractController.completeContract(contractId);
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void cancelContract_Returns200() {
+        ContractCancelRequest request = new ContractCancelRequest("Ritirato dal cliente");
+        when(contractService.cancelContract(contractId, "Ritirato dal cliente")).thenReturn(contractResponse);
+        Response response = contractController.cancelContract(contractId, request);
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void archiveContract_Returns200() {
+        when(contractService.archiveContract(contractId)).thenReturn(contractResponse);
+        Response response = contractController.archiveContract(contractId);
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void unarchiveContract_Returns200() {
+        when(contractService.unarchiveContract(contractId)).thenReturn(contractResponse);
+        Response response = contractController.unarchiveContract(contractId);
+        assertEquals(200, response.getStatus());
+    }
+
+    // payments
+
+    @Test
+    void addPaymentToContract_Returns201AndLocationHeader() {
+        PaymentRecordRequest request = new PaymentRecordRequest("Acconto", BigDecimal.TEN, now);
+        when(contractService.addPaymentToContract(contractId, "Acconto", BigDecimal.TEN, now))
+                .thenReturn(transactionResponse);
+
+        Response response = contractController.addPaymentToContract(contractId, request);
+
+        assertEquals(201, response.getStatus());
+        assertTrue(response.getLocation().toString().endsWith("/transactions/" + transactionId));
+    }
+
+    @Test
+    void addRefundToContract_Returns201AndLocationHeader() {
+        PaymentRecordRequest request = new PaymentRecordRequest("Rimborso", BigDecimal.TEN, now);
+        when(contractService.addRefundToContract(contractId, "Rimborso", BigDecimal.TEN, now))
+                .thenReturn(transactionResponse);
+
+        Response response = contractController.addRefundToContract(contractId, request);
+
+        assertEquals(201, response.getStatus());
+        assertTrue(response.getLocation().toString().endsWith("/transactions/" + transactionId));
+    }
+
+    // items
+
+    @Test
+    void addItemsToContract_Returns200() {
+        CatalogItemIdsRequest request = new CatalogItemIdsRequest(Set.of(itemId));
+        when(contractService.addItemsToContract(contractId, Set.of(itemId))).thenReturn(contractResponse);
+
+        Response response = contractController.addItemsToContract(contractId, request);
+
+        assertEquals(200, response.getStatus());
+        verify(contractService).addItemsToContract(contractId, Set.of(itemId));
+    }
+
+    @Test
+    void updateAppliedItemPrice_Returns200() {
+        CatalogItemPriceUpdateRequest request = new CatalogItemPriceUpdateRequest(BigDecimal.TEN);
+        when(contractService.updateAppliedItemPrice(contractId, itemId, BigDecimal.TEN)).thenReturn(contractResponse);
+
+        Response response = contractController.updateAppliedItemPrice(contractId, itemId, request);
+
+        assertEquals(200, response.getStatus());
+        verify(contractService).updateAppliedItemPrice(contractId, itemId, BigDecimal.TEN);
+    }
+
+    @Test
+    void removeItemsFromContract_Returns200() {
+        CatalogItemIdsRequest request = new CatalogItemIdsRequest(Set.of(itemId));
+        when(contractService.removeItemsFromContract(contractId, Set.of(itemId))).thenReturn(contractResponse);
+
+        Response response = contractController.removeItemsFromContract(contractId, request);
+
+        assertEquals(200, response.getStatus());
+        verify(contractService).removeItemsFromContract(contractId, Set.of(itemId));
+    }
+}
