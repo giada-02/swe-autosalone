@@ -8,13 +8,13 @@ import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 @ApplicationScoped
 public class AuthTokenRepository {
 
-    @Inject
+    @PersistenceContext
     protected EntityManager em;
 
     public Optional<AuthToken> findByToken(String token) {
