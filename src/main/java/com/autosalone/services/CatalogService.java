@@ -14,6 +14,7 @@ import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.catalog.Accessory;
 import com.autosalone.models.catalog.AccessoryPackage;
 import com.autosalone.models.catalog.PurchasableItem;
+import com.autosalone.models.catalog.visitors.HierarchyValidationVisitor;
 import com.autosalone.repositories.CatalogRepository;
 import com.autosalone.utils.Utils;
 
@@ -66,6 +67,16 @@ public class CatalogService {
             throw new ResourceNotFoundException("This id does not belong to an accessory: " + accessoryId);
         }
 
+        if (catalogRepository.isItemInUse(accessoryId)) {
+            boolean isNameChanged = !accessory.getName().equals(request.name());
+            boolean isDescriptionChanged = !accessory.getDescription().equals(request.description());
+
+            if (isNameChanged || isDescriptionChanged) {
+                throw new IllegalStateException(
+                        "Cannot change the name or description of an accessory in use. You can only update its base price.");
+            }
+        }
+
         accessory.setName(request.name());
         accessory.setDescription(request.description());
         accessory.setBasePrice(request.basePrice());
@@ -85,8 +96,11 @@ public class CatalogService {
             return CatalogItemResponse.fromEntity(accessoryPackage);
         }
 
+        HierarchyValidationVisitor inspector = new HierarchyValidationVisitor(null);
+
         for (UUID itemId : request.purchasableItemIds()) {
             PurchasableItem childItem = getItemById(itemId);
+            childItem.accept(inspector);
             accessoryPackage.addItem(childItem);
         }
 
@@ -103,11 +117,25 @@ public class CatalogService {
                     "This id does not belong to an accessory package: " + accessoryPackageId);
         }
 
+        if (catalogRepository.isItemInUse(accessoryPackageId)) {
+            throw new IllegalStateException(
+                    "Cannot modify an accessory package that is currently in use in sales documents or other packages. Archive it and create a new one instead.");
+        }
+
         accessoryPackage.setName(request.name());
         accessoryPackage.setDescription(request.description());
 
         Set<UUID> safeNewItemIds = (request.purchasableItemIds() == null) ? Collections.emptySet()
                 : request.purchasableItemIds();
+
+        if (!safeNewItemIds.isEmpty()) {
+            HierarchyValidationVisitor inspector = new HierarchyValidationVisitor(accessoryPackageId);
+
+            for (UUID itemId : safeNewItemIds) {
+                PurchasableItem childItem = getItemById(itemId);
+                childItem.accept(inspector);
+            }
+        }
 
         Set<UUID> currentItemIds = accessoryPackage.getItems().stream()
                 .map(PurchasableItem::getId)

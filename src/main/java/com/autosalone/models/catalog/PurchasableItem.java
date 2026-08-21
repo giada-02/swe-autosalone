@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.models.AuditableEntity;
+import com.autosalone.models.catalog.visitors.PurchasableItemVisitor;
 import com.autosalone.utils.Utils;
 
 @Entity
@@ -60,6 +61,8 @@ public abstract class PurchasableItem extends AuditableEntity {
     }
 
     public abstract BigDecimal getPrice();
+
+    public abstract void accept(PurchasableItemVisitor visitor);
 
     // setters
     public void setName(String name) {

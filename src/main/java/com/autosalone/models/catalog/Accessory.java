@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import com.autosalone.models.catalog.visitors.PurchasableItemVisitor;
+
 @Entity
 @Table(name = "accessories")
 public class Accessory extends PurchasableItem {
@@ -23,6 +25,11 @@ public class Accessory extends PurchasableItem {
     @Override
     public BigDecimal getPrice() {
         return basePrice;
+    }
+
+    @Override
+    public void accept(PurchasableItemVisitor visitor) {
+        visitor.visit(this);
     }
 
     public void setBasePrice(BigDecimal basePrice) {
