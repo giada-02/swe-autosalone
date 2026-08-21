@@ -29,15 +29,15 @@ public abstract class SalesDocument extends AuditableEntity {
     @Column(nullable = false)
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "vehicle_id", nullable = false)
     private Vehicle vehicle;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "document_items", joinColumns = @JoinColumn(name = "sales_document_id"))
     private List<AppliedItem> items = new ArrayList<>();
 
@@ -218,7 +218,7 @@ public abstract class SalesDocument extends AuditableEntity {
     }
 
     public BigDecimal getSubtotal() {
-        BigDecimal total = this.vehicle.getSellingPrice() != null ? this.vehicle.getSellingPrice() : BigDecimal.ZERO;
+        BigDecimal total = vehicleSellingPriceSnapshot != null ? vehicleSellingPriceSnapshot : BigDecimal.ZERO;
         for (AppliedItem item : items) {
             total = total.add(item.getAppliedPrice());
         }
