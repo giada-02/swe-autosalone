@@ -12,9 +12,7 @@ import com.autosalone.enums.DiscountType;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
 import com.autosalone.models.discounts.DiscountStrategy;
-import com.autosalone.models.discounts.FixedAmountDiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
-import com.autosalone.models.discounts.PercentageDiscountStrategy;
 import com.autosalone.utils.Utils;
 
 @Entity
@@ -68,25 +66,19 @@ public abstract class SalesDocument extends AuditableEntity {
 
     @PrePersist
     @PreUpdate
-    private void serializeDiscountStrategyAndNormalizeData() { // from Java to Database
-        if (this.discountStrategy instanceof FixedAmountDiscountStrategy fixed) {
-            this.dbDiscountType = DiscountType.FIXED;
-            this.dbDiscountValue = fixed.getDiscountAmount();
-        } else if (this.discountStrategy instanceof PercentageDiscountStrategy percentage) {
-            this.dbDiscountType = DiscountType.PERCENTAGE;
-            this.dbDiscountValue = percentage.getPercentageValue();
-        } else {
-            this.dbDiscountType = DiscountType.NONE;
-            this.dbDiscountValue = null;
-        }
+    protected void normalizeData() {
         this.publicNotes = Utils.sanitizeText(this.publicNotes);
         this.internalNotes = Utils.sanitizeText(this.internalNotes);
-
     }
 
     @PostLoad
-    private void deserializeDiscountStrategy() { // from Database to Java
-        this.discountStrategy = this.dbDiscountType.createStrategy(this.dbDiscountValue);
+    private void deserializeDiscountStrategy() {
+        if (this.dbDiscountType != null) {
+            this.discountStrategy = this.dbDiscountType.createStrategy(this.dbDiscountValue);
+        } else {
+            this.discountStrategy = new NoDiscountStrategy();
+            this.dbDiscountType = DiscountType.NONE;
+        }
     }
 
     protected SalesDocument() {
@@ -295,7 +287,11 @@ public abstract class SalesDocument extends AuditableEntity {
 
     public void setDiscountStrategy(DiscountStrategy discountStrategy) {
         validateIsEditable();
-        this.discountStrategy = discountStrategy;
+
+        this.discountStrategy = discountStrategy != null ? discountStrategy : new NoDiscountStrategy();
+
+        this.dbDiscountType = this.discountStrategy.getType();
+        this.dbDiscountValue = this.discountStrategy.getValue();
     }
 
     // items
@@ -332,5 +328,4 @@ public abstract class SalesDocument extends AuditableEntity {
                     errorTitle + ": the SECONDHAND vehicle is missing registration data or kilometers");
         }
     }
-
 }

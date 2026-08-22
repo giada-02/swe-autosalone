@@ -2,6 +2,8 @@ package com.autosalone.models.discounts;
 
 import java.math.BigDecimal;
 
+import com.autosalone.enums.DiscountType;
+
 public class FixedAmountDiscountStrategy implements DiscountStrategy {
     private final BigDecimal discountAmount;
 
@@ -19,5 +21,15 @@ public class FixedAmountDiscountStrategy implements DiscountStrategy {
             return subtotal;
         }
         return discountAmount;
+    }
+
+    @Override
+    public DiscountType getType() {
+        return DiscountType.FIXED;
+    }
+
+    @Override
+    public BigDecimal getValue() {
+        return this.discountAmount;
     }
 }

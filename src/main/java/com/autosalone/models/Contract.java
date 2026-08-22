@@ -68,7 +68,9 @@ public class Contract extends SalesDocument {
 
     @PrePersist
     @PreUpdate
+    @Override
     protected void normalizeData() {
+        super.normalizeData();
         this.cancelationReason = Utils.sanitizeText(this.cancelationReason);
     }
 
