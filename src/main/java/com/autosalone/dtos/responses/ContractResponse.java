@@ -30,7 +30,10 @@ public record ContractResponse(
         UUID sourceQuotationId,
         String estimatedHandoverDate,
         String cancelationReason,
-        CustomerSnapshot customerSnapshot) {
+        CustomerSnapshot customerSnapshot,
+        List<TransactionResponse> payments,
+        BigDecimal totalPayment,
+        BigDecimal remainingBalance) {
 
     public static ContractResponse fromEntity(Contract contract) {
         if (contract == null)
@@ -47,6 +50,12 @@ public record ContractResponse(
         List<AppliedItemResponse> itemsResponse = contract.getItems() != null
                 ? contract.getItems().stream()
                         .map(AppliedItemResponse::fromEntity)
+                        .toList()
+                : List.of();
+
+        List<TransactionResponse> paymentsReponse = contract.getPayments() != null
+                ? contract.getPayments().stream()
+                        .map(TransactionResponse::fromEntity)
                         .toList()
                 : List.of();
 
@@ -71,6 +80,9 @@ public record ContractResponse(
                 contract.getQuotationReference() != null ? contract.getQuotationReference().getId() : null,
                 contract.getEstimatedHandoverDate() != null ? contract.getEstimatedHandoverDate().toString() : null,
                 contract.getCancelationReason(),
-                contract.getCustomerSnapshot());
+                contract.getCustomerSnapshot(),
+                paymentsReponse,
+                contract.getTotalPayment(),
+                contract.getRemainingBalance());
     }
 }

@@ -11,9 +11,9 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 public record VehicleCreateRequest(
-        @NotBlank String brand,
-        @NotBlank String model,
-        @NotBlank String color,
+        @NotBlank @Size(max = 255, message = "cannot exceed 255 characters") String brand,
+        @NotBlank @Size(max = 255, message = "cannot exceed 255 characters") String model,
+        @NotBlank @Size(max = 255, message = "cannot exceed 255 characters") String color,
         @NotNull VehicleCondition condition,
         @PositiveOrZero BigDecimal sellingPrice,
         LocalDate handoverDate,

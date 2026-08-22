@@ -66,7 +66,7 @@ class ContractControllerTest {
         itemId = UUID.randomUUID();
 
         contractResponse = new ContractResponse(contractId, null, null, null, null, null, null, false, null, null, null,
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null, null);
         transactionResponse = new TransactionResponse(transactionId, "Pagamento", BigDecimal.TEN, now.toString(),
                 TransactionType.IN, null, contractId);
     }

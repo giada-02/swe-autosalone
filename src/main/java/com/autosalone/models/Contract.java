@@ -237,7 +237,8 @@ public class Contract extends SalesDocument {
             throw new IllegalArgumentException("Payment must be a transaction of type IN");
         }
         if (payment.getAmount().compareTo(getRemainingBalance()) > 0) {
-            throw new IllegalArgumentException("Payment amount exceeds the remaining balance");
+            throw new IllegalArgumentException(
+                    "Payment amount exceeds the remaining balance (" + this.getRemainingBalance() + ")");
         }
         this.payments.add(payment);
     }
