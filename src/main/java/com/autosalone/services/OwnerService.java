@@ -1,6 +1,7 @@
 package com.autosalone.services;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.dtos.requests.OwnerRequest;
@@ -84,7 +85,7 @@ public class OwnerService {
             throw new IllegalStateException("Cannot remove the email, the user is active");
         }
 
-        if (owner.getEmail() != null && request.email() != null && !request.email().equals(owner.getEmail())) {
+        if (request.email() != null && !Objects.equals(request.email(), owner.getEmail())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });

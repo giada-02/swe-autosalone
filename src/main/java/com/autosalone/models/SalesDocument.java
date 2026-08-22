@@ -235,33 +235,39 @@ public abstract class SalesDocument extends AuditableEntity {
 
     // setters
     public void setDate(LocalDate date) {
-        validateIsEditable();
         Objects.requireNonNull(date, "Date is required");
+        if (Objects.equals(this.date, date))
+            return;
+        validateIsEditable();
         this.date = date;
     }
 
     public void setVehicle(Vehicle vehicle) {
+        Objects.requireNonNull(vehicle, "Vehicle is required");
+        if (Objects.equals(this.vehicle, vehicle))
+            return;
         validateIsEditable();
-        Objects.requireNonNull(date, "Vehicle is required");
         this.vehicle = vehicle;
     }
 
     public void setCustomer(Customer customer) {
+        Objects.requireNonNull(customer, "Customer is required");
+        if (Objects.equals(this.customer, customer))
+            return;
         validateIsEditable();
-        Objects.requireNonNull(date, "Customer is required");
         this.customer = customer;
     }
 
     public void setAdditionalFees(BigDecimal additionalFees) {
-        validateIsEditable();
-        if (additionalFees == null) {
-            this.additionalFees = BigDecimal.ZERO;
+        BigDecimal fees = additionalFees != null ? additionalFees : BigDecimal.ZERO;
+        if (this.additionalFees != null && this.additionalFees.compareTo(fees) == 0)
             return;
-        }
-        if (additionalFees.compareTo(BigDecimal.ZERO) < 0)
+
+        validateIsEditable();
+        if (fees.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("Additional fees cannot be negative");
 
-        this.additionalFees = additionalFees;
+        this.additionalFees = fees;
     }
 
     public void archive() {
@@ -278,27 +284,38 @@ public abstract class SalesDocument extends AuditableEntity {
     }
 
     public void setPublicNotes(String publicNotes) {
+        if (Objects.equals(this.publicNotes, publicNotes))
+            return;
         validateIsEditable();
         this.publicNotes = publicNotes;
     }
 
     public void setInternalNotes(String internalNotes) {
+        if (Objects.equals(this.internalNotes, internalNotes))
+            return;
         this.internalNotes = internalNotes;
     }
 
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
-        validateIsEditable();
         Objects.requireNonNull(vehicleSellingPriceSnapshot, "The vehicle selling price is required");
+        if (this.vehicleSellingPriceSnapshot != null
+                && this.vehicleSellingPriceSnapshot.compareTo(vehicleSellingPriceSnapshot) == 0)
+            return;
+
+        validateIsEditable();
         if (vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("The vehicle selling price cannot negative");
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
     }
 
     public void setDiscountStrategy(DiscountStrategy discountStrategy) {
+        DiscountStrategy newDiscountStrategy = discountStrategy != null ? discountStrategy : new NoDiscountStrategy();
+        if (this.discountStrategy != null && this.discountStrategy.equals(newDiscountStrategy))
+            return;
+
         validateIsEditable();
 
-        this.discountStrategy = discountStrategy != null ? discountStrategy : new NoDiscountStrategy();
-
+        this.discountStrategy = newDiscountStrategy;
         this.dbDiscountType = this.discountStrategy.getType();
         this.dbDiscountValue = this.discountStrategy.getValue();
     }

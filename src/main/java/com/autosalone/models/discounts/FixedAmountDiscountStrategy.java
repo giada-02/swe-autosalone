@@ -32,4 +32,25 @@ public class FixedAmountDiscountStrategy implements DiscountStrategy {
     public BigDecimal getValue() {
         return this.discountAmount;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        FixedAmountDiscountStrategy that = (FixedAmountDiscountStrategy) o;
+
+        if (this.discountAmount == null && that.discountAmount == null)
+            return true;
+        if (this.discountAmount == null || that.discountAmount == null)
+            return false;
+
+        return this.discountAmount.compareTo(that.discountAmount) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return discountAmount != null ? discountAmount.stripTrailingZeros().hashCode() : 0;
+    }
 }

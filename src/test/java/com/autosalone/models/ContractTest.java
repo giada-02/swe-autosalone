@@ -773,7 +773,8 @@ public class ContractTest {
                 () -> assertThrows(IllegalStateException.class,
                         () -> document.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal("10"))),
                         "Discount"),
-                () -> assertThrows(IllegalStateException.class, () -> document.setDate(LocalDate.now()), "Date"),
+                () -> assertThrows(IllegalStateException.class, () -> document.setDate(LocalDate.now().plusDays(1)),
+                        "Date"),
                 () -> assertThrows(IllegalStateException.class,
                         () -> document.setVehicleSellingPriceSnapshot(new BigDecimal("12000.00")), "Price Snapshot"),
                 () -> assertThrows(IllegalStateException.class, () -> document.setPublicNotes("Note"), "Public Notes"));

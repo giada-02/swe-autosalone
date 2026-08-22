@@ -25,7 +25,7 @@ public class Contract extends SalesDocument {
     @JoinColumn(name = "deposit_transaction_id", referencedColumnName = "id")
     private Transaction deposit; // caparra
 
-    @OneToMany(mappedBy = "contract", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @OneToMany(mappedBy = "contract", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.EAGER)
     private List<Transaction> payments = new ArrayList<>(); // acconti
 
     @OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
@@ -38,7 +38,7 @@ public class Contract extends SalesDocument {
     @Column(name = "cancelation_reason", columnDefinition = "TEXT")
     private String cancelationReason;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinColumn(name = "customer_snapshot_id")
     private CustomerSnapshot customerSnapshot;
 
@@ -141,6 +141,8 @@ public class Contract extends SalesDocument {
 
     public void setEstimatedHandoverDate(LocalDate estimatedHandoverDate) {
         Objects.requireNonNull(estimatedHandoverDate, "Estimated handover date is required");
+        if (Objects.equals(this.estimatedHandoverDate, estimatedHandoverDate))
+            return;
         if (estimatedHandoverDate.isBefore(this.getDate())) {
             throw new IllegalArgumentException("The estimated handover date cannot be before the contract date");
         }
@@ -253,7 +255,8 @@ public class Contract extends SalesDocument {
         }
 
         if (refund.getAmount().compareTo(getTotalPayment()) > 0) {
-            throw new IllegalArgumentException("Cannot refund more than what has been paid");
+            throw new IllegalArgumentException(
+                    "Cannot refund more than the total payment (" + this.getTotalPayment() + ")");
         }
 
         this.payments.add(refund);

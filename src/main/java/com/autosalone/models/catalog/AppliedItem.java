@@ -48,15 +48,15 @@ public class AppliedItem {
     }
 
     public void setAppliedPrice(BigDecimal appliedPrice) {
-        validatePrice(appliedPrice);
-        this.appliedPrice = appliedPrice;
-    }
+        Objects.requireNonNull(appliedPrice, "Applied price is required");
+        if (this.appliedPrice != null && this.appliedPrice.compareTo(appliedPrice) == 0)
+            return;
 
-    private void validatePrice(BigDecimal price) {
-        Objects.requireNonNull(price, "Applied price is required");
-        if (price.compareTo(BigDecimal.ZERO) < 0) {
+        if (appliedPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Applied price cannot be negative");
         }
+
+        this.appliedPrice = appliedPrice;
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -185,7 +186,7 @@ public class QuotationService {
         Quotation quotation = getQuotationById(quotationId);
 
         AppliedItem targetItem = quotation.getItems().stream()
-                .filter(applied -> applied.getItem().getId().equals(catalogItemId))
+                .filter(applied -> Objects.equals(applied.getItem().getId(), catalogItemId))
                 .findFirst()
                 .orElseThrow(
                         () -> new ResourceNotFoundException(

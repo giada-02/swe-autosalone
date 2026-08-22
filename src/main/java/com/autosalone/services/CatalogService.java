@@ -2,6 +2,7 @@ package com.autosalone.services;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -68,8 +69,8 @@ public class CatalogService {
         }
 
         if (catalogRepository.isItemInUse(accessoryId)) {
-            boolean isNameChanged = !accessory.getName().equals(request.name());
-            boolean isDescriptionChanged = !accessory.getDescription().equals(request.description());
+            boolean isNameChanged = !Objects.equals(accessory.getName(), request.name());
+            boolean isDescriptionChanged = !Objects.equals(accessory.getDescription(), request.description());
 
             if (isNameChanged || isDescriptionChanged) {
                 throw new IllegalStateException(

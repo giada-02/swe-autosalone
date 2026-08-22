@@ -66,12 +66,19 @@ public abstract class PurchasableItem extends AuditableEntity {
 
     // setters
     public void setName(String name) {
-        validateIsNotArchived();
         Objects.requireNonNull(name, "Name is required");
+        if (Objects.equals(this.name, name))
+            return;
+
+        validateIsNotArchived();
+
         this.name = name;
     }
 
     public void setDescription(String description) {
+        if (Objects.equals(this.description, description))
+            return;
+
         validateIsNotArchived();
         this.description = description;
     }

@@ -215,7 +215,7 @@ public class ContractService {
             LocalDate refundDate) {
         Contract contract = getContractById(contractId);
 
-        Transaction refund = TransactionFactory.createContractPayment(contract, refundDescription, refundAmount,
+        Transaction refund = TransactionFactory.createContractRefund(contract, refundDescription, refundAmount,
                 refundDate);
         contract.registerRefund(refund);
 
