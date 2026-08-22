@@ -247,6 +247,7 @@ public abstract class SalesDocument extends AuditableEntity {
         if (Objects.equals(this.vehicle, vehicle))
             return;
         validateIsEditable();
+        vehicle.validateVehicleStatusForDocument("Cannot associate this vehicle to the document");
         this.vehicle = vehicle;
     }
 
