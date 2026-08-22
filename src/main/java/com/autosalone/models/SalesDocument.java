@@ -11,6 +11,7 @@ import java.util.UUID;
 import com.autosalone.enums.DiscountType;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
+import com.autosalone.models.catalog.visitors.HierarchyValidationVisitor;
 import com.autosalone.models.discounts.DiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
 import com.autosalone.utils.Utils;
@@ -298,6 +299,20 @@ public abstract class SalesDocument extends AuditableEntity {
     public void addItem(AppliedItem appliedItem) {
         validateIsEditable();
         Objects.requireNonNull(appliedItem, "Applied item is required");
+
+        HierarchyValidationVisitor inspector = new HierarchyValidationVisitor(null);
+
+        try {
+            for (AppliedItem existing : this.items) {
+                existing.getItem().accept(inspector);
+            }
+            appliedItem.getItem().accept(inspector);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Cannot add item: the item or one of its components is already in the document. (" + e.getMessage()
+                            + ")");
+        }
+
         this.items.add(appliedItem);
     }
 
