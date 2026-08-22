@@ -28,7 +28,7 @@ public record ContractUpdateRequest(
                     "Cannot apply a discount value without specifying a discount type.");
         }
 
-        if (discountType != null && discountValue == null) {
+        if (discountType != null && discountType != DiscountType.NONE && discountValue == null) {
             throw new IllegalArgumentException(
                     "A discount type was specified, but the discount value is missing.");
         }

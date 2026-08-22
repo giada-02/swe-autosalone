@@ -11,6 +11,7 @@ import java.util.UUID;
 import com.autosalone.enums.DiscountType;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
+import com.autosalone.models.catalog.visitors.ActiveItemValidatorVisitor;
 import com.autosalone.models.catalog.visitors.HierarchyValidationVisitor;
 import com.autosalone.models.discounts.DiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
@@ -138,10 +139,17 @@ public abstract class SalesDocument extends AuditableEntity {
         this.vehicleSellingPriceSnapshot = original.getVehicle().getSellingPrice(); // updated vehicle selling price
 
         this.items = new ArrayList<>(); // items deep copy
+
+        ActiveItemValidatorVisitor activeInspector = new ActiveItemValidatorVisitor();
+
         for (AppliedItem originalItem : original.getItems()) {
             PurchasableItem catalogItem = originalItem.getItem();
-            if (skipArchived && catalogItem.isArchived()) {
-                continue;
+            if (skipArchived) {
+                try {
+                    catalogItem.accept(activeInspector);
+                } catch (IllegalArgumentException e) {
+                    continue; // skips archived items and items containing archived items
+                }
             }
             this.items.add(new AppliedItem(originalItem, true)); // updated items price
         }

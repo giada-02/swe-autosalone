@@ -141,8 +141,9 @@ public class Contract extends SalesDocument {
 
     public void setEstimatedHandoverDate(LocalDate estimatedHandoverDate) {
         Objects.requireNonNull(estimatedHandoverDate, "Estimated handover date is required");
-        if (estimatedHandoverDate.isBefore(LocalDate.now()))
-            throw new IllegalArgumentException("The estimated handover date must be in the future");
+        if (estimatedHandoverDate.isBefore(this.getDate())) {
+            throw new IllegalArgumentException("The estimated handover date cannot be before the contract date");
+        }
         if (!isDraft())
             throw new IllegalStateException(
                     "Cannot edit the estimated handover date for a contract in status " + this.status);
