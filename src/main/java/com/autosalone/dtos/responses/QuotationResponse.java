@@ -8,7 +8,6 @@ import com.autosalone.enums.DiscountType;
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.models.Quotation;
-import com.autosalone.models.catalog.AppliedItem;
 
 public record QuotationResponse(
         UUID id,
@@ -16,7 +15,7 @@ public record QuotationResponse(
         QuotationStatus status,
         VehicleResponse vehicle,
         CustomerResponse customer,
-        List<AppliedItem> appliedItems,
+        List<AppliedItemResponse> appliedItems,
         BigDecimal additionalFees,
         boolean isArchived,
         String publicNotes,
@@ -42,13 +41,19 @@ public record QuotationResponse(
                 ? CustomerResponse.fromEntity(quotation.getCustomer(), false)
                 : null;
 
+        List<AppliedItemResponse> itemsResponse = quotation.getItems() != null
+                ? quotation.getItems().stream()
+                        .map(AppliedItemResponse::fromEntity)
+                        .toList()
+                : List.of();
+
         return new QuotationResponse(
                 quotation.getId(),
                 quotation.getDate() != null ? quotation.getDate().toString() : null,
                 quotation.getStatus(),
                 vehicleResponse,
                 customerResponse,
-                quotation.getItems(),
+                itemsResponse,
                 quotation.getAdditionalFees(),
                 quotation.isArchived(),
                 quotation.getPublicNotes(),

@@ -8,7 +8,6 @@ import com.autosalone.enums.DiscountType;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.models.Contract;
 import com.autosalone.models.CustomerSnapshot;
-import com.autosalone.models.catalog.AppliedItem;
 
 public record ContractResponse(
         UUID id,
@@ -16,7 +15,7 @@ public record ContractResponse(
         ContractStatus status,
         VehicleResponse vehicle,
         CustomerResponse customer,
-        List<AppliedItem> appliedItems,
+        List<AppliedItemResponse> appliedItems,
         BigDecimal additionalFees,
         boolean isArchived,
         String publicNotes,
@@ -45,13 +44,19 @@ public record ContractResponse(
                 ? CustomerResponse.fromEntity(contract.getCustomer(), false)
                 : null;
 
+        List<AppliedItemResponse> itemsResponse = contract.getItems() != null
+                ? contract.getItems().stream()
+                        .map(AppliedItemResponse::fromEntity)
+                        .toList()
+                : List.of();
+
         return new ContractResponse(
                 contract.getId(),
                 contract.getDate() != null ? contract.getDate().toString() : null,
                 contract.getStatus(),
                 vehicleResponse,
                 customerResponse,
-                contract.getItems(),
+                itemsResponse,
                 contract.getAdditionalFees(),
                 contract.isArchived(),
                 contract.getPublicNotes(),
