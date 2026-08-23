@@ -2,16 +2,22 @@ package com.autosalone.services;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.autosalone.dtos.AccessoryRequest;
-import com.autosalone.dtos.AccessoryPackageRequest;
+import com.autosalone.dtos.requests.AccessoryPackageRequest;
+import com.autosalone.dtos.requests.AccessoryRequest;
+import com.autosalone.dtos.responses.CatalogItemResponse;
+import com.autosalone.enums.CatalogItemType;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.catalog.Accessory;
 import com.autosalone.models.catalog.AccessoryPackage;
 import com.autosalone.models.catalog.PurchasableItem;
+import com.autosalone.models.catalog.visitors.HierarchyValidationVisitor;
 import com.autosalone.repositories.CatalogRepository;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -27,12 +33,20 @@ public class CatalogService {
 
     public PurchasableItem getItemById(UUID id) {
         return catalogRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found of id: " + id));
     }
 
-    public List<PurchasableItem> getPurchasableItems(String keyword, Boolean isArchived,
-            Class<? extends PurchasableItem> itemType) {
-        return catalogRepository.findPurchasableItems(keyword, isArchived, itemType);
+    public CatalogItemResponse getItemResponseById(UUID id) {
+        PurchasableItem item = getItemById(id);
+        return CatalogItemResponse.fromEntity(item);
+    }
+
+    public List<CatalogItemResponse> getPurchasableItems(String keyword, Boolean isArchived,
+            CatalogItemType itemType) {
+        String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
+        Class<? extends PurchasableItem> entityClass = itemType != null ? itemType.getEntityClass() : null;
+        return catalogRepository.findPurchasableItems(sanitizedKeyword, isArchived, entityClass).stream()
+                .map(CatalogItemResponse::fromEntity).toList();
     }
 
     // write
@@ -40,18 +54,28 @@ public class CatalogService {
     // accessory
 
     @Transactional
-    public UUID addAccessory(AccessoryRequest request) {
+    public CatalogItemResponse addAccessory(AccessoryRequest request) {
         Accessory accessory = new Accessory(request.name(), request.description(), request.basePrice());
         catalogRepository.save(accessory);
-        return accessory.getId();
+        return CatalogItemResponse.fromEntity(accessory);
     }
 
     @Transactional
-    public void updateAccessory(UUID accessoryId, AccessoryRequest request) {
+    public CatalogItemResponse updateAccessory(UUID accessoryId, AccessoryRequest request) {
         PurchasableItem item = getItemById(accessoryId);
 
         if (!(item instanceof Accessory accessory)) {
-            throw new IllegalArgumentException("This id does not belong to an accessory: " + accessoryId);
+            throw new ResourceNotFoundException("This id does not belong to an accessory: " + accessoryId);
+        }
+
+        if (catalogRepository.isItemInUse(accessoryId)) {
+            boolean isNameChanged = !Objects.equals(accessory.getName(), request.name());
+            boolean isDescriptionChanged = !Objects.equals(accessory.getDescription(), request.description());
+
+            if (isNameChanged || isDescriptionChanged) {
+                throw new IllegalStateException(
+                        "Cannot change the name or description of an accessory in use. You can only update its base price.");
+            }
         }
 
         accessory.setName(request.name());
@@ -59,35 +83,44 @@ public class CatalogService {
         accessory.setBasePrice(request.basePrice());
 
         catalogRepository.save(accessory);
+        return CatalogItemResponse.fromEntity(accessory);
     }
 
     // accessory package
 
     @Transactional
-    public UUID addAccessoryPackage(AccessoryPackageRequest request) {
+    public CatalogItemResponse addAccessoryPackage(AccessoryPackageRequest request) {
         AccessoryPackage accessoryPackage = new AccessoryPackage(request.name(), request.description());
 
         if (request.purchasableItemIds() == null || request.purchasableItemIds().isEmpty()) {
             catalogRepository.save(accessoryPackage);
-            return accessoryPackage.getId();
+            return CatalogItemResponse.fromEntity(accessoryPackage);
         }
+
+        HierarchyValidationVisitor inspector = new HierarchyValidationVisitor(null);
 
         for (UUID itemId : request.purchasableItemIds()) {
             PurchasableItem childItem = getItemById(itemId);
+            childItem.accept(inspector);
             accessoryPackage.addItem(childItem);
         }
 
         catalogRepository.save(accessoryPackage);
-        return accessoryPackage.getId();
+        return CatalogItemResponse.fromEntity(accessoryPackage);
     }
 
     @Transactional
-    public void updateAccessoryPackage(UUID accessoryPackageId, AccessoryPackageRequest request) {
+    public CatalogItemResponse updateAccessoryPackage(UUID accessoryPackageId, AccessoryPackageRequest request) {
         PurchasableItem item = getItemById(accessoryPackageId);
 
         if (!(item instanceof AccessoryPackage accessoryPackage)) {
-            throw new IllegalArgumentException(
+            throw new ResourceNotFoundException(
                     "This id does not belong to an accessory package: " + accessoryPackageId);
+        }
+
+        if (catalogRepository.isItemInUse(accessoryPackageId)) {
+            throw new IllegalStateException(
+                    "Cannot modify an accessory package that is currently in use in sales documents or other packages. Archive it and create a new one instead.");
         }
 
         accessoryPackage.setName(request.name());
@@ -96,13 +129,22 @@ public class CatalogService {
         Set<UUID> safeNewItemIds = (request.purchasableItemIds() == null) ? Collections.emptySet()
                 : request.purchasableItemIds();
 
+        if (!safeNewItemIds.isEmpty()) {
+            HierarchyValidationVisitor inspector = new HierarchyValidationVisitor(accessoryPackageId);
+
+            for (UUID itemId : safeNewItemIds) {
+                PurchasableItem childItem = getItemById(itemId);
+                childItem.accept(inspector);
+            }
+        }
+
         Set<UUID> currentItemIds = accessoryPackage.getItems().stream()
                 .map(PurchasableItem::getId)
                 .collect(Collectors.toSet());
 
         if (safeNewItemIds.equals(currentItemIds)) {
             catalogRepository.save(accessoryPackage);
-            return;
+            return CatalogItemResponse.fromEntity(accessoryPackage);
         }
 
         // rimuovere gli elementi che non sono più nella nuova lista
@@ -124,6 +166,7 @@ public class CatalogService {
         }
 
         catalogRepository.save(accessoryPackage);
+        return CatalogItemResponse.fromEntity(accessoryPackage);
     }
 
     // delete

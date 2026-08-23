@@ -11,6 +11,7 @@ import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.TransactionType;
 import com.autosalone.enums.VehicleCondition;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "contracts")
@@ -24,10 +25,10 @@ public class Contract extends SalesDocument {
     @JoinColumn(name = "deposit_transaction_id", referencedColumnName = "id")
     private Transaction deposit; // caparra
 
-    @OneToMany(mappedBy = "contract", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @OneToMany(mappedBy = "contract", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.EAGER)
     private List<Transaction> payments = new ArrayList<>(); // acconti
 
-    @OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "source_quotation_id", referencedColumnName = "id")
     private Quotation quotationReference;
 
@@ -37,7 +38,7 @@ public class Contract extends SalesDocument {
     @Column(name = "cancelation_reason", columnDefinition = "TEXT")
     private String cancelationReason;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinColumn(name = "customer_snapshot_id")
     private CustomerSnapshot customerSnapshot;
 
@@ -63,6 +64,14 @@ public class Contract extends SalesDocument {
 
         this.status = ContractStatus.DRAFT;
         this.quotationReference = source;
+    }
+
+    @PrePersist
+    @PreUpdate
+    @Override
+    protected void normalizeData() {
+        super.normalizeData();
+        this.cancelationReason = Utils.sanitizeText(this.cancelationReason);
     }
 
     // getters
@@ -132,8 +141,11 @@ public class Contract extends SalesDocument {
 
     public void setEstimatedHandoverDate(LocalDate estimatedHandoverDate) {
         Objects.requireNonNull(estimatedHandoverDate, "Estimated handover date is required");
-        if (estimatedHandoverDate.isBefore(LocalDate.now()))
-            throw new IllegalArgumentException("The estimated handover date must be in the future");
+        if (Objects.equals(this.estimatedHandoverDate, estimatedHandoverDate))
+            return;
+        if (estimatedHandoverDate.isBefore(this.getDate())) {
+            throw new IllegalArgumentException("The estimated handover date cannot be before the contract date");
+        }
         if (!isDraft())
             throw new IllegalStateException(
                     "Cannot edit the estimated handover date for a contract in status " + this.status);
@@ -227,7 +239,8 @@ public class Contract extends SalesDocument {
             throw new IllegalArgumentException("Payment must be a transaction of type IN");
         }
         if (payment.getAmount().compareTo(getRemainingBalance()) > 0) {
-            throw new IllegalArgumentException("Payment amount exceeds the remaining balance");
+            throw new IllegalArgumentException(
+                    "Payment amount exceeds the remaining balance (" + this.getRemainingBalance() + ")");
         }
         this.payments.add(payment);
     }
@@ -242,7 +255,8 @@ public class Contract extends SalesDocument {
         }
 
         if (refund.getAmount().compareTo(getTotalPayment()) > 0) {
-            throw new IllegalArgumentException("Cannot refund more than what has been paid");
+            throw new IllegalArgumentException(
+                    "Cannot refund more than the total payment (" + this.getTotalPayment() + ")");
         }
 
         this.payments.add(refund);

@@ -5,12 +5,18 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.autosalone.dtos.DeadlineRequest;
-import com.autosalone.dtos.VehicleRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
+import com.autosalone.dtos.requests.PurchaseTransactionRequest;
+import com.autosalone.dtos.requests.VehicleCreateRequest;
+import com.autosalone.dtos.requests.VehicleUpdateRequest;
+import com.autosalone.dtos.responses.DeadlineResponse;
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Quotation;
@@ -20,7 +26,9 @@ import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.DeadlineRepository;
 import com.autosalone.repositories.QuotationRepository;
+import com.autosalone.repositories.TransactionRepository;
 import com.autosalone.repositories.VehicleRepository;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -36,6 +44,9 @@ public class VehicleService {
     private DeadlineRepository deadlineRepository;
 
     @Inject
+    private TransactionRepository transactionRepository;
+
+    @Inject
     private QuotationRepository quotationRepository;
 
     @Inject
@@ -45,12 +56,19 @@ public class VehicleService {
 
     public Vehicle getVehicleById(UUID id) {
         return vehicleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found of id: " + id));
     }
 
-    public List<Vehicle> getVehicles(String keyword, String brand, VehicleCondition condition,
+    public VehicleResponse getVehicleResponseById(UUID id) {
+        Vehicle vehicle = getVehicleById(id);
+        return VehicleResponse.fromEntity(vehicle);
+    }
+
+    public List<VehicleResponse> getVehicles(String keyword, String brand, VehicleCondition condition,
             BigDecimal maxPrice, Boolean isInShowroom, List<VehicleStatus> statusList) {
-        return vehicleRepository.findVehicles(keyword, brand, condition, maxPrice, isInShowroom, statusList);
+        String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
+        return vehicleRepository.findVehicles(sanitizedKeyword, brand, condition, maxPrice, isInShowroom, statusList)
+                .stream().map(VehicleResponse::fromEntity).toList();
     }
 
     public List<String> getAllBrands() {
@@ -60,9 +78,9 @@ public class VehicleService {
     // write
 
     @Transactional
-    public UUID addVehicle(VehicleRequest request) {
+    public VehicleResponse addVehicle(VehicleCreateRequest request) {
 
-        Vehicle newVehicle = new Vehicle.VehicleBuilder()
+        Vehicle vehicle = new Vehicle.VehicleBuilder()
                 .setBrand(request.brand())
                 .setModel(request.model())
                 .setColor(request.color())
@@ -75,18 +93,33 @@ public class VehicleService {
                 .setIsInShowroom(request.inShowroom())
                 .build();
 
-        if (request.purchaseTransactionAmount() != null && request.purchaseTransactionDate() != null) {
-            Transaction purchase = TransactionFactory.createVehiclePurchase(newVehicle,
-                    request.purchaseTransactionAmount(), request.purchaseTransactionDate());
-            newVehicle.setPurchaseTransaction(purchase);
+        if (request.purchaseTransaction() != null) {
+            Transaction purchase = TransactionFactory.createVehiclePurchase(vehicle,
+                    request.purchaseTransaction().amount(), request.purchaseTransaction().date());
+            vehicle.setPurchaseTransaction(purchase);
         }
 
-        vehicleRepository.save(newVehicle);
-        return newVehicle.getId();
+        vehicleRepository.save(vehicle);
+        return VehicleResponse.fromEntity(vehicle);
     }
 
     @Transactional
-    public void withdrawVehicle(UUID vehicleId, String reason) {
+    public VehicleResponse addPurchaseTransaction(UUID vehicleId, PurchaseTransactionRequest request) {
+        Vehicle vehicle = getVehicleById(vehicleId);
+
+        if (vehicle.getPurchaseTransaction() != null)
+            throw new IllegalStateException("A purchase transaction already exists for this vehicle");
+
+        Transaction purchase = TransactionFactory.createVehiclePurchase(vehicle,
+                request.amount(), request.date());
+        vehicle.setPurchaseTransaction(purchase);
+
+        vehicleRepository.save(vehicle);
+        return VehicleResponse.fromEntity(vehicle);
+    }
+
+    @Transactional
+    public VehicleResponse withdrawVehicle(UUID vehicleId, String reason) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         vehicle.withdraw(reason);
@@ -116,21 +149,28 @@ public class VehicleService {
             }
             contractRepository.save(contract);
         }
+
+        List<Deadline> pendingDeadlines = deadlineRepository.findPendingByVehicleId(vehicleId);
+        for (Deadline deadline : pendingDeadlines) {
+            deadlineRepository.delete(deadline);
+        }
+
+        return VehicleResponse.fromEntity(vehicle);
     }
 
     @Transactional
-    public UUID addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
+    public ExpenseResponse addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
         Vehicle vehicle = getVehicleById(vehicleId);
-
-        Transaction expense = TransactionFactory.createVehicleExpense(vehicle, description, amount, date);
+        String sanitizedDescription = Utils.sanitizeText(description);
+        Transaction expense = TransactionFactory.createVehicleExpense(vehicle, sanitizedDescription, amount, date);
         vehicle.addExpense(expense);
 
-        vehicleRepository.save(vehicle);
-        return expense.getId();
+        transactionRepository.save(expense);
+        return ExpenseResponse.fromEntity(expense);
     }
 
     @Transactional
-    public UUID generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
+    public DeadlineResponse generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
         Vehicle vehicle = getVehicleById(vehicleId);
         Deadline inspectionDeadline;
 
@@ -140,35 +180,23 @@ public class VehicleService {
             inspectionDeadline = vehicle.generateStandardInspectionDeadline();
         }
 
-        vehicleRepository.save(vehicle);
-        return inspectionDeadline.getId();
+        deadlineRepository.save(inspectionDeadline);
+        return DeadlineResponse.fromEntity(inspectionDeadline);
     }
 
     @Transactional
-    public UUID addDeadline(UUID vehicleId, DeadlineRequest request) {
+    public DeadlineResponse addDeadline(UUID vehicleId, DeadlineRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
-        Deadline newDealine = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
+        Deadline deadline = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
 
-        vehicleRepository.save(vehicle);
-        return newDealine.getId();
+        deadlineRepository.save(deadline);
+        return DeadlineResponse.fromEntity(deadline);
     }
 
     @Transactional
-    public void removeDeadline(UUID vehicleId, UUID deadlineId) {
-        Vehicle vehicle = getVehicleById(vehicleId);
-
-        Deadline deadline = deadlineRepository.findById(deadlineId)
-                .orElseThrow(() -> new IllegalStateException("Deadline not found of id: " + deadlineId));
-
-        vehicle.removeDeadline(deadline);
-
-        vehicleRepository.save(vehicle);
-    }
-
-    @Transactional
-    public void updateVehicle(UUID vehicleId, VehicleRequest request) {
+    public VehicleResponse updateVehicle(UUID vehicleId, VehicleUpdateRequest request) {
         Vehicle vehicle = getVehicleById(vehicleId);
 
         vehicle.setBrand(request.brand());
@@ -182,13 +210,7 @@ public class VehicleService {
         vehicle.setKilometers(request.kilometers());
         vehicle.setIsInShowroom(request.inShowroom());
 
-        if (request.purchaseTransactionAmount() != null && request.purchaseTransactionDate() != null
-                && vehicle.getPurchaseTransaction() == null) {
-            Transaction transaction = TransactionFactory.createVehiclePurchase(vehicle,
-                    request.purchaseTransactionAmount(), request.purchaseTransactionDate());
-            vehicle.setPurchaseTransaction(transaction);
-        }
-
         vehicleRepository.save(vehicle);
+        return VehicleResponse.fromEntity(vehicle);
     }
 }

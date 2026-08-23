@@ -48,6 +48,17 @@ public abstract class User extends AuditableEntity {
         this.isActive = builder.isActive;
     }
 
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.firstName = this.firstName.trim().replaceAll("\\s+", " ");
+        this.lastName = this.lastName.trim().replaceAll("\\s+", " ");
+        this.phoneNumber = this.phoneNumber.replaceAll("[\\s\\-]", "");
+        if (this.email != null) {
+            this.email = this.email.trim().toLowerCase();
+        }
+    }
+
     // getters
     public UUID getId() {
         return id;

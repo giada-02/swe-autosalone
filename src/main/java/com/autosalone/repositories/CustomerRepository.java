@@ -24,20 +24,13 @@ public class CustomerRepository {
         return Optional.ofNullable(customer);
     }
 
-    public Optional<Customer> findByEmail(String email) {
-        return em.createQuery("SELECT c FROM Customer c WHERE c.email = :email", Customer.class)
-                .setParameter("email", email)
-                .getResultStream()
-                .findFirst();
-    }
-
     public List<Customer> findCustomers(
             String keyword, Boolean isActive) {
 
         StringBuilder jpql = new StringBuilder("SELECT c FROM Customer c WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
 
-        if (keyword != null && !keyword.isEmpty()) {
+        if (keyword != null) {
             jpql.append(
                     " AND (LOWER(c.firstName) LIKE LOWER(:keyword) OR LOWER(c.lastName) LIKE LOWER(:keyword) OR LOWER(c.phoneNumber) LIKE LOWER(:keyword) OR LOWER(c.email) LIKE LOWER(:keyword))");
             parameters.put("keyword", "%" + keyword + "%");

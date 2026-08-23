@@ -208,7 +208,8 @@ public class VehicleTest {
         assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
         assertThrows(IllegalStateException.class, () -> car.setHandoverDate(LocalDate.now()));
-        assertThrows(IllegalStateException.class, () -> car.setPurchaseTransaction(null));
+        assertThrows(IllegalStateException.class, () -> car.setPurchaseTransaction(TransactionFactory
+                .createVehiclePurchase(car, new BigDecimal("8000.00"), LocalDate.now().minusDays(12))));
     }
 
     @Test

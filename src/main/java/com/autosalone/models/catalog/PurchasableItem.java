@@ -6,6 +6,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.models.AuditableEntity;
+import com.autosalone.models.catalog.visitors.PurchasableItemVisitor;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "purchasable_items")
@@ -34,6 +36,13 @@ public abstract class PurchasableItem extends AuditableEntity {
         this.description = description;
     }
 
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.name = this.name.trim();
+        this.description = Utils.sanitizeText(this.description);
+    }
+
     // getters
     public UUID getId() {
         return id;
@@ -53,14 +62,23 @@ public abstract class PurchasableItem extends AuditableEntity {
 
     public abstract BigDecimal getPrice();
 
+    public abstract void accept(PurchasableItemVisitor visitor);
+
     // setters
     public void setName(String name) {
-        validateIsNotArchived();
         Objects.requireNonNull(name, "Name is required");
+        if (Objects.equals(this.name, name))
+            return;
+
+        validateIsNotArchived();
+
         this.name = name;
     }
 
     public void setDescription(String description) {
+        if (Objects.equals(this.description, description))
+            return;
+
         validateIsNotArchived();
         this.description = description;
     }

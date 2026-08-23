@@ -17,7 +17,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.DeadlineRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
+import com.autosalone.dtos.responses.DeadlineCompletionResponse;
+import com.autosalone.dtos.responses.DeadlineResponse;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.DeadlineRepository;
@@ -40,8 +43,9 @@ class DeadlineServiceTest {
     void setUp() {
         deadlineId = UUID.randomUUID();
         vehicleId = UUID.randomUUID();
-        mockDeadline = mock(Deadline.class);
+
         mockVehicle = mock(Vehicle.class);
+        mockDeadline = mock(Deadline.class);
     }
 
     // read
@@ -49,15 +53,15 @@ class DeadlineServiceTest {
     @Test
     void getDeadlineById_Success() {
         when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
-        Deadline result = deadlineService.getDeadlineById(deadlineId);
-        assertNotNull(result);
-        assertEquals(mockDeadline, result);
+        Deadline response = deadlineService.getDeadlineById(deadlineId);
+        assertNotNull(response);
+        assertEquals(mockDeadline, response);
     }
 
     @Test
     void getDeadlineById_NotFound() {
         when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             deadlineService.getDeadlineById(deadlineId);
         });
     }
@@ -66,9 +70,13 @@ class DeadlineServiceTest {
     void getDeadlinesByVehicleId_Completed() {
         when(deadlineRepository.findHistoryByVehicleId(vehicleId)).thenReturn(List.of(mockDeadline));
 
-        List<Deadline> results = deadlineService.getDeadlinesByVehicleId(vehicleId, true);
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockDeadline.getId()).thenReturn(deadlineId);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        assertEquals(1, results.size());
+        List<DeadlineResponse> responses = deadlineService.getDeadlinesByVehicleId(vehicleId, true);
+
+        assertEquals(1, responses.size());
         verify(deadlineRepository).findHistoryByVehicleId(vehicleId);
         verify(deadlineRepository, never()).findPendingByVehicleId(any());
     }
@@ -77,9 +85,13 @@ class DeadlineServiceTest {
     void getDeadlinesByVehicleId_Pending() {
         when(deadlineRepository.findPendingByVehicleId(vehicleId)).thenReturn(List.of(mockDeadline));
 
-        List<Deadline> results = deadlineService.getDeadlinesByVehicleId(vehicleId, false);
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockDeadline.getId()).thenReturn(deadlineId);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        assertEquals(1, results.size());
+        List<DeadlineResponse> responses = deadlineService.getDeadlinesByVehicleId(vehicleId, false);
+
+        assertEquals(1, responses.size());
         verify(deadlineRepository).findPendingByVehicleId(vehicleId);
         verify(deadlineRepository, never()).findHistoryByVehicleId(any());
     }
@@ -89,9 +101,13 @@ class DeadlineServiceTest {
         LocalDate upToDate = LocalDate.now().plusDays(7);
         when(deadlineRepository.findUrgentDeadlines(upToDate)).thenReturn(List.of(mockDeadline));
 
-        List<Deadline> results = deadlineService.getUrgentDeadlines(upToDate);
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockDeadline.getId()).thenReturn(deadlineId);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        assertEquals(1, results.size());
+        List<DeadlineResponse> responses = deadlineService.getUrgentDeadlines(upToDate);
+
+        assertEquals(1, responses.size());
         verify(deadlineRepository).findUrgentDeadlines(upToDate);
     }
 
@@ -104,10 +120,15 @@ class DeadlineServiceTest {
 
         when(mockDeadline.complete(completionDate, "Tagliando completato")).thenReturn(null);
 
-        deadlineService.completeDeadline(deadlineId, completionDate, "Tagliando completato");
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
+
+        DeadlineCompletionResponse response = deadlineService.completeDeadline(deadlineId, completionDate,
+                "Tagliando completato");
 
         verify(deadlineRepository).save(mockDeadline);
         verify(deadlineRepository).save(any(Deadline.class));
+        assertNotNull(response.completedDeadline());
+        assertNull(response.nextDeadline());
     }
 
     @Test
@@ -119,15 +140,26 @@ class DeadlineServiceTest {
 
         when(mockDeadline.complete(completionDate, "Revisione fatta")).thenReturn(mockNextRecurrence);
 
-        deadlineService.completeDeadline(deadlineId, completionDate, "Revisione fatta");
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
+        when(mockNextRecurrence.getVehicle()).thenReturn(mockVehicle);
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+
+        DeadlineCompletionResponse response = deadlineService.completeDeadline(deadlineId, completionDate,
+                "Revisione fatta");
 
         verify(deadlineRepository).save(mockDeadline);
         verify(deadlineRepository).save(mockNextRecurrence);
+        assertNotNull(response.completedDeadline());
+        assertNotNull(response.nextDeadline());
     }
 
     @Test
     void updateDeadline_Success() {
         when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
+
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockDeadline.getId()).thenReturn(deadlineId);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
         DeadlineRequest request = new DeadlineRequest(
                 "Bollo",
@@ -148,11 +180,7 @@ class DeadlineServiceTest {
     @Test
     void deleteDeadline_Success() {
         when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
-        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
-
         deadlineService.deleteDeadline(deadlineId);
-
-        verify(mockVehicle).removeDeadline(mockDeadline);
         verify(deadlineRepository).delete(mockDeadline);
     }
 }

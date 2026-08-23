@@ -27,7 +27,7 @@ public abstract class AuditableEntity {
     private UUID updatedBy;
 
     @PrePersist
-    public void onPrePersist() {
+    protected void onPrePersist() {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
@@ -36,7 +36,7 @@ public abstract class AuditableEntity {
     }
 
     @PreUpdate
-    public void onPreUpdate() {
+    protected void onPreUpdate() {
         this.updatedAt = Instant.now();
         this.updatedBy = AuditContext.getCurrentUserId();
     }

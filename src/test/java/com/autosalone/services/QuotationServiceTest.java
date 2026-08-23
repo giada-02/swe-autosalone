@@ -19,11 +19,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.QuotationUpdateRequest;
-import com.autosalone.dtos.SalesDocumentCreateRequest;
+import com.autosalone.dtos.requests.QuotationUpdateRequest;
+import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Customer;
 import com.autosalone.models.Quotation;
@@ -90,8 +92,23 @@ class QuotationServiceTest {
     @Test
     void getQuotationById_NotFound() {
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             quotationService.getQuotationById(quotationId);
+        });
+    }
+
+    @Test
+    void getQuotationResponseById_Success() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
+        QuotationResponse response = quotationService.getQuotationResponseById(quotationId);
+        assertNotNull(response);
+    }
+
+    @Test
+    void getQuotationResponseById_NotFound() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            quotationService.getQuotationResponseById(quotationId);
         });
     }
 
@@ -100,7 +117,7 @@ class QuotationServiceTest {
         when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(quotation));
 
-        List<Quotation> results = quotationService.getQuotations(null, null, null, null, null, null);
+        List<QuotationResponse> results = quotationService.getQuotations(null, null, null, null, null, null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         verify(quotationRepository).findQuotations(null, null, null, null, null, null);
@@ -111,7 +128,7 @@ class QuotationServiceTest {
         when(quotationRepository.findVisibleQuotationsByCustomerId(customerId))
                 .thenReturn(List.of(quotation));
 
-        List<Quotation> results = quotationService.getVisibleQuotationsForCustomer(customerId);
+        List<QuotationResponse> results = quotationService.getVisibleQuotationsForCustomer(customerId);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         verify(quotationRepository).findVisibleQuotationsByCustomerId(customerId);
@@ -126,8 +143,8 @@ class QuotationServiceTest {
         when(vehicleService.getVehicleById(vehicleId)).thenReturn(mockVehicle);
         when(customerService.getCustomerById(customerId)).thenReturn(mockCustomer);
 
-        UUID resultId = quotationService.addQuotation(request);
-        assertNull(resultId);
+        QuotationResponse response = quotationService.addQuotation(request);
+        assertNotNull(response);
         verify(quotationRepository).save(any(Quotation.class));
     }
 
@@ -136,8 +153,8 @@ class QuotationServiceTest {
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         when(mockVehicle.getSellingPrice()).thenReturn(new BigDecimal("10000"));
 
-        UUID resultId = quotationService.cloneQuotation(quotationId);
-        assertNull(resultId);
+        QuotationResponse response = quotationService.cloneQuotation(quotationId);
+        assertNotNull(response);
         verify(quotationRepository).save(any(Quotation.class));
     }
 
@@ -283,10 +300,11 @@ class QuotationServiceTest {
 
     @Test
     void addItemsToQuotation_NullOrEmptySet_DoesNothing() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
+
         quotationService.addItemsToQuotation(quotationId, null);
         quotationService.addItemsToQuotation(quotationId, Collections.emptySet());
 
-        verify(quotationRepository, never()).findById(any());
         verify(quotationRepository, never()).save(any());
         verify(catalogService, never()).getItemById(any());
     }
@@ -309,10 +327,11 @@ class QuotationServiceTest {
 
     @Test
     void removeItemsFromQuotation_NullOrEmptySet_DoesNothing() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
+
         quotationService.removeItemsFromQuotation(quotationId, null);
         quotationService.removeItemsFromQuotation(quotationId, Collections.emptySet());
 
-        verify(quotationRepository, never()).findById(any());
         verify(quotationRepository, never()).save(any());
     }
 
@@ -338,7 +357,7 @@ class QuotationServiceTest {
         UUID wrongCatalogItemId = UUID.randomUUID();
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             quotationService.updateAppliedItemPrice(quotationId, wrongCatalogItemId, BigDecimal.TEN);
         });
 
@@ -414,5 +433,4 @@ class QuotationServiceTest {
 
         verify(quotationRepository).save(quotation);
     }
-
 }

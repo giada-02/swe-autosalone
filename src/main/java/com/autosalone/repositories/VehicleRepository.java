@@ -38,7 +38,7 @@ public class VehicleRepository {
         StringBuilder jpql = new StringBuilder("SELECT v FROM Vehicle v WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
 
-        if (keyword != null && !keyword.isEmpty()) {
+        if (keyword != null) {
             jpql.append(
                     " AND (LOWER(v.brand) LIKE LOWER(:keyword) OR LOWER(v.model) LIKE LOWER(:keyword) OR LOWER(v.licensePlate) LIKE LOWER(:keyword))");
             parameters.put("keyword", "%" + keyword + "%");

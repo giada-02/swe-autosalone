@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.utils.PeriodStringConverter;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "deadlines")
@@ -70,6 +71,13 @@ public class Deadline extends AuditableEntity {
         this.vehicle = vehicle;
     }
 
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.reason = this.reason.trim();
+        this.notes = Utils.sanitizeText(this.notes);
+    }
+
     // getters
     public UUID getId() {
         return id;
@@ -113,28 +121,35 @@ public class Deadline extends AuditableEntity {
 
     // setters
     public void setReason(String reason) {
-        if (this.isCompleted)
-            throw new IllegalStateException("Cannot edit a completed deadline");
+        Objects.requireNonNull(reason, "Reason is required");
+        if (Objects.equals(this.reason, reason))
+            return;
+        validateNotCompleted();
         this.reason = reason;
     }
 
     public void setDueDate(LocalDate dueDate) {
-        if (this.isCompleted)
-            throw new IllegalStateException("Cannot edit a completed deadline");
+        Objects.requireNonNull(dueDate, "Due date is required");
+        if (Objects.equals(this.dueDate, dueDate))
+            return;
+        validateNotCompleted();
         this.dueDate = dueDate;
     }
 
     public void setRecurrence(Period recurrence) {
-        if (this.isCompleted)
-            throw new IllegalStateException("Cannot edit a completed deadline");
+        if (Objects.equals(this.recurrence, recurrence))
+            return;
+        validateNotCompleted();
         if (recurrence == null && this.recalculateFromCompletion)
             this.recalculateFromCompletion = false;
         this.recurrence = recurrence;
     }
 
     public void setRecalculateFromCompletion(boolean recalculateFromCompletion) {
-        if (this.isCompleted)
-            throw new IllegalStateException("Cannot edit a completed deadline");
+        if (this.recalculateFromCompletion == recalculateFromCompletion) {
+            return;
+        }
+        validateNotCompleted();
         if (recalculateFromCompletion && this.recurrence == null)
             throw new IllegalArgumentException("Cannot recalculate from completion if there is no recurrence");
         this.recalculateFromCompletion = recalculateFromCompletion;
@@ -145,9 +160,8 @@ public class Deadline extends AuditableEntity {
      * generata. Restituisce null se la scadenza non è ricorrente.
      */
     public Deadline complete(LocalDate actualCompletionDate, String notes) {
-        if (this.isCompleted) {
+        if (this.isCompleted)
             throw new IllegalStateException("This deadline is already completed");
-        }
 
         this.isCompleted = true;
         this.completionDate = actualCompletionDate;
@@ -171,5 +185,10 @@ public class Deadline extends AuditableEntity {
 
         // crea il nuovo evento per il futuro
         return new Deadline(this.vehicle, this.reason, nextDueDate, this.recurrence, this.recalculateFromCompletion);
+    }
+
+    private void validateNotCompleted() {
+        if (this.isCompleted)
+            throw new IllegalStateException("Cannot edit a completed deadline");
     }
 }

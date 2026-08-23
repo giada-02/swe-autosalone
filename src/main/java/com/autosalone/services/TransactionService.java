@@ -5,8 +5,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.SortOrder;
 import com.autosalone.enums.TransactionType;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Transaction;
 import com.autosalone.models.TransactionFactory;
 import com.autosalone.repositories.TransactionRepository;
@@ -25,22 +28,28 @@ public class TransactionService {
 
     public Transaction getTransactionById(UUID id) {
         return transactionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Transaction not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found of id: " + id));
     }
 
-    public List<Transaction> getTransactions(LocalDate dateFrom,
+    public TransactionResponse getTransactionResponseById(UUID id) {
+        Transaction transaction = getTransactionById(id);
+        return TransactionResponse.fromEntity(transaction);
+    }
+
+    public List<TransactionResponse> getTransactions(LocalDate dateFrom,
             LocalDate dateTo,
             TransactionType type,
             SortOrder sortOrder) {
-        return transactionRepository.findTransactions(dateFrom, dateTo, type, sortOrder);
+        return transactionRepository.findTransactions(dateFrom, dateTo, type, sortOrder)
+                .stream().map(TransactionResponse::fromEntity).toList();
     }
 
-    public List<Transaction> getExpensesByVehicleId(UUID vehicleId) {
-        return transactionRepository.findAllExpenses(vehicleId);
+    public List<ExpenseResponse> getExpensesByVehicleId(UUID vehicleId) {
+        return transactionRepository.findAllExpenses(vehicleId).stream().map(ExpenseResponse::fromEntity).toList();
     }
 
-    public List<Transaction> getPaymentsByContractId(UUID contractId) {
-        return transactionRepository.findAllPayments(contractId);
+    public List<TransactionResponse> getPaymentsByContractId(UUID contractId) {
+        return transactionRepository.findAllPayments(contractId).stream().map(TransactionResponse::fromEntity).toList();
     }
 
     public BigDecimal getSumOfIncomes(LocalDate dateFrom, LocalDate dateTo) {
@@ -54,20 +63,20 @@ public class TransactionService {
     // write
 
     @Transactional
-    public UUID createGeneralExpense(String reason, BigDecimal amount, LocalDate date) {
+    public TransactionResponse createGeneralExpense(String reason, BigDecimal amount, LocalDate date) {
         Transaction generalExpense = TransactionFactory.createGeneralExpense(reason, amount, date);
 
         transactionRepository.save(generalExpense);
 
-        return generalExpense.getId();
+        return TransactionResponse.fromEntity(generalExpense);
     }
 
     @Transactional
-    public UUID createGeneralIncome(String reason, BigDecimal amount, LocalDate date) {
+    public TransactionResponse createGeneralIncome(String reason, BigDecimal amount, LocalDate date) {
         Transaction generalIncome = TransactionFactory.createGeneralIncome(reason, amount, date);
 
         transactionRepository.save(generalIncome);
 
-        return generalIncome.getId();
+        return TransactionResponse.fromEntity(generalIncome);
     }
 }

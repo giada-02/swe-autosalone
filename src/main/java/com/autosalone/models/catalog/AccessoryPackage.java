@@ -6,11 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.autosalone.models.catalog.visitors.PurchasableItemVisitor;
+
 @Entity
 @Table(name = "accessory_packages")
 public class AccessoryPackage extends PurchasableItem {
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "package_items", joinColumns = @JoinColumn(name = "package_id"), inverseJoinColumns = @JoinColumn(name = "item_id"))
     private List<PurchasableItem> items = new ArrayList<>();
 
@@ -37,6 +39,11 @@ public class AccessoryPackage extends PurchasableItem {
             total = total.add(item.getPrice());
         }
         return total;
+    }
+
+    @Override
+    public void accept(PurchasableItemVisitor visitor) {
+        visitor.visit(this);
     }
 
     public List<PurchasableItem> getItems() {

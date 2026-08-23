@@ -4,7 +4,9 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd">
     
-    <persistence-unit name="autosalonePU" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="autosalonePU" transaction-type="JTA">
+        <jta-data-source>java:app/env/jdbc/AutosaloneDS</jta-data-source>
+
         <class>com.autosalone.models.User</class>
         <class>com.autosalone.models.Owner</class>
         <class>com.autosalone.models.Customer</class>
@@ -20,14 +22,12 @@
         <class>com.autosalone.models.catalog.Accessory</class>
         <class>com.autosalone.models.catalog.AccessoryPackage</class>
         <class>com.autosalone.models.catalog.AuditableEntity</class>
+        <class>com.autosalone.models.AuthToken</class>
 
         <properties>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/autosalone"/>
-            <property name="jakarta.persistence.jdbc.user" value="admin"/>
-            <property name="jakarta.persistence.jdbc.password" value="dev_password"/>
-            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
-
             <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
+            
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
             
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>

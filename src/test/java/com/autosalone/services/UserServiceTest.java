@@ -2,6 +2,7 @@ package com.autosalone.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -15,6 +16,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.enums.TokenType;
+import com.autosalone.exceptions.ForbiddenException;
+import com.autosalone.exceptions.ResourceNotFoundException;
+import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.repositories.UserRepository;
 
@@ -25,6 +30,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AuthTokenService authTokenService;
 
     @Mock
     private PasswordHash passwordHash;
@@ -56,7 +64,7 @@ class UserServiceTest {
     @Test
     void getUserById_NotFound() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             userService.getUserById(userId);
         });
     }
@@ -72,7 +80,7 @@ class UserServiceTest {
     @Test
     void getUserByEmail_NotFound() {
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             userService.getUserByEmail(email);
         });
     }
@@ -80,61 +88,32 @@ class UserServiceTest {
     // write
 
     @Test
-    void updateEmail_Success_EmailNotUsed() {
-        String newEmail = "new@autosalone.com";
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(mockUser.getEmail()).thenReturn(email);
-        when(userRepository.findByEmail(newEmail)).thenReturn(Optional.empty());
-
-        userService.updateEmail(userId, newEmail);
-
-        verify(mockUser).setEmail(newEmail);
-        verify(userRepository).save(mockUser);
-    }
-
-    @Test
-    void updateEmail_Success_EmailUsedBySameUser() {
-        String newEmail = "same@autosalone.com";
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(mockUser.getEmail()).thenReturn(newEmail);
-
-        userService.updateEmail(userId, newEmail);
-
-        verify(mockUser, never()).setEmail(newEmail);
-        verify(userRepository, never()).save(mockUser);
-    }
-
-    @Test
-    void updateEmail_FailsIfEmailUsedByAnotherUser() {
-        String newEmail = "taken@autosalone.com";
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(mockUser.getEmail()).thenReturn(email);
-
-        User anotherUser = mock(User.class);
-        when(userRepository.findByEmail(newEmail)).thenReturn(Optional.of(anotherUser));
-
-        assertThrows(IllegalStateException.class, () -> {
-            userService.updateEmail(userId, newEmail);
-        });
-
-        verify(userRepository, never()).save(any());
-    }
-
-    @Test
     void updatePassword_Success() {
-        String rawPassword = "password";
-        String hashedPassword = "hashed_password";
-
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(passwordHash.generate(any())).thenReturn(hashedPassword);
+        when(mockUser.getPassword()).thenReturn("hashed_current_password");
 
-        userService.updatePassword(userId, rawPassword);
+        when(passwordHash.verify(any(char[].class), eq("hashed_current_password"))).thenReturn(true);
+        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_new_password");
 
-        verify(mockUser).setPassword(hashedPassword);
+        userService.updatePassword(userId, "current_password", "new_password");
+
+        verify(mockUser).setPassword("hashed_new_password");
         verify(userRepository).save(mockUser);
+    }
+
+    @Test
+    void updatePassword_WrongCurrentPassword_ThrowsForbiddenException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(mockUser.getPassword()).thenReturn("hashed_current_password");
+
+        when(passwordHash.verify(any(char[].class), eq("hashed_current_password"))).thenReturn(false);
+
+        assertThrows(
+                ForbiddenException.class,
+                () -> userService.updatePassword(userId, "wrong_password", "new_password"));
+
+        verify(mockUser, never()).setPassword(anyString());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -143,7 +122,6 @@ class UserServiceTest {
         String hashedPassword = "hashed_password";
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(mockUser.isActive()).thenReturn(false);
         when(passwordHash.generate(any())).thenReturn(hashedPassword);
 
         userService.activateUser(userId, rawPassword);
@@ -156,7 +134,7 @@ class UserServiceTest {
     @Test
     void activateUser_FailsIfAlreadyActive() {
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(mockUser.isActive()).thenReturn(true);
+        when(mockUser.getPassword()).thenReturn(anyString());
 
         assertThrows(IllegalStateException.class, () -> {
             userService.activateUser(userId, "password");
@@ -218,24 +196,15 @@ class UserServiceTest {
     }
 
     @Test
-    void login_FailsIfNotActive() {
-        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
-        when(mockUser.isActive()).thenReturn(false);
-
-        assertThrows(SecurityException.class, () -> {
-            userService.login(email, "password");
-        });
-    }
-
-    @Test
     void login_FailsIfNoPassword() {
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
-        when(mockUser.isActive()).thenReturn(true);
         when(mockUser.getPassword()).thenReturn(null);
 
-        assertThrows(SecurityException.class, () -> {
+        SecurityException exception = assertThrows(SecurityException.class, () -> {
             userService.login(email, "password");
         });
+
+        assertEquals("Invalid credentials", exception.getMessage());
     }
 
     @Test
@@ -244,7 +213,6 @@ class UserServiceTest {
         String hashedPassword = "hashed_password";
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
-        when(mockUser.isActive()).thenReturn(true);
         when(mockUser.getPassword()).thenReturn(hashedPassword);
 
         when(passwordHash.verify(any(char[].class), eq(hashedPassword))).thenReturn(false);
@@ -254,5 +222,44 @@ class UserServiceTest {
         });
 
         assertEquals("Invalid credentials", exception.getMessage());
+    }
+
+    @Test
+    void completeRegistration_Success() {
+        String tokenString = "valid_token";
+        when(mockUser.getId()).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+
+        AuthToken mockToken = mock(AuthToken.class);
+        when(mockToken.getUser()).thenReturn(mockUser);
+
+        when(authTokenService.validateToken(tokenString, TokenType.REGISTRATION)).thenReturn(mockToken);
+        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_password!");
+
+        userService.completeRegistration(tokenString, "new_password");
+
+        verify(authTokenService).validateToken(tokenString, TokenType.REGISTRATION);
+        verify(mockUser).setPassword(anyString());
+        verify(mockUser).activate();
+        verify(userRepository).save(mockUser);
+        verify(authTokenService).deleteToken(mockToken);
+    }
+
+    @Test
+    void completePasswordReset_Success() {
+        String tokenString = "valid_token";
+
+        AuthToken mockToken = mock(AuthToken.class);
+        when(mockToken.getUser()).thenReturn(mockUser);
+
+        when(authTokenService.validateToken(tokenString, TokenType.PASSWORD_RESET)).thenReturn(mockToken);
+        when(passwordHash.generate(any(char[].class))).thenReturn("hashed_password");
+
+        userService.completePasswordReset(tokenString, "new_password");
+
+        verify(authTokenService).validateToken(tokenString, TokenType.PASSWORD_RESET);
+        verify(mockUser).setPassword(anyString());
+        verify(userRepository).save(mockUser);
+        verify(authTokenService).deleteToken(mockToken);
     }
 }

@@ -1,5 +1,7 @@
 package com.autosalone.models;
 
+import com.autosalone.utils.Utils;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 
@@ -33,6 +35,16 @@ public class Customer extends User {
         this.zipCode = builder.zipCode;
         this.fiscalCode = builder.fiscalCode;
         this.vatNumber = builder.vatNumber;
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        super.normalizeData();
+        this.residenceCity = Utils.sanitizeText(this.residenceCity);
+        if (this.fiscalCode != null) {
+            this.fiscalCode = this.fiscalCode.trim().toUpperCase();
+        }
     }
 
     // getters

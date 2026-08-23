@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "vehicles")
@@ -86,6 +87,17 @@ public class Vehicle extends AuditableEntity {
         this.status = VehicleStatus.AVAILABLE;
     }
 
+    @PrePersist
+    @PreUpdate
+    protected void normalizeData() {
+        this.brand = this.brand.trim();
+        this.model = this.model.trim();
+        this.color = this.color.trim();
+        if (Utils.sanitizeText(this.licensePlate) != null) {
+            this.licensePlate = this.licensePlate.replaceAll("[\\s\\-]", "").toUpperCase();
+        }
+    }
+
     // getters
     public UUID getId() {
         return id;
@@ -153,26 +165,36 @@ public class Vehicle extends AuditableEntity {
 
     // setters
     public void setBrand(String brand) {
+        if (Objects.equals(this.brand, brand))
+            return;
         assertCoreEditable();
         this.brand = brand;
     }
 
     public void setModel(String model) {
+        if (Objects.equals(this.model, model))
+            return;
         assertCoreEditable();
         this.model = model;
     }
 
     public void setColor(String color) {
+        if (Objects.equals(this.color, color))
+            return;
         assertCoreEditable();
         this.color = color;
     }
 
     public void setCondition(VehicleCondition condition) {
+        if (Objects.equals(this.condition, condition))
+            return;
         assertCoreEditable();
         this.condition = condition;
     }
 
     public void setPurchaseTransaction(Transaction purchaseTransaction) {
+        if (Objects.equals(this.purchaseTransaction, purchaseTransaction))
+            return;
         assertNotWithdrawn();
         if (this.purchaseTransaction != null) {
             throw new IllegalStateException(
@@ -182,8 +204,10 @@ public class Vehicle extends AuditableEntity {
     }
 
     public void setSellingPrice(BigDecimal sellingPrice) {
-        assertNotTerminal();
         Objects.requireNonNull(sellingPrice, "Selling price is required");
+        if (this.sellingPrice != null && this.sellingPrice.compareTo(sellingPrice) == 0)
+            return;
+        assertNotTerminal();
         if (sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Selling price cannot be negative");
         }
@@ -191,21 +215,29 @@ public class Vehicle extends AuditableEntity {
     }
 
     public void setHandoverDate(LocalDate handoverDate) {
+        if (Objects.equals(this.handoverDate, handoverDate))
+            return;
         assertNotTerminal();
         this.handoverDate = handoverDate;
     }
 
     public void setLicensePlate(String licensePlate) {
+        if (Objects.equals(this.licensePlate, licensePlate))
+            return;
         assertAnagraphicEditable();
         this.licensePlate = licensePlate;
     }
 
     public void setRegistrationDate(LocalDate registrationDate) {
+        if (Objects.equals(this.registrationDate, registrationDate))
+            return;
         assertAnagraphicEditable();
         this.registrationDate = registrationDate;
     }
 
     public void setKilometers(Double kilometers) {
+        if (Objects.equals(this.kilometers, kilometers))
+            return;
         assertCoreEditable();
         if (kilometers != null && kilometers < 0) {
             throw new IllegalArgumentException("Kilometers cannot be negative");
@@ -231,6 +263,8 @@ public class Vehicle extends AuditableEntity {
     }
 
     public void setIsInShowroom(boolean isInShowroom) {
+        if (this.isInShowroom == isInShowroom)
+            return;
         assertNotTerminal();
         this.isInShowroom = isInShowroom;
     }

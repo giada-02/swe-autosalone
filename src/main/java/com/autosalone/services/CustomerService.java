@@ -1,11 +1,19 @@
 package com.autosalone.services;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
-import com.autosalone.dtos.CustomerRequest;
+import com.autosalone.dtos.requests.CustomerRequest;
+import com.autosalone.dtos.responses.CustomerListResponse;
+import com.autosalone.dtos.responses.CustomerResponse;
+import com.autosalone.enums.TokenType;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
+import com.autosalone.repositories.AuthTokenRepository;
 import com.autosalone.repositories.CustomerRepository;
+import com.autosalone.repositories.UserRepository;
+import com.autosalone.utils.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,23 +25,45 @@ public class CustomerService {
     @Inject
     private CustomerRepository customerRepository;
 
+    @Inject
+    private UserRepository userRepository;
+
+    @Inject
+    private AuthTokenRepository authTokenRepository;
+
     // read
 
     public Customer getCustomerById(UUID id) {
         return customerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found of id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found of id: " + id));
     }
 
-    public List<Customer> getCustomers(String keyword, Boolean isActive) {
-        return customerRepository.findCustomers(keyword, isActive);
+    private boolean hasActiveInvitation(Customer customer) {
+        return authTokenRepository
+                .findByUserAndType(customer, TokenType.REGISTRATION)
+                .map(token -> !token.isExpired())
+                .orElse(false);
+    }
+
+    public CustomerResponse getCustomerResponseById(UUID id) {
+        Customer customer = getCustomerById(id);
+        boolean hasActiveInvitation = hasActiveInvitation(customer);
+        return CustomerResponse.fromEntity(customer, hasActiveInvitation);
+    }
+
+    public List<CustomerListResponse> getCustomers(String keyword, Boolean isActive) {
+        String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
+        return customerRepository.findCustomers(sanitizedKeyword, isActive).stream()
+                .map(CustomerListResponse::fromEntity)
+                .toList();
     }
 
     // write
 
     @Transactional
-    public UUID addCustomer(CustomerRequest request) {
+    public CustomerResponse addCustomer(CustomerRequest request) {
 
-        if (customerRepository.findByEmail(request.email()).isPresent()) {
+        if (request.email() != null && userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalStateException("This email is already in use");
         }
 
@@ -49,15 +79,20 @@ public class CustomerService {
                 .build();
 
         customerRepository.save(customer);
-        return customer.getId();
+        return CustomerResponse.fromEntity(customer, false);
     }
 
     @Transactional
-    public void updateCustomer(UUID customerId, CustomerRequest request) {
-        Customer customer = getCustomerById(customerId);
+    public CustomerResponse updateCustomer(UUID id, CustomerRequest request) {
+        Customer customer = getCustomerById(id);
+        boolean hasActiveInvitation = hasActiveInvitation(customer);
 
-        if (!customer.getEmail().equals(request.email())) {
-            customerRepository.findByEmail(request.email()).ifPresent(existing -> {
+        if (request.email() == null && (customer.isActive() || customer.getPassword() != null)) {
+            throw new IllegalStateException("Cannot remove the email, the user is active");
+        }
+
+        if (request.email() != null && !Objects.equals(request.email(), customer.getEmail())) {
+            userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });
         }
@@ -72,6 +107,6 @@ public class CustomerService {
         customer.setVatNumber(request.vatNumber());
 
         customerRepository.save(customer);
+        return CustomerResponse.fromEntity(customer, hasActiveInvitation);
     }
-
 }

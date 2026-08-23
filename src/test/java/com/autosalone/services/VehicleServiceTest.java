@@ -17,16 +17,21 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.autosalone.dtos.DeadlineRequest;
-import com.autosalone.dtos.VehicleRequest;
+import com.autosalone.dtos.requests.DeadlineRequest;
+import com.autosalone.dtos.requests.PurchaseTransactionRequest;
+import com.autosalone.dtos.requests.VehicleCreateRequest;
+import com.autosalone.dtos.requests.VehicleUpdateRequest;
+import com.autosalone.dtos.responses.DeadlineResponse;
+import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Quotation;
@@ -35,6 +40,7 @@ import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.ContractRepository;
 import com.autosalone.repositories.DeadlineRepository;
 import com.autosalone.repositories.QuotationRepository;
+import com.autosalone.repositories.TransactionRepository;
 import com.autosalone.repositories.VehicleRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +53,9 @@ class VehicleServiceTest {
     private DeadlineRepository deadlineRepository;
 
     @Mock
+    private TransactionRepository transactionRepository;
+
+    @Mock
     private QuotationRepository quotationRepository;
 
     @Mock
@@ -57,26 +66,11 @@ class VehicleServiceTest {
 
     private UUID vehicleId;
     private Vehicle mockVehicle;
-    private VehicleRequest validRequest;
 
     @BeforeEach
     void setUp() {
         vehicleId = UUID.randomUUID();
         mockVehicle = mock(Vehicle.class);
-
-        validRequest = new VehicleRequest(
-                "Fiat",
-                "Panda",
-                "Rosso",
-                VehicleCondition.NEW,
-                BigDecimal.valueOf(10000),
-                LocalDate.now(),
-                BigDecimal.valueOf(12000),
-                null,
-                "AB123CD",
-                LocalDate.now(),
-                0.0,
-                true);
     }
 
     // read
@@ -84,16 +78,35 @@ class VehicleServiceTest {
     @Test
     void getVehicleById_Success() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
-        Vehicle result = vehicleService.getVehicleById(vehicleId);
-        assertNotNull(result);
-        assertEquals(mockVehicle, result);
+        Vehicle response = vehicleService.getVehicleById(vehicleId);
+        assertNotNull(response);
+        assertEquals(mockVehicle, response);
     }
 
     @Test
     void getVehicleById_NotFound() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             vehicleService.getVehicleById(vehicleId);
+        });
+    }
+
+    @Test
+    void getVehicleResponseById_Success() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+
+        VehicleResponse response = vehicleService.getVehicleResponseById(vehicleId);
+
+        assertNotNull(response);
+        assertEquals(vehicleId, response.id());
+    }
+
+    @Test
+    void getVehicleResponseById_NotFound() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            vehicleService.getVehicleResponseById(vehicleId);
         });
     }
 
@@ -106,13 +119,16 @@ class VehicleServiceTest {
         Boolean isInShowroom = true;
         List<VehicleStatus> statusList = List.of(VehicleStatus.AVAILABLE);
 
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+
         when(vehicleRepository.findVehicles(keyword, brand, condition, maxPrice, isInShowroom, statusList))
                 .thenReturn(List.of(mockVehicle));
 
-        List<Vehicle> results = vehicleService.getVehicles(
+        List<VehicleResponse> responses = vehicleService.getVehicles(
                 keyword, brand, condition, maxPrice, isInShowroom, statusList);
 
-        assertEquals(1, results.size());
+        assertEquals(1, responses.size());
+        assertEquals(vehicleId, responses.get(0).id());
         verify(vehicleRepository).findVehicles(
                 keyword, brand, condition, maxPrice, isInShowroom, statusList);
     }
@@ -123,10 +139,10 @@ class VehicleServiceTest {
 
         when(vehicleRepository.findAllBrands()).thenReturn(mockBrands);
 
-        List<String> results = vehicleService.getAllBrands();
+        List<String> responses = vehicleService.getAllBrands();
 
-        assertEquals(3, results.size());
-        assertTrue(results.contains("BMW"));
+        assertEquals(3, responses.size());
+        assertTrue(responses.contains("BMW"));
         verify(vehicleRepository).findAllBrands();
     }
 
@@ -134,34 +150,34 @@ class VehicleServiceTest {
 
     @Test
     void addVehicle_Success_WithPurchaseTransaction() {
-        vehicleService.addVehicle(validRequest);
+        VehicleCreateRequest request = new VehicleCreateRequest("Fiat", "Panda", "Rosso", VehicleCondition.NEW,
+                BigDecimal.valueOf(12000), null, "AB123CD", LocalDate.now(), 0.0, true,
+                new PurchaseTransactionRequest(
+                        BigDecimal.valueOf(10000),
+                        LocalDate.now()));
 
-        ArgumentCaptor<Vehicle> captor = ArgumentCaptor.forClass(Vehicle.class);
-        verify(vehicleRepository).save(captor.capture());
+        VehicleResponse response = vehicleService.addVehicle(request);
 
-        Vehicle savedVehicle = captor.getValue();
-        assertEquals("Fiat", savedVehicle.getBrand());
-        assertEquals(VehicleCondition.NEW, savedVehicle.getCondition());
-        assertNotNull(savedVehicle.getPurchaseTransaction());
+        assertNotNull(response);
+        assertNotNull(response.purchaseTransaction());
+        verify(vehicleRepository).save(any(Vehicle.class));
     }
 
     @Test
     void addVehicle_Success_WithoutPurchaseTransaction() {
-        VehicleRequest requestNoPurchase = new VehicleRequest(
-                "BMW", "X5", "Nero", VehicleCondition.SECONDHAND, null, null,
-                BigDecimal.valueOf(30000), null, "ZA999ZZ", LocalDate.now(), 50000.0, true);
+        VehicleCreateRequest requestNoPurchase = new VehicleCreateRequest(
+                "BMW", "X5", "Nero", VehicleCondition.SECONDHAND, BigDecimal.valueOf(30000), null,
+                "ZA999ZZ", LocalDate.now(), 50000.0, true, null);
 
-        vehicleService.addVehicle(requestNoPurchase);
+        VehicleResponse response = vehicleService.addVehicle(requestNoPurchase);
 
-        ArgumentCaptor<Vehicle> captor = ArgumentCaptor.forClass(Vehicle.class);
-        verify(vehicleRepository).save(captor.capture());
-
-        Vehicle savedVehicle = captor.getValue();
-        assertNull(savedVehicle.getPurchaseTransaction());
+        assertNotNull(response);
+        assertNull(response.purchaseTransaction());
+        verify(vehicleRepository).save(any(Vehicle.class));
     }
 
     @Test
-    void withdrawVehicle_Success_VoidsQuotationsAndCancelsContracts() {
+    void withdrawVehicle_Success_VoidsQuotationsCancelsContractsAndRemovesDeadlines() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 
         Quotation mockQuotation = mock(Quotation.class);
@@ -177,20 +193,28 @@ class VehicleServiceTest {
         when(contractRepository.findContracts(any(), any(), anyBoolean(), eq(vehicleId), any(), any()))
                 .thenReturn(List.of(mockDraftContract, mockConfirmedContract));
 
+        Deadline mockPendingDeadline = mock(Deadline.class);
+        when(deadlineRepository.findPendingByVehicleId(vehicleId))
+                .thenReturn(List.of(mockPendingDeadline));
+
         vehicleService.withdrawVehicle(vehicleId, "Danno irreparabile");
 
         verify(mockVehicle).withdraw("Danno irreparabile");
         verify(vehicleRepository).save(mockVehicle);
 
-        // verifica preventivi
+        // verifica Preventivi
         verify(mockQuotation).voidDocument();
         verify(quotationRepository).save(mockQuotation);
 
-        // verifica contratti
+        // verifica Contratti
         verify(mockDraftContract).voidDocument(); // Draft -> Void
         verify(mockConfirmedContract).cancel("Danno irreparabile"); // Confirmed -> Cancel
         verify(contractRepository).save(mockDraftContract);
         verify(contractRepository).save(mockConfirmedContract);
+
+        // verifica Scadenze
+        verify(deadlineRepository).findPendingByVehicleId(vehicleId);
+        verify(deadlineRepository).delete(mockPendingDeadline);
     }
 
     @Test
@@ -199,10 +223,12 @@ class VehicleServiceTest {
         when(mockVehicle.getBrand()).thenReturn("Audi");
         when(mockVehicle.getModel()).thenReturn("A3");
 
-        vehicleService.addExpense(vehicleId, "Cambio gomme", BigDecimal.valueOf(400), LocalDate.now());
+        ExpenseResponse response = vehicleService.addExpense(vehicleId, "Cambio gomme", BigDecimal.valueOf(400),
+                LocalDate.now());
 
+        assertNotNull(response);
         verify(mockVehicle).addExpense(any(Transaction.class));
-        verify(vehicleRepository).save(mockVehicle);
+        verify(transactionRepository).save(any(Transaction.class));
     }
 
     @Test
@@ -211,11 +237,13 @@ class VehicleServiceTest {
 
         Deadline mockDeadline = mock(Deadline.class);
         when(mockVehicle.generateStandardInspectionDeadline()).thenReturn(mockDeadline);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        vehicleService.generateStandardInspection(vehicleId, null);
+        DeadlineResponse response = vehicleService.generateStandardInspection(vehicleId, null);
 
+        assertNotNull(response);
         verify(mockVehicle).generateStandardInspectionDeadline();
-        verify(vehicleRepository).save(mockVehicle);
+        verify(deadlineRepository).save(mockDeadline);
     }
 
     @Test
@@ -225,69 +253,75 @@ class VehicleServiceTest {
         Deadline mockDeadline = mock(Deadline.class);
         LocalDate lastDate = LocalDate.now().minusYears(2);
         when(mockVehicle.generateInspectionFromLastDate(lastDate)).thenReturn(mockDeadline);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        vehicleService.generateStandardInspection(vehicleId, lastDate);
+        DeadlineResponse response = vehicleService.generateStandardInspection(vehicleId, lastDate);
 
+        assertNotNull(response);
         verify(mockVehicle).generateInspectionFromLastDate(lastDate);
-        verify(vehicleRepository).save(mockVehicle);
+        verify(deadlineRepository).save(mockDeadline);
     }
 
     @Test
     void addDeadline_Success() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+
         Deadline mockDeadline = mock(Deadline.class);
 
         DeadlineRequest request = new DeadlineRequest("Bollo", LocalDate.now(), Period.ofYears(1), false);
 
         when(mockVehicle.addDeadline(anyString(), any(LocalDate.class), any(Period.class), anyBoolean()))
                 .thenReturn(mockDeadline);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        vehicleService.addDeadline(vehicleId, request);
+        DeadlineResponse response = vehicleService.addDeadline(vehicleId, request);
 
+        assertNotNull(response);
         verify(mockVehicle).addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
+        verify(deadlineRepository).save(mockDeadline);
+    }
+
+    @Test
+    void addPurchaseTransaction_Success() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+        when(mockVehicle.getPurchaseTransaction()).thenReturn(null);
+
+        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), LocalDate.now());
+
+        assertDoesNotThrow(() -> vehicleService.addPurchaseTransaction(vehicleId, request));
+
+        verify(mockVehicle).setPurchaseTransaction(any(Transaction.class));
         verify(vehicleRepository).save(mockVehicle);
     }
 
     @Test
-    void removeDeadline_Success() {
+    void addPurchaseTransaction_AlreadyExists_ThrowsException() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 
-        UUID deadlineId = UUID.randomUUID();
-        Deadline mockDeadline = mock(Deadline.class);
-        when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
+        Transaction existingTransaction = mock(Transaction.class);
+        when(mockVehicle.getPurchaseTransaction()).thenReturn(existingTransaction);
 
-        vehicleService.removeDeadline(vehicleId, deadlineId);
+        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), LocalDate.now());
 
-        verify(mockVehicle).removeDeadline(mockDeadline);
-        verify(vehicleRepository).save(mockVehicle);
+        assertThrows(IllegalStateException.class, () -> vehicleService.addPurchaseTransaction(vehicleId, request));
+
+        verify(mockVehicle, never()).setPurchaseTransaction(any());
     }
 
     @Test
-    void updateVehicle_Success_WithoutOverwritingExistingPurchase() {
+    void updateVehicle_Success_OnlyUpdatesBaseFields() {
+        VehicleUpdateRequest request = new VehicleUpdateRequest("Fiat", "Panda", "Rosso", VehicleCondition.NEW,
+                BigDecimal.valueOf(12000), null, "AB123CD", LocalDate.now(), 0.0, true);
+
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 
-        Transaction existingPurchase = mock(Transaction.class);
-        when(mockVehicle.getPurchaseTransaction()).thenReturn(existingPurchase);
-
-        assertDoesNotThrow(() -> vehicleService.updateVehicle(vehicleId, validRequest));
+        assertDoesNotThrow(() -> vehicleService.updateVehicle(vehicleId, request));
 
         verify(mockVehicle).setBrand("Fiat");
         verify(mockVehicle).setSellingPrice(BigDecimal.valueOf(12000));
 
         verify(mockVehicle, never()).setPurchaseTransaction(any());
-        verify(vehicleRepository).save(mockVehicle);
-    }
-
-    @Test
-    void updateVehicle_Success_AddingNewPurchaseTransaction() {
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
-
-        when(mockVehicle.getPurchaseTransaction()).thenReturn(null);
-
-        assertDoesNotThrow(() -> vehicleService.updateVehicle(vehicleId, validRequest));
-
-        verify(mockVehicle).setPurchaseTransaction(any(Transaction.class));
         verify(vehicleRepository).save(mockVehicle);
     }
 }

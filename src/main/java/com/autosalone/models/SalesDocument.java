@@ -11,10 +11,11 @@ import java.util.UUID;
 import com.autosalone.enums.DiscountType;
 import com.autosalone.models.catalog.AppliedItem;
 import com.autosalone.models.catalog.PurchasableItem;
+import com.autosalone.models.catalog.visitors.ActiveItemValidatorVisitor;
+import com.autosalone.models.catalog.visitors.HierarchyValidationVisitor;
 import com.autosalone.models.discounts.DiscountStrategy;
-import com.autosalone.models.discounts.FixedAmountDiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
-import com.autosalone.models.discounts.PercentageDiscountStrategy;
+import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "sales_documents")
@@ -28,15 +29,15 @@ public abstract class SalesDocument extends AuditableEntity {
     @Column(nullable = false)
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "vehicle_id", nullable = false)
     private Vehicle vehicle;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "document_items", joinColumns = @JoinColumn(name = "sales_document_id"))
     private List<AppliedItem> items = new ArrayList<>();
 
@@ -67,22 +68,19 @@ public abstract class SalesDocument extends AuditableEntity {
 
     @PrePersist
     @PreUpdate
-    private void serializeDiscountStrategy() { // from Java to Database
-        if (this.discountStrategy instanceof FixedAmountDiscountStrategy fixed) {
-            this.dbDiscountType = DiscountType.FIXED;
-            this.dbDiscountValue = fixed.getDiscountAmount();
-        } else if (this.discountStrategy instanceof PercentageDiscountStrategy percentage) {
-            this.dbDiscountType = DiscountType.PERCENTAGE;
-            this.dbDiscountValue = percentage.getPercentageValue();
-        } else {
-            this.dbDiscountType = DiscountType.NONE;
-            this.dbDiscountValue = null;
-        }
+    protected void normalizeData() {
+        this.publicNotes = Utils.sanitizeText(this.publicNotes);
+        this.internalNotes = Utils.sanitizeText(this.internalNotes);
     }
 
     @PostLoad
-    private void deserializeDiscountStrategy() { // from Database to Java
-        this.discountStrategy = this.dbDiscountType.createStrategy(this.dbDiscountValue);
+    private void deserializeDiscountStrategy() {
+        if (this.dbDiscountType != null) {
+            this.discountStrategy = this.dbDiscountType.createStrategy(this.dbDiscountValue);
+        } else {
+            this.discountStrategy = new NoDiscountStrategy();
+            this.dbDiscountType = DiscountType.NONE;
+        }
     }
 
     protected SalesDocument() {
@@ -141,10 +139,17 @@ public abstract class SalesDocument extends AuditableEntity {
         this.vehicleSellingPriceSnapshot = original.getVehicle().getSellingPrice(); // updated vehicle selling price
 
         this.items = new ArrayList<>(); // items deep copy
+
+        ActiveItemValidatorVisitor activeInspector = new ActiveItemValidatorVisitor();
+
         for (AppliedItem originalItem : original.getItems()) {
             PurchasableItem catalogItem = originalItem.getItem();
-            if (skipArchived && catalogItem.isArchived()) {
-                continue;
+            if (skipArchived) {
+                try {
+                    catalogItem.accept(activeInspector);
+                } catch (IllegalArgumentException e) {
+                    continue; // skips archived items and items containing archived items
+                }
             }
             this.items.add(new AppliedItem(originalItem, true)); // updated items price
         }
@@ -195,17 +200,26 @@ public abstract class SalesDocument extends AuditableEntity {
         return vehicleSellingPriceSnapshot;
     }
 
+    public DiscountType getDiscountType() {
+        return dbDiscountType;
+    }
+
+    public BigDecimal getDiscountValue() {
+        return dbDiscountValue;
+    }
+
     public DiscountStrategy getDiscountStrategy() {
         return discountStrategy;
     }
 
     public BigDecimal getDiscountAmount() {
         BigDecimal subtotal = getSubtotal();
-        return this.discountStrategy.calculateDiscountAmount(subtotal);
+        return this.discountStrategy != null ? this.discountStrategy.calculateDiscountAmount(subtotal)
+                : BigDecimal.ZERO;
     }
 
     public BigDecimal getSubtotal() {
-        BigDecimal total = this.vehicle.getSellingPrice();
+        BigDecimal total = vehicleSellingPriceSnapshot != null ? vehicleSellingPriceSnapshot : BigDecimal.ZERO;
         for (AppliedItem item : items) {
             total = total.add(item.getAppliedPrice());
         }
@@ -214,40 +228,47 @@ public abstract class SalesDocument extends AuditableEntity {
 
     public BigDecimal getFinalPrice() {
         BigDecimal subtotal = getSubtotal();
-        BigDecimal discount = this.discountStrategy.calculateDiscountAmount(subtotal);
+        BigDecimal discount = getDiscountAmount();
         BigDecimal discountedTotal = subtotal.subtract(discount);
         return discountedTotal.add(this.additionalFees);
     }
 
     // setters
     public void setDate(LocalDate date) {
-        validateIsEditable();
         Objects.requireNonNull(date, "Date is required");
+        if (Objects.equals(this.date, date))
+            return;
+        validateIsEditable();
         this.date = date;
     }
 
     public void setVehicle(Vehicle vehicle) {
+        Objects.requireNonNull(vehicle, "Vehicle is required");
+        if (Objects.equals(this.vehicle, vehicle))
+            return;
         validateIsEditable();
-        Objects.requireNonNull(date, "Vehicle is required");
+        vehicle.validateVehicleStatusForDocument("Cannot associate this vehicle to the document");
         this.vehicle = vehicle;
     }
 
     public void setCustomer(Customer customer) {
+        Objects.requireNonNull(customer, "Customer is required");
+        if (Objects.equals(this.customer, customer))
+            return;
         validateIsEditable();
-        Objects.requireNonNull(date, "Customer is required");
         this.customer = customer;
     }
 
     public void setAdditionalFees(BigDecimal additionalFees) {
-        validateIsEditable();
-        if (additionalFees == null) {
-            this.additionalFees = BigDecimal.ZERO;
+        BigDecimal fees = additionalFees != null ? additionalFees : BigDecimal.ZERO;
+        if (this.additionalFees != null && this.additionalFees.compareTo(fees) == 0)
             return;
-        }
-        if (additionalFees.compareTo(BigDecimal.ZERO) < 0)
+
+        validateIsEditable();
+        if (fees.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("Additional fees cannot be negative");
 
-        this.additionalFees = additionalFees;
+        this.additionalFees = fees;
     }
 
     public void archive() {
@@ -264,31 +285,60 @@ public abstract class SalesDocument extends AuditableEntity {
     }
 
     public void setPublicNotes(String publicNotes) {
+        if (Objects.equals(this.publicNotes, publicNotes))
+            return;
         validateIsEditable();
         this.publicNotes = publicNotes;
     }
 
     public void setInternalNotes(String internalNotes) {
+        if (Objects.equals(this.internalNotes, internalNotes))
+            return;
         this.internalNotes = internalNotes;
     }
 
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
-        validateIsEditable();
         Objects.requireNonNull(vehicleSellingPriceSnapshot, "The vehicle selling price is required");
+        if (this.vehicleSellingPriceSnapshot != null
+                && this.vehicleSellingPriceSnapshot.compareTo(vehicleSellingPriceSnapshot) == 0)
+            return;
+
+        validateIsEditable();
         if (vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("The vehicle selling price cannot negative");
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
     }
 
     public void setDiscountStrategy(DiscountStrategy discountStrategy) {
+        DiscountStrategy newDiscountStrategy = discountStrategy != null ? discountStrategy : new NoDiscountStrategy();
+        if (this.discountStrategy != null && this.discountStrategy.equals(newDiscountStrategy))
+            return;
+
         validateIsEditable();
-        this.discountStrategy = discountStrategy;
+
+        this.discountStrategy = newDiscountStrategy;
+        this.dbDiscountType = this.discountStrategy.getType();
+        this.dbDiscountValue = this.discountStrategy.getValue();
     }
 
     // items
     public void addItem(AppliedItem appliedItem) {
         validateIsEditable();
         Objects.requireNonNull(appliedItem, "Applied item is required");
+
+        HierarchyValidationVisitor inspector = new HierarchyValidationVisitor(null);
+
+        try {
+            for (AppliedItem existing : this.items) {
+                existing.getItem().accept(inspector);
+            }
+            appliedItem.getItem().accept(inspector);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Cannot add item: the item or one of its components is already in the document. (" + e.getMessage()
+                            + ")");
+        }
+
         this.items.add(appliedItem);
     }
 
@@ -319,5 +369,4 @@ public abstract class SalesDocument extends AuditableEntity {
                     errorTitle + ": the SECONDHAND vehicle is missing registration data or kilometers");
         }
     }
-
 }

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import com.autosalone.models.catalog.visitors.ActiveItemValidatorVisitor;
+
 @Embeddable
 public class AppliedItem {
 
@@ -18,8 +20,9 @@ public class AppliedItem {
     }
 
     public AppliedItem(PurchasableItem item) {
-        if (item.isArchived())
-            throw new IllegalArgumentException("The item must not be archived to add it in a sales document");
+        ActiveItemValidatorVisitor inspector = new ActiveItemValidatorVisitor();
+        item.accept(inspector);
+
         this.item = item;
         this.appliedPrice = item.getPrice();
     }
@@ -45,15 +48,15 @@ public class AppliedItem {
     }
 
     public void setAppliedPrice(BigDecimal appliedPrice) {
-        validatePrice(appliedPrice);
-        this.appliedPrice = appliedPrice;
-    }
+        Objects.requireNonNull(appliedPrice, "Applied price is required");
+        if (this.appliedPrice != null && this.appliedPrice.compareTo(appliedPrice) == 0)
+            return;
 
-    private void validatePrice(BigDecimal price) {
-        Objects.requireNonNull(price, "Applied price is required");
-        if (price.compareTo(BigDecimal.ZERO) < 0) {
+        if (appliedPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Applied price cannot be negative");
         }
+
+        this.appliedPrice = appliedPrice;
     }
 
     @Override
