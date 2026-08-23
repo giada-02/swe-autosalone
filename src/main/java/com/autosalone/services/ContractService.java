@@ -97,6 +97,11 @@ public class ContractService {
     public ContractResponse createContractFromQuotation(UUID quotationId) {
         Quotation quotation = quotationService.getQuotationById(quotationId);
 
+        List<Contract> existingDrafts = contractRepository.findDraftContractsBySourceQuotation(quotationId);
+        if (!existingDrafts.isEmpty()) {
+            throw new IllegalStateException("A draft contract already exists for this quotation");
+        }
+
         Contract contract = new Contract(quotation);
 
         contractRepository.save(contract);

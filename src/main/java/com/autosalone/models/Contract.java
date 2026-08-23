@@ -28,7 +28,7 @@ public class Contract extends SalesDocument {
     @OneToMany(mappedBy = "contract", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.EAGER)
     private List<Transaction> payments = new ArrayList<>(); // acconti
 
-    @OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "source_quotation_id", referencedColumnName = "id")
     private Quotation quotationReference;
 
