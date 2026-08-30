@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import com.autosalone.models.catalog.AppliedItem;
 
 public record AppliedItemResponse(
-        CatalogItemResponse item,
+        CatalogAppliedItemResponse item,
         BigDecimal appliedPrice) {
 
     public static AppliedItemResponse fromEntity(AppliedItem appliedItem) {
@@ -14,7 +14,7 @@ public record AppliedItemResponse(
         }
 
         return new AppliedItemResponse(
-                CatalogItemResponse.fromEntity(appliedItem.getItem()),
+                CatalogAppliedItemResponse.fromEntity(appliedItem.getItem()),
                 appliedItem.getAppliedPrice());
     }
 }
