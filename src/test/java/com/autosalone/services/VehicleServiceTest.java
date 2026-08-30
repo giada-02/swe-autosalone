@@ -27,6 +27,7 @@ import com.autosalone.dtos.requests.VehicleCreateRequest;
 import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleCustomerResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.VehicleCondition;
@@ -111,7 +112,26 @@ class VehicleServiceTest {
     }
 
     @Test
-    void getVehicles_AsOwner_Success() {
+    void getCustomerVehicleResponseById_Success() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+
+        VehicleCustomerResponse response = vehicleService.getCustomerVehicleResponseById(vehicleId);
+
+        assertNotNull(response);
+        assertEquals(vehicleId, response.id());
+    }
+
+    @Test
+    void getCustomerVehicleResponseById_NotFound() {
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            vehicleService.getCustomerVehicleResponseById(vehicleId);
+        });
+    }
+
+    @Test
+    void getVehiclesForOwner_Success() {
         String keyword = "Panda";
         String brand = "Fiat";
         VehicleCondition condition = VehicleCondition.NEW;
@@ -124,8 +144,8 @@ class VehicleServiceTest {
         when(vehicleRepository.findVehicles(keyword, brand, condition, maxPrice, isInShowroom, statusList))
                 .thenReturn(List.of(mockVehicle));
 
-        List<VehicleResponse> responses = vehicleService.getVehicles(
-                keyword, brand, condition, maxPrice, isInShowroom, statusList, null);
+        List<VehicleResponse> responses = vehicleService.getVehiclesForOwner(
+                keyword, brand, condition, maxPrice, isInShowroom, statusList);
 
         assertEquals(1, responses.size());
         assertEquals(vehicleId, responses.get(0).id());
@@ -135,7 +155,7 @@ class VehicleServiceTest {
     }
 
     @Test
-    void getVehicles_AsCustomer_Success() {
+    void getVehiclesForCustomer_Success() {
         UUID customerId = UUID.randomUUID();
         Contract mockContract = mock(Contract.class);
 
@@ -147,8 +167,7 @@ class VehicleServiceTest {
         when(mockContract.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getId()).thenReturn(vehicleId);
 
-        List<VehicleResponse> responses = vehicleService.getVehicles(
-                null, null, null, null, null, null, customerId);
+        List<VehicleCustomerResponse> responses = vehicleService.getVehiclesForCustomer(customerId);
 
         assertEquals(1, responses.size());
         assertEquals(vehicleId, responses.get(0).id());

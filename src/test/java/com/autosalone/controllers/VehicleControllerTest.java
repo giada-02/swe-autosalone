@@ -28,6 +28,7 @@ import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.requests.VehicleWithdrawRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleCustomerResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
@@ -64,6 +65,7 @@ class VehicleControllerTest {
     private VehicleCreateRequest vehicleCreateRequest;
     private VehicleUpdateRequest vehicleUpdateRequest;
     private VehicleResponse vehicleResponse;
+    private VehicleCustomerResponse vehicleCustomerResponse;
 
     private UUID deadlineId;
     private DeadlineResponse deadlineResponse;
@@ -75,14 +77,10 @@ class VehicleControllerTest {
         now = LocalDate.now();
         vehicleId = UUID.randomUUID();
 
-        vehicleCreateRequest = new VehicleCreateRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
-                new BigDecimal("45000"), null, null, null, null, true, null);
-
-        vehicleUpdateRequest = new VehicleUpdateRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
-                new BigDecimal("45000"), null, null, null, null, true);
-
-        vehicleResponse = new VehicleResponse(vehicleId, "Fiat", "Panda", "Bianco", VehicleCondition.NEW,
-                new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null, null);
+        vehicleCreateRequest = buildCreateRequest();
+        vehicleUpdateRequest = buildUpdateRequest();
+        vehicleResponse = buildVehicleResponse(vehicleId);
+        vehicleCustomerResponse = buildCustomerResponse(vehicleId);
 
         deadlineId = UUID.randomUUID();
         deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", now.plusDays(10).toString(), vehicleId, null,
@@ -96,8 +94,8 @@ class VehicleControllerTest {
     @Test
     void getVehicles_AsOwner_Returns200AndList() {
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
-        when(vehicleService.getVehicles("keyword", "Fiat", VehicleCondition.NEW, new BigDecimal("50000"), true,
-                List.of(VehicleStatus.AVAILABLE), null)).thenReturn(List.of(vehicleResponse));
+        when(vehicleService.getVehiclesForOwner("keyword", "Fiat", VehicleCondition.NEW, new BigDecimal("50000"), true,
+                List.of(VehicleStatus.AVAILABLE))).thenReturn(List.of(vehicleResponse));
 
         Response response = vehicleController.getVehicles("keyword", "Fiat", VehicleCondition.NEW,
                 new BigDecimal("50000"), true, List.of(VehicleStatus.AVAILABLE));
@@ -113,14 +111,13 @@ class VehicleControllerTest {
         when(securityContext.getUserPrincipal()).thenReturn(principal);
         when(principal.getName()).thenReturn(customerId.toString());
 
-        when(vehicleService.getVehicles(null, null, null, null, null,
-                null, customerId)).thenReturn(List.of(vehicleResponse));
+        when(vehicleService.getVehiclesForCustomer(customerId)).thenReturn(List.of(vehicleCustomerResponse));
 
         Response response = vehicleController.getVehicles(null, null, null, null, null, null);
 
         assertEquals(200, response.getStatus());
 
-        verify(vehicleService).getVehicles(null, null, null, null, null, null, customerId);
+        verify(vehicleService).getVehiclesForCustomer(customerId);
     }
 
     @Test
@@ -280,5 +277,27 @@ class VehicleControllerTest {
         URI location = response.getLocation();
         assertNotNull(location);
         assertTrue(location.toString().endsWith("/vehicles/" + vehicleId + "/deadlines/" + deadlineId));
+    }
+
+    // helper methods
+
+    private VehicleCreateRequest buildCreateRequest() {
+        return new VehicleCreateRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
+                new BigDecimal("45000"), null, null, null, null, true, null);
+    }
+
+    private VehicleUpdateRequest buildUpdateRequest() {
+        return new VehicleUpdateRequest("Fiat", "Panda", "Bianco", VehicleCondition.NEW,
+                new BigDecimal("45000"), null, null, null, null, true);
+    }
+
+    private VehicleResponse buildVehicleResponse(UUID id) {
+        return new VehicleResponse(id, "Fiat", "Panda", "Bianco", VehicleCondition.NEW,
+                new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null, null);
+    }
+
+    private VehicleCustomerResponse buildCustomerResponse(UUID id) {
+        return new VehicleCustomerResponse(id, "Fiat", "Panda", "Bianco",
+                VehicleCondition.NEW, new BigDecimal("45000"), null, null, null, null);
     }
 }

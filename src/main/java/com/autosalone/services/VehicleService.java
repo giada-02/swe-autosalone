@@ -11,6 +11,7 @@ import com.autosalone.dtos.requests.VehicleCreateRequest;
 import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleCustomerResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
@@ -64,24 +65,29 @@ public class VehicleService {
         return VehicleResponse.fromEntity(vehicle);
     }
 
-    public List<VehicleResponse> getVehicles(String keyword, String brand, VehicleCondition condition,
-            BigDecimal maxPrice, Boolean isInShowroom, List<VehicleStatus> statusList, UUID customerId) {
+    public VehicleCustomerResponse getCustomerVehicleResponseById(UUID id) {
+        Vehicle vehicle = getVehicleById(id);
+        return VehicleCustomerResponse.fromEntity(vehicle);
+    }
 
-        if (customerId != null) {
-            List<Contract> customerContracts = contractRepository.findContracts(
-                    null, null, false, null, customerId,
-                    List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED));
-
-            return customerContracts.stream()
-                    .map(Contract::getVehicle)
-                    .distinct()
-                    .map(VehicleResponse::fromEntity)
-                    .toList();
-        }
+    public List<VehicleResponse> getVehiclesForOwner(String keyword, String brand, VehicleCondition condition,
+            BigDecimal maxPrice, Boolean isInShowroom, List<VehicleStatus> statusList) {
 
         String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
         return vehicleRepository.findVehicles(sanitizedKeyword, brand, condition, maxPrice, isInShowroom, statusList)
                 .stream().map(VehicleResponse::fromEntity).toList();
+    }
+
+    public List<VehicleCustomerResponse> getVehiclesForCustomer(UUID customerId) {
+        List<Contract> customerContracts = contractRepository.findContracts(
+                null, null, false, null, customerId,
+                List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED));
+
+        return customerContracts.stream()
+                .map(Contract::getVehicle)
+                .distinct()
+                .map(VehicleCustomerResponse::fromEntity)
+                .toList();
     }
 
     public List<String> getAllBrands() {
