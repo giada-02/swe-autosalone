@@ -26,7 +26,7 @@ public class Deadline extends AuditableEntity {
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "target_vehicle_id")
     private Vehicle vehicle;
 
