@@ -14,6 +14,7 @@ import com.autosalone.dtos.requests.VehicleUpdateRequest;
 import com.autosalone.dtos.requests.VehicleWithdrawRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.dtos.responses.ExpenseResponse;
+import com.autosalone.dtos.responses.VehicleCustomerResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
@@ -61,12 +62,14 @@ public class VehicleController {
             @QueryParam("isInShowroom") Boolean isInShowroom,
             @QueryParam("statusList") List<VehicleStatus> statusList) {
 
-        UUID customerId = null;
-        if (securityContext.isUserInRole("CUSTOMER"))
-            customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+        if (securityContext.isUserInRole("CUSTOMER")) {
+            UUID customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+            List<VehicleCustomerResponse> vehicles = vehicleService.getVehiclesForCustomer(customerId);
+            return Response.ok(vehicles).build();
+        }
 
-        List<VehicleResponse> vehicles = vehicleService.getVehicles(keyword, brand, condition, maxPrice, isInShowroom,
-                statusList, customerId);
+        List<VehicleResponse> vehicles = vehicleService.getVehiclesForOwner(keyword, brand, condition, maxPrice,
+                isInShowroom, statusList);
         return Response.ok(vehicles).build(); // 200 OK
     }
 
@@ -90,6 +93,9 @@ public class VehicleController {
                 return Response.status(Response.Status.FORBIDDEN)
                         .entity("{\"error\":\"You do not have access to this vehicle\"}").build();
             }
+
+            VehicleCustomerResponse vehicle = vehicleService.getCustomerVehicleResponseById(id);
+            return Response.ok(vehicle).build();
         }
 
         VehicleResponse vehicle = vehicleService.getVehicleResponseById(id);
