@@ -111,7 +111,7 @@ class VehicleServiceTest {
     }
 
     @Test
-    void getVehicles_Success() {
+    void getVehicles_AsOwner_Success() {
         String keyword = "Panda";
         String brand = "Fiat";
         VehicleCondition condition = VehicleCondition.NEW;
@@ -125,12 +125,66 @@ class VehicleServiceTest {
                 .thenReturn(List.of(mockVehicle));
 
         List<VehicleResponse> responses = vehicleService.getVehicles(
-                keyword, brand, condition, maxPrice, isInShowroom, statusList);
+                keyword, brand, condition, maxPrice, isInShowroom, statusList, null);
 
         assertEquals(1, responses.size());
         assertEquals(vehicleId, responses.get(0).id());
-        verify(vehicleRepository).findVehicles(
-                keyword, brand, condition, maxPrice, isInShowroom, statusList);
+
+        verify(vehicleRepository).findVehicles(keyword, brand, condition, maxPrice, isInShowroom, statusList);
+        verifyNoInteractions(contractRepository);
+    }
+
+    @Test
+    void getVehicles_AsCustomer_Success() {
+        UUID customerId = UUID.randomUUID();
+        Contract mockContract = mock(Contract.class);
+
+        when(contractRepository.findContracts(
+                null, null, false, null, customerId,
+                List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED)))
+                .thenReturn(List.of(mockContract));
+
+        when(mockContract.getVehicle()).thenReturn(mockVehicle);
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+
+        List<VehicleResponse> responses = vehicleService.getVehicles(
+                null, null, null, null, null, null, customerId);
+
+        assertEquals(1, responses.size());
+        assertEquals(vehicleId, responses.get(0).id());
+
+        verify(contractRepository).findContracts(null, null, false, null, customerId,
+                List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED));
+        verifyNoInteractions(vehicleRepository);
+    }
+
+    @Test
+    void isVehicleOwnedByCustomer_ReturnsTrue() {
+        UUID customerId = UUID.randomUUID();
+        Contract mockContract = mock(Contract.class);
+
+        when(contractRepository.findContracts(
+                null, null, null, vehicleId, customerId,
+                List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED)))
+                .thenReturn(List.of(mockContract));
+
+        boolean result = vehicleService.isVehicleOwnedByCustomer(vehicleId, customerId);
+
+        assertTrue(result);
+    }
+
+    @Test
+    void isVehicleOwnedByCustomer_ReturnsFalse() {
+        UUID customerId = UUID.randomUUID();
+
+        when(contractRepository.findContracts(
+                null, null, null, vehicleId, customerId,
+                List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED)))
+                .thenReturn(List.of());
+
+        boolean result = vehicleService.isVehicleOwnedByCustomer(vehicleId, customerId);
+
+        assertFalse(result);
     }
 
     @Test

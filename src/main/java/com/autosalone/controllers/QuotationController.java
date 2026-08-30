@@ -14,12 +14,15 @@ import com.autosalone.enums.QuotationStatus;
 import com.autosalone.services.QuotationService;
 import com.autosalone.utils.Utils;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @ApplicationScoped
 @Path("/quotations")
@@ -30,7 +33,11 @@ public class QuotationController {
     @Inject
     private QuotationService quotationService;
 
+    @Context
+    private SecurityContext securityContext;
+
     @GET
+    @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getQuotations(
             @QueryParam("dateFrom") String dateFromString,
             @QueryParam("dateTo") String dateToString,
@@ -38,6 +45,17 @@ public class QuotationController {
             @QueryParam("vehicleId") UUID vehicleId,
             @QueryParam("customerId") UUID customerId,
             @QueryParam("statusList") List<QuotationStatus> statusList) {
+
+        if (securityContext.isUserInRole("CUSTOMER")) {
+            customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+
+            if (statusList == null || statusList.isEmpty()) {
+                statusList = List.of(QuotationStatus.ISSUED, QuotationStatus.ACCEPTED, QuotationStatus.EXPIRED,
+                        QuotationStatus.VOIDED);
+            } else {
+                statusList.remove(QuotationStatus.DRAFT);
+            }
+        }
 
         LocalDate dateFrom = Utils.parseDate(dateFromString);
         LocalDate dateTo = Utils.parseDate(dateToString);
@@ -48,12 +66,25 @@ public class QuotationController {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getQuotationById(@PathParam("id") UUID id) {
         QuotationResponse quotation = quotationService.getQuotationResponseById(id);
+
+        if (securityContext.isUserInRole("CUSTOMER")) {
+            String loggedInUserId = securityContext.getUserPrincipal().getName();
+
+            if (!quotation.customer().id().toString().equals(loggedInUserId)
+                    || quotation.status() == QuotationStatus.DRAFT) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("{\"error\":\"You do not have access to this quotation\"}").build();
+            }
+        }
+
         return Response.ok(quotation).build(); // 200 OK
     }
 
     @POST
+    @RolesAllowed("OWNER")
     public Response addQuotation(@Valid SalesDocumentCreateRequest request) {
         QuotationResponse quotation = quotationService.addQuotation(request);
         URI location = URI.create("/quotations/" + quotation.id());
@@ -62,6 +93,7 @@ public class QuotationController {
 
     @PUT
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response updateQuotation(@PathParam("id") UUID id, @Valid QuotationUpdateRequest request) {
         QuotationResponse quotation = quotationService.updateQuotation(id, request);
         return Response.ok(quotation).build(); // 200 OK
@@ -69,6 +101,7 @@ public class QuotationController {
 
     @POST
     @Path("/{id}/clone")
+    @RolesAllowed("OWNER")
     public Response cloneQuotation(@PathParam("id") UUID id) {
         QuotationResponse quotation = quotationService.cloneQuotation(id);
         URI location = URI.create("/quotations/" + quotation.id());
@@ -77,6 +110,7 @@ public class QuotationController {
 
     @PUT
     @Path("/{id}/issue")
+    @RolesAllowed("OWNER")
     public Response issueQuotation(@PathParam("id") UUID id) {
         QuotationResponse quotation = quotationService.issueQuotation(id);
         return Response.ok(quotation).build(); // 200 OK
@@ -84,6 +118,7 @@ public class QuotationController {
 
     @PUT
     @Path("/{id}/archive")
+    @RolesAllowed("OWNER")
     public Response archiveQuotation(@PathParam("id") UUID id) {
         QuotationResponse quotation = quotationService.archiveQuotation(id);
         return Response.ok(quotation).build(); // 200 OK
@@ -91,6 +126,7 @@ public class QuotationController {
 
     @PUT
     @Path("/{id}/unarchive")
+    @RolesAllowed("OWNER")
     public Response unarchiveQuotation(@PathParam("id") UUID id) {
         QuotationResponse quotation = quotationService.unarchiveQuotation(id);
         return Response.ok(quotation).build(); // 200 OK
@@ -100,6 +136,7 @@ public class QuotationController {
 
     @POST
     @Path("/{id}/items")
+    @RolesAllowed("OWNER")
     public Response addItemsToQuotation(@PathParam("id") UUID id, @Valid CatalogItemIdsRequest request) {
         QuotationResponse quotation = quotationService.addItemsToQuotation(id, request.catalogItemIds());
         return Response.ok(quotation).build(); // 200 OK
@@ -107,6 +144,7 @@ public class QuotationController {
 
     @PUT
     @Path("/{id}/items/{itemId}/price")
+    @RolesAllowed("OWNER")
     public Response updateAppliedItemPrice(
             @PathParam("id") UUID quotationId,
             @PathParam("itemId") UUID itemId,
@@ -117,6 +155,7 @@ public class QuotationController {
 
     @POST
     @Path("/{id}/items/remove")
+    @RolesAllowed("OWNER")
     public Response removeItemsFromQuotation(@PathParam("id") UUID id, @Valid CatalogItemIdsRequest request) {
         QuotationResponse quotation = quotationService.removeItemsFromQuotation(id, request.catalogItemIds());
         return Response.ok(quotation).build(); // 200 OK

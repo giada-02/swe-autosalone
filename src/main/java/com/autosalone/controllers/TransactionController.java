@@ -14,6 +14,7 @@ import com.autosalone.enums.TransactionType;
 import com.autosalone.services.TransactionService;
 import com.autosalone.utils.Utils;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -31,6 +32,7 @@ public class TransactionController {
     private TransactionService transactionService;
 
     @GET
+    @RolesAllowed("OWNER")
     public Response getTransactions(
             @QueryParam("dateFrom") String dateFromString,
             @QueryParam("dateTo") String dateToString,
@@ -45,6 +47,7 @@ public class TransactionController {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response getTransactionById(@PathParam("id") UUID id) {
         TransactionResponse transaction = transactionService.getTransactionResponseById(id);
         return Response.ok(transaction).build(); // 200 OK
@@ -52,6 +55,7 @@ public class TransactionController {
 
     @GET
     @Path("/summary")
+    @RolesAllowed("OWNER")
     public Response getSummary(
             @QueryParam("dateFrom") String dateFromString,
             @QueryParam("dateTo") String dateToString) {
@@ -69,6 +73,7 @@ public class TransactionController {
 
     @POST
     @Path("/expenses")
+    @RolesAllowed("OWNER")
     public Response createGeneralExpense(@Valid GeneralTransactionRequest request) {
         TransactionResponse transaction = transactionService.createGeneralExpense(
                 request.reason(), request.amount(), request.date());
@@ -78,6 +83,7 @@ public class TransactionController {
 
     @POST
     @Path("/incomes")
+    @RolesAllowed("OWNER")
     public Response createGeneralIncome(@Valid GeneralTransactionRequest request) {
         TransactionResponse transaction = transactionService.createGeneralIncome(
                 request.reason(), request.amount(), request.date());

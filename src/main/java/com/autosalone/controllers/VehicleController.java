@@ -22,13 +22,16 @@ import com.autosalone.services.TransactionService;
 import com.autosalone.services.VehicleService;
 import com.autosalone.utils.Utils;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @ApplicationScoped
 @Path("/vehicles")
@@ -45,7 +48,11 @@ public class VehicleController {
     @Inject
     private DeadlineService deadlineService;
 
+    @Context
+    private SecurityContext securityContext;
+
     @GET
+    @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getVehicles(
             @QueryParam("keyword") @Size(max = 50, message = "The keyword must not be over 50 characters") String keyword,
             @QueryParam("brand") @Size(max = 255, message = "The keyword must not be over 255 characters") String brand,
@@ -53,12 +60,18 @@ public class VehicleController {
             @QueryParam("maxPrice") BigDecimal maxPrice,
             @QueryParam("isInShowroom") Boolean isInShowroom,
             @QueryParam("statusList") List<VehicleStatus> statusList) {
+
+        UUID customerId = null;
+        if (securityContext.isUserInRole("CUSTOMER"))
+            customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+
         List<VehicleResponse> vehicles = vehicleService.getVehicles(keyword, brand, condition, maxPrice, isInShowroom,
-                statusList);
+                statusList, customerId);
         return Response.ok(vehicles).build(); // 200 OK
     }
 
     @GET
+    @RolesAllowed("OWNER")
     @Path("/brands")
     public Response getBrands() {
         List<String> brands = vehicleService.getAllBrands();
@@ -67,12 +80,24 @@ public class VehicleController {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getVehicleById(@PathParam("id") UUID id) {
+
+        if (securityContext.isUserInRole("CUSTOMER")) {
+            UUID customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+
+            if (!vehicleService.isVehicleOwnedByCustomer(id, customerId)) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("{\"error\":\"You do not have access to this vehicle\"}").build();
+            }
+        }
+
         VehicleResponse vehicle = vehicleService.getVehicleResponseById(id);
         return Response.ok(vehicle).build(); // 200 OK
     }
 
     @POST
+    @RolesAllowed("OWNER")
     public Response addVehicle(@Valid VehicleCreateRequest request) {
         VehicleResponse vehicle = vehicleService.addVehicle(request);
         URI location = URI.create("/vehicles/" + vehicle.id());
@@ -81,6 +106,7 @@ public class VehicleController {
 
     @POST
     @Path("/{id}/purchase-transaction")
+    @RolesAllowed("OWNER")
     public Response addPurchaseTransaction(
             @PathParam("id") UUID vehicleId,
             @Valid PurchaseTransactionRequest request) {
@@ -90,6 +116,7 @@ public class VehicleController {
 
     @PUT
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response updateVehicle(@PathParam("id") UUID id, @Valid VehicleUpdateRequest request) {
         VehicleResponse vehicle = vehicleService.updateVehicle(id, request);
         return Response.ok(vehicle).build(); // 200 OK
@@ -97,6 +124,7 @@ public class VehicleController {
 
     @PUT
     @Path("/{id}/withdraw")
+    @RolesAllowed("OWNER")
     public Response withdrawVehicle(
             @PathParam("id") UUID id, @Valid VehicleWithdrawRequest request) {
         VehicleResponse vehicle = vehicleService.withdrawVehicle(id, request.reason());
@@ -107,6 +135,7 @@ public class VehicleController {
 
     @GET
     @Path("/{id}/expenses")
+    @RolesAllowed("OWNER")
     public Response getExpenses(
             @PathParam("id") UUID id) {
         List<ExpenseResponse> expenses = transactionService.getExpensesByVehicleId(id);
@@ -115,6 +144,7 @@ public class VehicleController {
 
     @POST
     @Path("/{id}/expenses")
+    @RolesAllowed("OWNER")
     public Response addExpense(
             @PathParam("id") UUID id,
             @Valid ExpenseRequest request) {
@@ -128,6 +158,7 @@ public class VehicleController {
 
     @POST
     @Path("/{id}/standard-inspections")
+    @RolesAllowed("OWNER")
     public Response generateStandardInspection(
             @PathParam("id") UUID id,
             @QueryParam("lastInspection") String lastInspectionDateString) {
@@ -139,15 +170,27 @@ public class VehicleController {
 
     @GET
     @Path("/{id}/deadlines")
+    @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getDeadlines(
             @PathParam("id") UUID id,
             @QueryParam("completed") @DefaultValue("false") boolean completed) {
+
+        if (securityContext.isUserInRole("CUSTOMER")) {
+            UUID customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+
+            if (!vehicleService.isVehicleOwnedByCustomer(id, customerId)) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("{\"error\":\"You do not have access to the deadlines of this vehicle\"}").build();
+            }
+        }
+
         List<DeadlineResponse> deadlines = deadlineService.getDeadlinesByVehicleId(id, completed);
         return Response.ok(deadlines).build(); // 200 OK
     }
 
     @POST
     @Path("/{id}/deadlines")
+    @RolesAllowed("OWNER")
     public Response addDeadline(@PathParam("id") UUID id, @Valid DeadlineRequest request) {
         DeadlineResponse deadline = vehicleService.addDeadline(id, request);
         URI location = URI.create("/vehicles/" + id + "/deadlines/" + deadline.id());

@@ -34,12 +34,16 @@ import com.autosalone.enums.TransactionType;
 import com.autosalone.services.ContractService;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @ExtendWith(MockitoExtension.class)
 class ContractControllerTest {
 
     @Mock
     private ContractService contractService;
+
+    @Mock
+    private SecurityContext securityContext;
 
     @InjectMocks
     private ContractController contractController;

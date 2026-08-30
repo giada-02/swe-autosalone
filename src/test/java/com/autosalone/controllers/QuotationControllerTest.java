@@ -30,12 +30,16 @@ import com.autosalone.enums.QuotationStatus;
 import com.autosalone.services.QuotationService;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @ExtendWith(MockitoExtension.class)
 class QuotationControllerTest {
 
     @Mock
     private QuotationService quotationService;
+
+    @Mock
+    private SecurityContext securityContext;
 
     @InjectMocks
     private QuotationController quotationController;
