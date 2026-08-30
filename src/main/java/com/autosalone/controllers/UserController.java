@@ -3,7 +3,6 @@ package com.autosalone.controllers;
 import java.util.UUID;
 
 import com.autosalone.dtos.requests.PasswordUpdateRequest;
-import com.autosalone.dtos.responses.UserResponse;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.services.AuthTokenService;
@@ -14,7 +13,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -41,15 +39,6 @@ public class UserController {
 
     @Context
     private SecurityContext securityContext;
-
-    @GET
-    @Path("/{id}")
-    @RolesAllowed("OWNER")
-    public Response getUserById(@PathParam("id") UUID id) {
-        User user = userService.getUserById(id);
-        UserResponse response = UserResponse.fromEntity(user);
-        return Response.ok(response).build(); // 200 OK
-    }
 
     @PUT
     @Path("/{id}/password")
