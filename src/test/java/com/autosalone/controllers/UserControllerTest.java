@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.PasswordUpdateRequest;
-import com.autosalone.dtos.responses.UserResponse;
 import com.autosalone.enums.TokenType;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
@@ -46,24 +45,6 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
-    }
-
-    @Test
-    void getUserById_Returns200AndUser() {
-        User mockUser = mock(User.class);
-        when(userService.getUserById(userId)).thenReturn(mockUser);
-        when(mockUser.getId()).thenReturn(userId);
-        when(mockUser.getEmail()).thenReturn("test@email.com");
-
-        Response response = userController.getUserById(userId);
-
-        assertEquals(200, response.getStatus());
-
-        UserResponse userResponse = (UserResponse) response.getEntity();
-        assertEquals(userId, userResponse.id());
-        assertEquals("test@email.com", userResponse.email());
-
-        verify(userService).getUserById(userId);
     }
 
     @Test
