@@ -9,6 +9,7 @@ import com.autosalone.dtos.responses.OwnerListResponse;
 import com.autosalone.dtos.responses.OwnerResponse;
 import com.autosalone.services.OwnerService;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ public class OwnerController {
     private OwnerService ownerService;
 
     @GET
+    @RolesAllowed("OWNER")
     public Response getOwners(@QueryParam("isActive") Boolean isActive) {
         List<OwnerListResponse> owners = ownerService.getOwners(isActive);
         return Response.ok(owners).build(); // 200 OK
@@ -33,12 +35,14 @@ public class OwnerController {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response getOwnerById(@PathParam("id") UUID id) {
         OwnerResponse owner = ownerService.getOwnerResponseById(id);
         return Response.ok(owner).build(); // 200 OK
     }
 
     @POST
+    @RolesAllowed("OWNER")
     public Response addOwner(@Valid OwnerRequest request) {
         OwnerResponse owner = ownerService.addOwner(request);
 
@@ -48,6 +52,7 @@ public class OwnerController {
 
     @PUT
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response updateOwner(@PathParam("id") UUID id, @Valid OwnerRequest request) {
         OwnerResponse owner = ownerService.updateOwner(id, request);
         return Response.ok(owner).build(); // 200 OK

@@ -3,9 +3,11 @@ package com.autosalone.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.security.Principal;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +27,7 @@ import com.autosalone.services.EmailService;
 import com.autosalone.services.UserService;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
@@ -37,6 +40,11 @@ class UserControllerTest {
 
     @Mock
     private EmailService emailService;
+
+    @Mock
+    private SecurityContext securityContext;
+    @Mock
+    private Principal principal;
 
     @InjectMocks
     private UserController userController;
@@ -68,6 +76,8 @@ class UserControllerTest {
 
     @Test
     void updatePassword_Returns204NoContent() {
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(userId.toString());
         PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword", "newPassword");
 
         Response response = userController.updatePassword(userId, request);
@@ -75,6 +85,19 @@ class UserControllerTest {
         assertEquals(204, response.getStatus());
         assertNull(response.getEntity()); // no body
         verify(userService).updatePassword(userId, "currentPassword", "newPassword");
+    }
+
+    @Test
+    void updatePassword_Returns403WhenAccessingAnotherProfile() {
+        UUID anotherCustomerId = UUID.randomUUID();
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(userId.toString());
+        PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword", "newPassword");
+
+        Response response = userController.updatePassword(anotherCustomerId, request);
+
+        assertEquals(403, response.getStatus());
+        verify(userService, never()).updatePassword(userId, "currentPassword", "newPassword");
     }
 
     @Test

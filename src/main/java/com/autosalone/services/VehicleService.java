@@ -65,7 +65,20 @@ public class VehicleService {
     }
 
     public List<VehicleResponse> getVehicles(String keyword, String brand, VehicleCondition condition,
-            BigDecimal maxPrice, Boolean isInShowroom, List<VehicleStatus> statusList) {
+            BigDecimal maxPrice, Boolean isInShowroom, List<VehicleStatus> statusList, UUID customerId) {
+
+        if (customerId != null) {
+            List<Contract> customerContracts = contractRepository.findContracts(
+                    null, null, false, null, customerId,
+                    List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED));
+
+            return customerContracts.stream()
+                    .map(Contract::getVehicle)
+                    .distinct()
+                    .map(VehicleResponse::fromEntity)
+                    .toList();
+        }
+
         String sanitizedKeyword = Utils.sanitizeLikeKeyword(keyword);
         return vehicleRepository.findVehicles(sanitizedKeyword, brand, condition, maxPrice, isInShowroom, statusList)
                 .stream().map(VehicleResponse::fromEntity).toList();
@@ -73,6 +86,14 @@ public class VehicleService {
 
     public List<String> getAllBrands() {
         return vehicleRepository.findAllBrands();
+    }
+
+    public boolean isVehicleOwnedByCustomer(UUID vehicleId, UUID customerId) {
+        List<Contract> contracts = contractRepository.findContracts(
+                null, null, null, vehicleId, customerId,
+                List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED));
+
+        return !contracts.isEmpty();
     }
 
     // write

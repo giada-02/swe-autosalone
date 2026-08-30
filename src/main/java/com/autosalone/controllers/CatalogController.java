@@ -10,6 +10,7 @@ import com.autosalone.dtos.responses.CatalogItemResponse;
 import com.autosalone.enums.CatalogItemType;
 import com.autosalone.services.CatalogService;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ public class CatalogController {
     private CatalogService catalogService;
 
     @GET
+    @RolesAllowed("OWNER")
     public Response getCatalogItems(
             @QueryParam("keyword") @Size(max = 50, message = "The keyword must not be over 50 characters") String keyword,
             @QueryParam("isArchived") Boolean isArchived,
@@ -38,6 +40,7 @@ public class CatalogController {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response getCatalogItemById(@PathParam("id") UUID id) {
         CatalogItemResponse item = catalogService.getItemResponseById(id);
         return Response.ok(item).build(); // 200 OK
@@ -47,6 +50,7 @@ public class CatalogController {
 
     @POST
     @Path("/accessories")
+    @RolesAllowed("OWNER")
     public Response addAccessory(@Valid AccessoryRequest request) {
         CatalogItemResponse accessory = catalogService.addAccessory(request);
 
@@ -56,6 +60,7 @@ public class CatalogController {
 
     @PUT
     @Path("/accessories/{id}")
+    @RolesAllowed("OWNER")
     public Response updateAccessory(@PathParam("id") UUID id, @Valid AccessoryRequest request) {
         CatalogItemResponse accessory = catalogService.updateAccessory(id, request);
         return Response.ok(accessory).build(); // 200 OK
@@ -65,6 +70,7 @@ public class CatalogController {
 
     @POST
     @Path("/accessory-packages")
+    @RolesAllowed("OWNER")
     public Response addAccessoryPackage(@Valid AccessoryPackageRequest request) {
         CatalogItemResponse accessoryPackage = catalogService.addAccessoryPackage(request);
 
@@ -74,6 +80,7 @@ public class CatalogController {
 
     @PUT
     @Path("/accessory-packages/{id}")
+    @RolesAllowed("OWNER")
     public Response updateAccessoryPackage(@PathParam("id") UUID id, @Valid AccessoryPackageRequest request) {
         CatalogItemResponse accessoryPackage = catalogService.updateAccessoryPackage(id, request);
         return Response.ok(accessoryPackage).build(); // 200 OK
@@ -81,6 +88,7 @@ public class CatalogController {
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response removeCatalogItem(@PathParam("id") UUID id) {
         catalogService.removePurchasableItem(id);
         return Response.noContent().build(); // 204 No Content

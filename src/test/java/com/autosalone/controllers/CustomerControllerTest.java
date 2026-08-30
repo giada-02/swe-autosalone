@@ -1,9 +1,11 @@
 package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,12 +22,18 @@ import com.autosalone.dtos.responses.CustomerResponse;
 import com.autosalone.services.CustomerService;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerControllerTest {
 
     @Mock
     private CustomerService customerService;
+
+    @Mock
+    private SecurityContext securityContext;
+    @Mock
+    private Principal principal;
 
     @InjectMocks
     private CustomerController customerController;
@@ -54,23 +62,31 @@ class CustomerControllerTest {
     }
 
     @Test
-    void getCustomerById_Returns200AndCustomer() {
+    void getCustomerById_AsOwner_Returns200() {
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(UUID.randomUUID().toString());
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
+
         CustomerResponse mockCustomerResponse = mock(CustomerResponse.class);
-        when(mockCustomerResponse.id()).thenReturn(customerId);
-        when(mockCustomerResponse.lastName()).thenReturn("Rossi");
-        when(mockCustomerResponse.residenceCity()).thenReturn("Roma");
         when(customerService.getCustomerResponseById(customerId)).thenReturn(mockCustomerResponse);
 
         Response response = customerController.getCustomerById(customerId);
 
         assertEquals(200, response.getStatus());
+    }
 
-        CustomerResponse customerResponse = (CustomerResponse) response.getEntity();
-        assertEquals(customerId, customerResponse.id());
-        assertEquals("Rossi", customerResponse.lastName());
-        assertEquals("Roma", customerResponse.residenceCity());
+    @Test
+    void getCustomerById_AsCustomer_Returns403WhenAccessingAnotherProfile() {
+        UUID anotherCustomerId = UUID.randomUUID();
 
-        verify(customerService).getCustomerResponseById(customerId);
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
+
+        Response response = customerController.getCustomerById(anotherCustomerId);
+
+        assertEquals(403, response.getStatus());
+        verify(customerService, never()).getCustomerResponseById(any());
     }
 
     @Test

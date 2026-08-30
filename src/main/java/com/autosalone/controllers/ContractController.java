@@ -18,12 +18,15 @@ import com.autosalone.enums.ContractStatus;
 import com.autosalone.services.ContractService;
 import com.autosalone.utils.Utils;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @ApplicationScoped
 @Path("/contracts")
@@ -34,7 +37,11 @@ public class ContractController {
     @Inject
     private ContractService contractService;
 
+    @Context
+    private SecurityContext securityContext;
+
     @GET
+    @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getContracts(
             @QueryParam("dateFrom") String dateFromString,
             @QueryParam("dateTo") String dateToString,
@@ -42,6 +49,17 @@ public class ContractController {
             @QueryParam("vehicleId") UUID vehicleId,
             @QueryParam("customerId") UUID customerId,
             @QueryParam("statusList") List<ContractStatus> statusList) {
+
+        if (securityContext.isUserInRole("CUSTOMER")) {
+            customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+
+            if (statusList == null || statusList.isEmpty()) {
+                statusList = List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED, ContractStatus.CANCELED,
+                        ContractStatus.VOIDED);
+            } else {
+                statusList.remove(ContractStatus.DRAFT);
+            }
+        }
 
         LocalDate dateFrom = Utils.parseDate(dateFromString);
         LocalDate dateTo = Utils.parseDate(dateToString);
@@ -52,12 +70,25 @@ public class ContractController {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getContractById(@PathParam("id") UUID id) {
         ContractResponse contract = contractService.getContractResponseById(id);
+
+        if (securityContext.isUserInRole("CUSTOMER")) {
+            String loggedInUserId = securityContext.getUserPrincipal().getName();
+
+            if (!contract.customer().id().toString().equals(loggedInUserId)
+                    || contract.status() == ContractStatus.DRAFT) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("{\"error\":\"You do not have access to this contract\"}").build();
+            }
+        }
+
         return Response.ok(contract).build(); // 200 OK
     }
 
     @POST
+    @RolesAllowed("OWNER")
     public Response addContract(@Valid SalesDocumentCreateRequest request) {
         ContractResponse contract = contractService.addContract(request);
         URI location = URI.create("/contracts/" + contract.id());
@@ -66,6 +97,7 @@ public class ContractController {
 
     @POST
     @Path("/from-quotation/{quotationId}")
+    @RolesAllowed("OWNER")
     public Response createContractFromQuotation(@PathParam("quotationId") UUID quotationId) {
         ContractResponse contract = contractService.createContractFromQuotation(quotationId);
         URI location = URI.create("/contracts/" + contract.id());
@@ -74,6 +106,7 @@ public class ContractController {
 
     @PUT
     @Path("/{id}")
+    @RolesAllowed("OWNER")
     public Response updateContract(@PathParam("id") UUID id, @Valid ContractUpdateRequest request) {
         ContractResponse contract = contractService.updateContract(id, request);
         return Response.ok(contract).build(); // 200 OK
@@ -81,6 +114,7 @@ public class ContractController {
 
     @PUT
     @Path("/{id}/confirm")
+    @RolesAllowed("OWNER")
     public Response confirmContract(@PathParam("id") UUID id, @Valid ContractConfirmRequest request) {
         ContractResponse contract = contractService.confirmContract(id, request.depositAmount(), request.depositDate());
         return Response.ok(contract).build(); // 200 OK
@@ -88,6 +122,7 @@ public class ContractController {
 
     @PUT
     @Path("/{id}/complete")
+    @RolesAllowed("OWNER")
     public Response completeContract(@PathParam("id") UUID id) {
         ContractResponse contract = contractService.completeContract(id);
         return Response.ok(contract).build(); // 200 OK
@@ -95,6 +130,7 @@ public class ContractController {
 
     @PUT
     @Path("/{id}/cancel")
+    @RolesAllowed("OWNER")
     public Response cancelContract(@PathParam("id") UUID id, @Valid ContractCancelRequest request) {
         ContractResponse contract = contractService.cancelContract(id, request.reason());
         return Response.ok(contract).build(); // 200 OK
@@ -102,6 +138,7 @@ public class ContractController {
 
     @PUT
     @Path("/{id}/archive")
+    @RolesAllowed("OWNER")
     public Response archiveContract(@PathParam("id") UUID id) {
         ContractResponse contract = contractService.archiveContract(id);
         return Response.ok(contract).build(); // 200 OK
@@ -109,6 +146,7 @@ public class ContractController {
 
     @PUT
     @Path("/{id}/unarchive")
+    @RolesAllowed("OWNER")
     public Response unarchiveContract(@PathParam("id") UUID id) {
         ContractResponse contract = contractService.unarchiveContract(id);
         return Response.ok(contract).build(); // 200 OK
@@ -118,6 +156,7 @@ public class ContractController {
 
     @POST
     @Path("/{id}/payments")
+    @RolesAllowed("OWNER")
     public Response addPaymentToContract(@PathParam("id") UUID id, @Valid PaymentRecordRequest request) {
         TransactionResponse payment = contractService.addPaymentToContract(id, request.description(), request.amount(),
                 request.date());
@@ -127,6 +166,7 @@ public class ContractController {
 
     @POST
     @Path("/{id}/refunds")
+    @RolesAllowed("OWNER")
     public Response addRefundToContract(@PathParam("id") UUID id, @Valid PaymentRecordRequest request) {
         TransactionResponse refund = contractService.addRefundToContract(id, request.description(), request.amount(),
                 request.date());
@@ -138,6 +178,7 @@ public class ContractController {
 
     @POST
     @Path("/{id}/items")
+    @RolesAllowed("OWNER")
     public Response addItemsToContract(@PathParam("id") UUID id, @Valid CatalogItemIdsRequest request) {
         ContractResponse contract = contractService.addItemsToContract(id, request.catalogItemIds());
         return Response.ok(contract).build(); // 200 OK
@@ -145,6 +186,7 @@ public class ContractController {
 
     @PUT
     @Path("/{id}/items/{itemId}/price")
+    @RolesAllowed("OWNER")
     public Response updateAppliedItemPrice(
             @PathParam("id") UUID contractId,
             @PathParam("itemId") UUID itemId,
@@ -155,6 +197,7 @@ public class ContractController {
 
     @POST
     @Path("/{id}/items/remove")
+    @RolesAllowed("OWNER")
     public Response removeItemsFromContract(@PathParam("id") UUID id, @Valid CatalogItemIdsRequest request) {
         ContractResponse contract = contractService.removeItemsFromContract(id, request.catalogItemIds());
         return Response.ok(contract).build(); // 200 OK
