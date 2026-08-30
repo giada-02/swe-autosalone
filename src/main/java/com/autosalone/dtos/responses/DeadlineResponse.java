@@ -1,7 +1,7 @@
 package com.autosalone.dtos.responses;
 
 import java.util.UUID;
-
+import org.hibernate.proxy.HibernateProxy;
 import com.autosalone.models.Deadline;
 
 public record DeadlineResponse(
@@ -20,11 +20,21 @@ public record DeadlineResponse(
         if (deadline == null)
             return null;
 
+        UUID extractedVehicleId = null;
+
+        if (deadline.getVehicle() != null) {
+            if (deadline.getVehicle() instanceof HibernateProxy proxy) {
+                extractedVehicleId = (UUID) proxy.getHibernateLazyInitializer().getIdentifier();
+            } else {
+                extractedVehicleId = deadline.getVehicle().getId();
+            }
+        }
+
         return new DeadlineResponse(
                 deadline.getId(),
                 deadline.getReason(),
                 deadline.getDueDate() != null ? deadline.getDueDate().toString() : null,
-                deadline.getVehicle().getId(),
+                extractedVehicleId,
                 deadline.getRecurrence() != null ? deadline.getRecurrence().toString() : null,
                 deadline.isRecalculatedFromCompletion(),
                 deadline.isCompleted(),
