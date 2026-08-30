@@ -1,6 +1,7 @@
 package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,12 +22,14 @@ import com.autosalone.dtos.auth.ForgotPasswordRequest;
 import com.autosalone.dtos.auth.LoginRequest;
 import com.autosalone.dtos.auth.ResetPasswordRequest;
 import com.autosalone.dtos.auth.SignUpRequest;
+import com.autosalone.dtos.auth.TokenResponse;
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.services.AuthTokenService;
 import com.autosalone.services.EmailService;
+import com.autosalone.services.JwtService;
 import com.autosalone.services.UserService;
 
 import jakarta.ws.rs.core.Response;
@@ -39,6 +42,9 @@ class AuthControllerTest {
 
     @Mock
     private AuthTokenService authTokenService;
+
+    @Mock
+    private JwtService jwtService;
 
     @Mock
     private EmailService emailService;
@@ -56,14 +62,22 @@ class AuthControllerTest {
     @Test
     void login_WithValidCredentials_Success() {
         LoginRequest request = new LoginRequest("test@email.com", "password123");
+        String expectedToken = "mock.jwt.token.string";
+
         when(userService.login(request.email(), request.password())).thenReturn(mockUser);
+        when(jwtService.generateToken(mockUser)).thenReturn(expectedToken);
 
         Response response = authController.login(request);
 
         assertEquals(200, response.getStatus());
         assertNotNull(response.getEntity());
 
+        assertInstanceOf(TokenResponse.class, response.getEntity());
+        TokenResponse tokenResponse = (TokenResponse) response.getEntity();
+        assertEquals(expectedToken, tokenResponse.token());
+
         verify(userService).login("test@email.com", "password123");
+        verify(jwtService).generateToken(mockUser);
     }
 
     @Test
