@@ -181,16 +181,18 @@ public class VehicleController {
             @PathParam("id") UUID id,
             @QueryParam("completed") @DefaultValue("false") boolean completed) {
 
-        if (securityContext.isUserInRole("CUSTOMER")) {
-            UUID customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
+        UUID currentUserId = UUID.fromString(securityContext.getUserPrincipal().getName());
+        boolean isOwner = securityContext.isUserInRole("OWNER");
 
-            if (!vehicleService.isVehicleOwnedByCustomer(id, customerId)) {
+        if (!isOwner) {
+            if (!vehicleService.isVehicleOwnedByCustomer(id, currentUserId)) {
                 return Response.status(Response.Status.FORBIDDEN)
                         .entity("{\"error\":\"You do not have access to the deadlines of this vehicle\"}").build();
             }
         }
 
-        List<DeadlineResponse> deadlines = deadlineService.getDeadlinesByVehicleId(id, completed);
+        List<DeadlineResponse> deadlines = deadlineService.getDeadlinesByVehicleId(id, completed, currentUserId,
+                isOwner);
         return Response.ok(deadlines).build(); // 200 OK
     }
 

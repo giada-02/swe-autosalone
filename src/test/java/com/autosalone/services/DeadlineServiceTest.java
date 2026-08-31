@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -24,12 +25,16 @@ import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Vehicle;
 import com.autosalone.repositories.DeadlineRepository;
+import com.autosalone.repositories.OwnerRepository;
 
 @ExtendWith(MockitoExtension.class)
 class DeadlineServiceTest {
 
     @Mock
     private DeadlineRepository deadlineRepository;
+
+    @Mock
+    private OwnerRepository ownerRepository;
 
     @InjectMocks
     private DeadlineService deadlineService;
@@ -67,31 +72,46 @@ class DeadlineServiceTest {
     }
 
     @Test
-    void getDeadlinesByVehicleId_Completed() {
+    void getDeadlinesByVehicleId_Completed_AsOwner_SeesNotes() {
+        UUID currentUserId = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+
         when(deadlineRepository.findHistoryByVehicleId(vehicleId)).thenReturn(List.of(mockDeadline));
+        when(mockDeadline.getUpdatedBy()).thenReturn(authorId);
+        when(mockDeadline.getNotes()).thenReturn("Note interne");
 
         when(mockVehicle.getId()).thenReturn(vehicleId);
         when(mockDeadline.getId()).thenReturn(deadlineId);
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        List<DeadlineResponse> responses = deadlineService.getDeadlinesByVehicleId(vehicleId, true);
+        when(ownerRepository.filterOwnerIds(Set.of(authorId))).thenReturn(Set.of(authorId));
+
+        List<DeadlineResponse> responses = deadlineService.getDeadlinesByVehicleId(vehicleId, true, currentUserId,
+                true);
 
         assertEquals(1, responses.size());
+        assertEquals("Note interne", responses.get(0).notes(), "The owner can read notes written by other owners");
         verify(deadlineRepository).findHistoryByVehicleId(vehicleId);
         verify(deadlineRepository, never()).findPendingByVehicleId(any());
     }
 
     @Test
-    void getDeadlinesByVehicleId_Pending() {
+    void getDeadlinesByVehicleId_Pending_AsCustomer_HiddenNotes() {
+        UUID currentUserId = UUID.randomUUID();
+        UUID anotherUserId = UUID.randomUUID();
+
         when(deadlineRepository.findPendingByVehicleId(vehicleId)).thenReturn(List.of(mockDeadline));
+        when(mockDeadline.getUpdatedBy()).thenReturn(anotherUserId);
 
         when(mockVehicle.getId()).thenReturn(vehicleId);
         when(mockDeadline.getId()).thenReturn(deadlineId);
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        List<DeadlineResponse> responses = deadlineService.getDeadlinesByVehicleId(vehicleId, false);
+        List<DeadlineResponse> responses = deadlineService.getDeadlinesByVehicleId(vehicleId, false, currentUserId,
+                false);
 
         assertEquals(1, responses.size());
+        assertNull(responses.get(0).notes(), "The customer cannot read notes written by others");
         verify(deadlineRepository).findPendingByVehicleId(vehicleId);
         verify(deadlineRepository, never()).findHistoryByVehicleId(any());
     }

@@ -4,12 +4,14 @@ import com.autosalone.models.Owner;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,6 +93,41 @@ public class OwnerRepositoryTest {
         assertEquals(2, owners.size(), "Should find the 2 owners");
         assertEquals("Mario", owners.get(0).getFirstName());
         assertEquals("Sofia", owners.get(1).getFirstName());
+    }
+
+    @Test
+    void filterOwnerIds_NullOrEmpty_ReturnsEmptySet() {
+        Set<UUID> resultNull = repository.filterOwnerIds(null);
+        Set<UUID> resultEmpty = repository.filterOwnerIds(Set.of());
+
+        assertTrue(resultNull.isEmpty());
+        assertTrue(resultEmpty.isEmpty());
+    }
+
+    @Test
+    void filterOwnerIds_ValidSet_ReturnsFilteredSet() {
+        em.getTransaction().begin();
+
+        Owner owner = new Owner.OwnerBuilder()
+                .setFirstName("Mario")
+                .setLastName("Rossi")
+                .setEmail("mario@example.com")
+                .setPhoneNumber("111222")
+                .build();
+        repository.save(owner);
+        em.getTransaction().commit();
+
+        UUID ownerId = owner.getId();
+
+        em.clear();
+
+        UUID customerId = UUID.randomUUID();
+        Set<UUID> userIds = Set.of(ownerId, customerId);
+
+        Set<UUID> resultSet = repository.filterOwnerIds(userIds);
+
+        assertEquals(1, resultSet.size());
+        assertTrue(resultSet.contains(ownerId));
     }
 
     @Test
