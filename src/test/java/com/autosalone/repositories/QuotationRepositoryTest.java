@@ -121,10 +121,10 @@ public class QuotationRepositoryTest {
         List<Quotation> byCustomerId = repository.findQuotations(null, null, null, null, customer.getId(), null);
         assertEquals(3, byCustomerId.size(), "Should find 3 quotations");
 
-        List<QuotationStatus> statuses = Arrays.asList(QuotationStatus.ISSUED, QuotationStatus.ACCEPTED);
+        List<QuotationStatus> statusList = Arrays.asList(QuotationStatus.ISSUED, QuotationStatus.ACCEPTED);
 
         List<Quotation> byStatus = repository.findQuotations(null, null, null,
-                null, null, statuses);
+                null, null, statusList);
         assertEquals(2, byStatus.size(), "Should find 2 quotations matching the status");
         assertEquals(LocalDate.of(2026, 4, 2), byDateFrom.get(0).getDate());
         assertEquals(LocalDate.of(2026, 3, 12), byDateFrom.get(1).getDate());

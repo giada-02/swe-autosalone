@@ -9,6 +9,7 @@ import com.autosalone.dtos.requests.CatalogItemIdsRequest;
 import com.autosalone.dtos.requests.CatalogItemPriceUpdateRequest;
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.services.QuotationService;
@@ -46,21 +47,28 @@ public class QuotationController {
             @QueryParam("customerId") UUID customerId,
             @QueryParam("statusList") List<QuotationStatus> statusList) {
 
+        LocalDate dateFrom = Utils.parseDate(dateFromString);
+        LocalDate dateTo = Utils.parseDate(dateToString);
+
         if (securityContext.isUserInRole("CUSTOMER")) {
             customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
 
-            if (statusList == null || statusList.isEmpty()) {
-                statusList = List.of(QuotationStatus.ISSUED, QuotationStatus.ACCEPTED, QuotationStatus.EXPIRED,
-                        QuotationStatus.VOIDED);
-            } else {
-                statusList.remove(QuotationStatus.DRAFT);
+            List<QuotationStatus> filteredStatusList = (statusList == null || statusList.isEmpty())
+                    ? statusList = List.of(QuotationStatus.ISSUED, QuotationStatus.ACCEPTED, QuotationStatus.EXPIRED,
+                            QuotationStatus.VOIDED)
+                    : statusList.stream().filter(status -> status != QuotationStatus.DRAFT).toList();
+
+            if (filteredStatusList.isEmpty()) {
+                return Response.ok(List.of()).build(); // 200 OK
             }
+
+            List<QuotationCustomerResponse> quotations = quotationService.getQuotationsForCustomer(dateFrom, dateTo,
+                    isArchived, vehicleId, customerId, filteredStatusList);
+            return Response.ok(quotations).build(); // 200 OK
         }
 
-        LocalDate dateFrom = Utils.parseDate(dateFromString);
-        LocalDate dateTo = Utils.parseDate(dateToString);
-        List<QuotationResponse> quotations = quotationService.getQuotations(dateFrom, dateTo, isArchived, vehicleId,
-                customerId, statusList);
+        List<QuotationResponse> quotations = quotationService.getQuotationsForOwner(dateFrom, dateTo, isArchived,
+                vehicleId, customerId, statusList);
         return Response.ok(quotations).build(); // 200 OK
     }
 
@@ -68,18 +76,22 @@ public class QuotationController {
     @Path("/{id}")
     @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getQuotationById(@PathParam("id") UUID id) {
-        QuotationResponse quotation = quotationService.getQuotationResponseById(id);
 
         if (securityContext.isUserInRole("CUSTOMER")) {
             String loggedInUserId = securityContext.getUserPrincipal().getName();
+
+            QuotationCustomerResponse quotation = quotationService.getQuotationCustomerResponseById(id);
 
             if (!quotation.customer().id().toString().equals(loggedInUserId)
                     || quotation.status() == QuotationStatus.DRAFT) {
                 return Response.status(Response.Status.FORBIDDEN)
                         .entity("{\"error\":\"You do not have access to this quotation\"}").build();
             }
+
+            return Response.ok(quotation).build(); // 200 OK
         }
 
+        QuotationResponse quotation = quotationService.getQuotationResponseById(id);
         return Response.ok(quotation).build(); // 200 OK
     }
 

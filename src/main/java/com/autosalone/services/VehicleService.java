@@ -65,7 +65,7 @@ public class VehicleService {
         return VehicleResponse.fromEntity(vehicle);
     }
 
-    public VehicleCustomerResponse getCustomerVehicleResponseById(UUID id) {
+    public VehicleCustomerResponse getVehicleCustomerResponseById(UUID id) {
         Vehicle vehicle = getVehicleById(id);
         return VehicleCustomerResponse.fromEntity(vehicle);
     }

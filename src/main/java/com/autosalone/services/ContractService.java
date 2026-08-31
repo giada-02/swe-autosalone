@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import com.autosalone.dtos.requests.ContractUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.ContractCustomerResponse;
 import com.autosalone.dtos.responses.ContractResponse;
 import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.ContractStatus;
@@ -69,10 +70,21 @@ public class ContractService {
         return ContractResponse.fromEntity(contract);
     }
 
-    public List<ContractResponse> getContracts(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
-            UUID customerId, List<ContractStatus> statusList) {
+    public ContractCustomerResponse getContractCustomerResponseById(UUID id) {
+        Contract contract = getContractById(id);
+        return ContractCustomerResponse.fromEntity(contract);
+    }
+
+    public List<ContractResponse> getContractsForOwner(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived,
+            UUID vehicleId, UUID customerId, List<ContractStatus> statusList) {
         return contractRepository.findContracts(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
                 .stream().map(ContractResponse::fromEntity).toList();
+    }
+
+    public List<ContractCustomerResponse> getContractsForCustomer(LocalDate dateFrom, LocalDate dateTo,
+            Boolean IsArchived, UUID vehicleId, UUID customerId, List<ContractStatus> statusList) {
+        return contractRepository.findContracts(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+                .stream().map(ContractCustomerResponse::fromEntity).toList();
     }
 
     public List<ContractResponse> getVisibleContractsForCustomer(UUID customerId) {

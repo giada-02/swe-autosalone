@@ -112,21 +112,21 @@ class VehicleServiceTest {
     }
 
     @Test
-    void getCustomerVehicleResponseById_Success() {
+    void getVehicleCustomerResponseById_Success() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
         when(mockVehicle.getId()).thenReturn(vehicleId);
 
-        VehicleCustomerResponse response = vehicleService.getCustomerVehicleResponseById(vehicleId);
+        VehicleCustomerResponse response = vehicleService.getVehicleCustomerResponseById(vehicleId);
 
         assertNotNull(response);
         assertEquals(vehicleId, response.id());
     }
 
     @Test
-    void getCustomerVehicleResponseById_NotFound() {
+    void getVehicleCustomerResponseById_NotFound() {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> {
-            vehicleService.getCustomerVehicleResponseById(vehicleId);
+            vehicleService.getVehicleCustomerResponseById(vehicleId);
         });
     }
 

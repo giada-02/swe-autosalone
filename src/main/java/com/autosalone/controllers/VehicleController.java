@@ -94,7 +94,7 @@ public class VehicleController {
                         .entity("{\"error\":\"You do not have access to this vehicle\"}").build();
             }
 
-            VehicleCustomerResponse vehicle = vehicleService.getCustomerVehicleResponseById(id);
+            VehicleCustomerResponse vehicle = vehicleService.getVehicleCustomerResponseById(id);
             return Response.ok(vehicle).build();
         }
 

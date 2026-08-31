@@ -120,10 +120,10 @@ public class ContractRepositoryTest {
         List<Contract> byCustomerId = repository.findContracts(null, null, null, null, customer.getId(), null);
         assertEquals(3, byCustomerId.size(), "Should find 3 contracts");
 
-        List<ContractStatus> statuses = Arrays.asList(ContractStatus.CONFIRMED, ContractStatus.CANCELED);
+        List<ContractStatus> statusList = Arrays.asList(ContractStatus.CONFIRMED, ContractStatus.CANCELED);
 
         List<Contract> byStatus = repository.findContracts(null, null, null,
-                null, null, statuses);
+                null, null, statusList);
         assertEquals(2, byStatus.size(), "Should find 2 contracts matching the status");
         assertEquals(LocalDate.of(2026, 4, 2), byDateFrom.get(0).getDate());
         assertEquals(LocalDate.of(2026, 3, 12), byDateFrom.get(1).getDate());

@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
@@ -113,11 +114,38 @@ class QuotationServiceTest {
     }
 
     @Test
-    void getQuotations_Success() {
+    void getQuotationCustomerResponseById_Success() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
+        QuotationCustomerResponse response = quotationService.getQuotationCustomerResponseById(quotationId);
+        assertNotNull(response);
+    }
+
+    @Test
+    void getQuotationCustomerResponseById_NotFound() {
+        when(quotationRepository.findById(quotationId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            quotationService.getQuotationCustomerResponseById(quotationId);
+        });
+    }
+
+    @Test
+    void getQuotationsForOwner_Success() {
         when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(quotation));
 
-        List<QuotationResponse> results = quotationService.getQuotations(null, null, null, null, null, null);
+        List<QuotationResponse> results = quotationService.getQuotationsForOwner(null, null, null, null, null, null);
+        assertFalse(results.isEmpty());
+        assertEquals(1, results.size());
+        verify(quotationRepository).findQuotations(null, null, null, null, null, null);
+    }
+
+    @Test
+    void getQuotationsForCustomer_Success() {
+        when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any()))
+                .thenReturn(List.of(quotation));
+
+        List<QuotationCustomerResponse> results = quotationService.getQuotationsForCustomer(null, null, null, null,
+                null, null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         verify(quotationRepository).findQuotations(null, null, null, null, null, null);
