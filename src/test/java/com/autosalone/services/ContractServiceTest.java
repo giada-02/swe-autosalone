@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.ContractUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.ContractCustomerResponse;
 import com.autosalone.dtos.responses.ContractResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
@@ -122,11 +123,42 @@ class ContractServiceTest {
     }
 
     @Test
-    void getContracts_Success() {
+    void getContractCustomerResponseById_Success() {
+        when(contractRepository.findById(contractId)).thenReturn(Optional.of(mockContract));
+        when(mockContract.getId()).thenReturn(contractId);
+
+        ContractCustomerResponse response = contractService.getContractCustomerResponseById(contractId);
+
+        assertNotNull(response);
+        assertEquals(contractId, response.id());
+    }
+
+    @Test
+    void getContractCustomerResponseById_NotFound() {
+        when(contractRepository.findById(contractId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contractService.getContractCustomerResponseById(contractId);
+        });
+    }
+
+    @Test
+    void getContractsForOwner_Success() {
         when(contractRepository.findContracts(any(), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(mockContract));
 
-        List<ContractResponse> results = contractService.getContracts(null, null, null, null, null, null);
+        List<ContractResponse> results = contractService.getContractsForOwner(null, null, null, null, null, null);
+        assertFalse(results.isEmpty());
+        assertEquals(1, results.size());
+        verify(contractRepository).findContracts(null, null, null, null, null, null);
+    }
+
+    @Test
+    void getContractsForCustomer_Success() {
+        when(contractRepository.findContracts(any(), any(), any(), any(), any(), any()))
+                .thenReturn(List.of(mockContract));
+
+        List<ContractCustomerResponse> results = contractService.getContractsForCustomer(null, null, null, null, null,
+                null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         verify(contractRepository).findContracts(null, null, null, null, null, null);

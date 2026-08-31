@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleStatus;
@@ -61,11 +62,21 @@ public class QuotationService {
         return QuotationResponse.fromEntity(quotation);
     }
 
-    public List<QuotationResponse> getQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived,
-            UUID vehicleId,
-            UUID customerId, List<QuotationStatus> statusList) {
+    public QuotationCustomerResponse getQuotationCustomerResponseById(UUID id) {
+        Quotation quotation = getQuotationById(id);
+        return QuotationCustomerResponse.fromEntity(quotation);
+    }
+
+    public List<QuotationResponse> getQuotationsForOwner(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived,
+            UUID vehicleId, UUID customerId, List<QuotationStatus> statusList) {
         return quotationRepository.findQuotations(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
                 .stream().map(QuotationResponse::fromEntity).toList();
+    }
+
+    public List<QuotationCustomerResponse> getQuotationsForCustomer(LocalDate dateFrom, LocalDate dateTo,
+            Boolean IsArchived, UUID vehicleId, UUID customerId, List<QuotationStatus> statusList) {
+        return quotationRepository.findQuotations(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+                .stream().map(QuotationCustomerResponse::fromEntity).toList();
     }
 
     public List<QuotationResponse> getVisibleQuotationsForCustomer(UUID customerId) {

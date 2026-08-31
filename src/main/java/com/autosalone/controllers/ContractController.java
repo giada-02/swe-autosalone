@@ -12,6 +12,7 @@ import com.autosalone.dtos.requests.CatalogItemIdsRequest;
 import com.autosalone.dtos.requests.CatalogItemPriceUpdateRequest;
 import com.autosalone.dtos.requests.PaymentRecordRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.ContractCustomerResponse;
 import com.autosalone.dtos.responses.ContractResponse;
 import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.ContractStatus;
@@ -50,20 +51,27 @@ public class ContractController {
             @QueryParam("customerId") UUID customerId,
             @QueryParam("statusList") List<ContractStatus> statusList) {
 
+        LocalDate dateFrom = Utils.parseDate(dateFromString);
+        LocalDate dateTo = Utils.parseDate(dateToString);
+
         if (securityContext.isUserInRole("CUSTOMER")) {
             customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
 
-            if (statusList == null || statusList.isEmpty()) {
-                statusList = List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED, ContractStatus.CANCELED,
-                        ContractStatus.VOIDED);
-            } else {
-                statusList.remove(ContractStatus.DRAFT);
+            List<ContractStatus> filteredStatusList = (statusList == null || statusList.isEmpty())
+                    ? List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED, ContractStatus.CANCELED,
+                            ContractStatus.VOIDED)
+                    : statusList.stream().filter(status -> status != ContractStatus.DRAFT).toList();
+
+            if (filteredStatusList.isEmpty()) {
+                return Response.ok(List.of()).build(); // 200 OK
             }
+
+            List<ContractCustomerResponse> contracts = contractService.getContractsForCustomer(
+                    dateFrom, dateTo, isArchived, vehicleId, customerId, filteredStatusList);
+            return Response.ok(contracts).build(); // 200 OK
         }
 
-        LocalDate dateFrom = Utils.parseDate(dateFromString);
-        LocalDate dateTo = Utils.parseDate(dateToString);
-        List<ContractResponse> contracts = contractService.getContracts(dateFrom, dateTo, isArchived, vehicleId,
+        List<ContractResponse> contracts = contractService.getContractsForOwner(dateFrom, dateTo, isArchived, vehicleId,
                 customerId, statusList);
         return Response.ok(contracts).build(); // 200 OK
     }
@@ -72,18 +80,22 @@ public class ContractController {
     @Path("/{id}")
     @RolesAllowed({ "OWNER", "CUSTOMER" })
     public Response getContractById(@PathParam("id") UUID id) {
-        ContractResponse contract = contractService.getContractResponseById(id);
 
         if (securityContext.isUserInRole("CUSTOMER")) {
             String loggedInUserId = securityContext.getUserPrincipal().getName();
+
+            ContractCustomerResponse contract = contractService.getContractCustomerResponseById(id);
 
             if (!contract.customer().id().toString().equals(loggedInUserId)
                     || contract.status() == ContractStatus.DRAFT) {
                 return Response.status(Response.Status.FORBIDDEN)
                         .entity("{\"error\":\"You do not have access to this contract\"}").build();
             }
+
+            return Response.ok(contract).build();// 200 OK
         }
 
+        ContractResponse contract = contractService.getContractResponseById(id);
         return Response.ok(contract).build(); // 200 OK
     }
 

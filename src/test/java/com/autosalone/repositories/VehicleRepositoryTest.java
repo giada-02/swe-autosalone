@@ -132,10 +132,10 @@ public class VehicleRepositoryTest {
         List<Vehicle> inShowroom = repository.findVehicles(null, null, null, null, true, null);
         assertEquals(2, inShowroom.size(), "Should find 2 vehicles in showroom");
 
-        List<VehicleStatus> statuses = Arrays.asList(VehicleStatus.QUOTED, VehicleStatus.SOLD);
+        List<VehicleStatus> statusList = Arrays.asList(VehicleStatus.QUOTED, VehicleStatus.SOLD);
 
         List<Vehicle> combined = repository.findVehicles(null, "BMW", VehicleCondition.SECONDHAND,
-                new BigDecimal("20000.00"), true, statuses);
+                new BigDecimal("20000.00"), true, statusList);
         assertEquals(1, combined.size(), "Should find exactly 1 vehicle matching all combined criteria");
         assertEquals("Serie 1", combined.get(0).getModel());
     }

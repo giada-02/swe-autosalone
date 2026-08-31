@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +28,9 @@ import com.autosalone.dtos.requests.ContractConfirmRequest;
 import com.autosalone.dtos.requests.ContractUpdateRequest;
 import com.autosalone.dtos.requests.PaymentRecordRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.ContractCustomerResponse;
 import com.autosalone.dtos.responses.ContractResponse;
+import com.autosalone.dtos.responses.CustomerResponse;
 import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.TransactionType;
@@ -44,6 +47,8 @@ class ContractControllerTest {
 
     @Mock
     private SecurityContext securityContext;
+    @Mock
+    private Principal principal;
 
     @InjectMocks
     private ContractController contractController;
@@ -57,6 +62,7 @@ class ContractControllerTest {
     private LocalDate now;
 
     private ContractResponse contractResponse;
+    private ContractCustomerResponse contractCustomerResponse;
     private TransactionResponse transactionResponse;
 
     @BeforeEach
@@ -69,32 +75,139 @@ class ContractControllerTest {
         transactionId = UUID.randomUUID();
         itemId = UUID.randomUUID();
 
-        contractResponse = new ContractResponse(contractId, null, null, null, null, null, null, false, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null, null, null);
-        transactionResponse = new TransactionResponse(transactionId, "Pagamento", BigDecimal.TEN, now.toString(),
-                TransactionType.IN, null, contractId);
+        contractResponse = buildContractResponse(contractId);
+        contractCustomerResponse = buildContractCustomerResponse(contractId);
+        transactionResponse = buildTransactionResponse(transactionId);
     }
 
     @Test
-    void getContracts_Returns200AndList() {
-        when(contractService.getContracts(now, now, false, vehicleId, customerId, List.of(ContractStatus.DRAFT)))
+    void getContracts_AsOwner_Returns200AndList() {
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
+        List<ContractStatus> statusList = List.of(ContractStatus.DRAFT, ContractStatus.CONFIRMED);
+        when(contractService.getContractsForOwner(now, now, false, vehicleId, customerId, statusList))
                 .thenReturn(List.of(contractResponse));
 
         Response response = contractController.getContracts(now.toString(), now.toString(), false, vehicleId,
-                customerId, List.of(ContractStatus.DRAFT));
+                customerId, statusList);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
+        verify(contractService).getContractsForOwner(now, now, false, vehicleId, customerId, statusList);
     }
 
     @Test
-    void getContractById_Returns200AndContract() {
+    void getContracts_AsCustomer_EmptyStatusList_UsesDefaults() {
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+
+        List<ContractStatus> statusList = List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED,
+                ContractStatus.CANCELED, ContractStatus.VOIDED);
+
+        when(contractService.getContractsForCustomer(now, now, false, vehicleId, customerId, statusList))
+                .thenReturn(List.of(contractCustomerResponse));
+
+        Response response = contractController.getContracts(now.toString(), now.toString(), false, vehicleId, null,
+                List.of());
+
+        assertEquals(200, response.getStatus());
+        assertEquals(1, ((List<?>) response.getEntity()).size());
+        verify(contractService).getContractsForCustomer(now, now, false, vehicleId, customerId, statusList);
+    }
+
+    @Test
+    void getContracts_AsCustomer_RemovesDraftFromStatusList() {
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+
+        List<ContractStatus> statusList = List.of(ContractStatus.DRAFT, ContractStatus.CONFIRMED);
+        List<ContractStatus> expectedStatusList = List.of(ContractStatus.CONFIRMED);
+
+        when(contractService.getContractsForCustomer(now, now, false, vehicleId, customerId, expectedStatusList))
+                .thenReturn(List.of(contractCustomerResponse));
+
+        Response response = contractController.getContracts(now.toString(), now.toString(), false, vehicleId, null,
+                statusList);
+
+        assertEquals(200, response.getStatus());
+        assertEquals(1, ((List<?>) response.getEntity()).size());
+        verify(contractService).getContractsForCustomer(now, now, false, vehicleId, customerId, expectedStatusList);
+    }
+
+    @Test
+    void getContractById_AsOwner_Returns200AndContract() {
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
         when(contractService.getContractResponseById(contractId)).thenReturn(contractResponse);
 
         Response response = contractController.getContractById(contractId);
 
         assertEquals(200, response.getStatus());
         assertEquals(contractResponse, response.getEntity());
+        verify(contractService).getContractResponseById(contractId);
+    }
+
+    @Test
+    void getContractById_AsCustomer_Returns200AndContract() {
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+
+        CustomerResponse customerResponse = new CustomerResponse(customerId, "Mario", "Rossi", "0123456789", null,
+                false, null, null, null, null, false);
+
+        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, now.toString(),
+                ContractStatus.CONFIRMED, null, customerResponse, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null);
+
+        when(contractService.getContractCustomerResponseById(contractId)).thenReturn(contractCustomerResponse);
+
+        Response response = contractController.getContractById(contractId);
+
+        assertEquals(200, response.getStatus());
+        assertEquals(contractCustomerResponse, response.getEntity());
+    }
+
+    @Test
+    void getContractById_AsCustomer_Returns403WhenNotOwned() {
+        UUID anotherCustomerId = UUID.randomUUID();
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+
+        CustomerResponse customerResponse = new CustomerResponse(anotherCustomerId, "Luigi", "Verdi", "1234567890",
+                null, false, null, null, null, null, false);
+
+        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, now.toString(),
+                ContractStatus.CONFIRMED, null, customerResponse, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null);
+
+        when(contractService.getContractCustomerResponseById(contractId)).thenReturn(contractCustomerResponse);
+
+        Response response = contractController.getContractById(contractId);
+
+        assertEquals(403, response.getStatus());
+        verify(contractService).getContractCustomerResponseById(contractId);
+    }
+
+    @Test
+    void getContractById_AsCustomer_Returns403WhenStatusDraft() {
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+
+        CustomerResponse customerResponse = new CustomerResponse(customerId, "Mario", "Rossi", "0123456789", null,
+                false, null, null, null, null, false);
+
+        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, now.toString(),
+                ContractStatus.DRAFT, null, customerResponse, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null);
+
+        when(contractService.getContractCustomerResponseById(contractId)).thenReturn(contractCustomerResponse);
+
+        Response response = contractController.getContractById(contractId);
+
+        assertEquals(403, response.getStatus());
     }
 
     @Test
@@ -233,5 +346,22 @@ class ContractControllerTest {
 
         assertEquals(200, response.getStatus());
         verify(contractService).removeItemsFromContract(contractId, Set.of(itemId));
+    }
+
+    // helper methods
+
+    private ContractResponse buildContractResponse(UUID id) {
+        return new ContractResponse(id, null, null, null, null, null, null, false, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    private ContractCustomerResponse buildContractCustomerResponse(UUID id) {
+        return new ContractCustomerResponse(id, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    private TransactionResponse buildTransactionResponse(UUID id) {
+        return new TransactionResponse(id, "Pagamento", BigDecimal.TEN, now.toString(),
+                TransactionType.IN, null, contractId);
     }
 }

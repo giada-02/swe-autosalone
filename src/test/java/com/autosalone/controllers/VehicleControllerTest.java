@@ -3,6 +3,9 @@ package com.autosalone.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,7 +83,7 @@ class VehicleControllerTest {
         vehicleCreateRequest = buildCreateRequest();
         vehicleUpdateRequest = buildUpdateRequest();
         vehicleResponse = buildVehicleResponse(vehicleId);
-        vehicleCustomerResponse = buildCustomerResponse(vehicleId);
+        vehicleCustomerResponse = buildVehicleCustomerResponse(vehicleId);
 
         deadlineId = UUID.randomUUID();
         deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", now.plusDays(10).toString(), vehicleId, null,
@@ -139,6 +142,24 @@ class VehicleControllerTest {
 
         assertEquals(200, response.getStatus());
         assertEquals(vehicleResponse, response.getEntity());
+        verify(vehicleService).getVehicleResponseById(vehicleId);
+    }
+
+    @Test
+    void getVehicleById_AsCustomer_Returns200AndVehicle() {
+        UUID customerId = UUID.randomUUID();
+        when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+
+        when(vehicleService.isVehicleOwnedByCustomer(vehicleId, customerId)).thenReturn(true);
+        when(vehicleService.getVehicleCustomerResponseById(vehicleId)).thenReturn(vehicleCustomerResponse);
+
+        Response response = vehicleController.getVehicleById(vehicleId);
+
+        assertEquals(200, response.getStatus());
+        assertEquals(vehicleCustomerResponse, response.getEntity());
+        verify(vehicleService).getVehicleCustomerResponseById(vehicleId);
     }
 
     @Test
@@ -153,6 +174,8 @@ class VehicleControllerTest {
         Response response = vehicleController.getVehicleById(vehicleId);
 
         assertEquals(403, response.getStatus());
+        verify(vehicleService, never()).getVehicleCustomerResponseById(any());
+        verify(vehicleService, never()).getVehicleResponseById(any());
     }
 
     @Test
@@ -255,18 +278,53 @@ class VehicleControllerTest {
 
     @Test
     void getDeadlines_AsOwner_Returns200AndList() {
-        UUID userId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
         when(securityContext.getUserPrincipal()).thenReturn(principal);
-        when(principal.getName()).thenReturn(userId.toString());
+        when(principal.getName()).thenReturn(ownerId.toString());
         when(securityContext.isUserInRole("OWNER")).thenReturn(true);
-        when(deadlineService.getDeadlinesByVehicleId(vehicleId, false, userId, true))
+        when(deadlineService.getDeadlinesByVehicleId(vehicleId, false, ownerId, true))
                 .thenReturn(List.of(deadlineResponse));
 
         Response response = vehicleController.getDeadlines(vehicleId, false);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(deadlineService).getDeadlinesByVehicleId(vehicleId, false, userId, true);
+        verify(deadlineService).getDeadlinesByVehicleId(vehicleId, false, ownerId, true);
+    }
+
+    @Test
+    void getDeadlines_AsCustomer_Returns200AndList() {
+        UUID customerId = UUID.randomUUID();
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+        when(securityContext.isUserInRole("OWNER")).thenReturn(false);
+
+        when(vehicleService.isVehicleOwnedByCustomer(vehicleId, customerId)).thenReturn(true);
+
+        when(deadlineService.getDeadlinesByVehicleId(vehicleId, true, customerId, false))
+                .thenReturn(List.of(deadlineResponse));
+
+        Response response = vehicleController.getDeadlines(vehicleId, true);
+
+        assertEquals(200, response.getStatus());
+        assertEquals(List.of(deadlineResponse), response.getEntity());
+        verify(deadlineService).getDeadlinesByVehicleId(vehicleId, true, customerId, false);
+    }
+
+    @Test
+    void getDeadlines_AsCustomer_Returns403WhenNotOwned() {
+        UUID customerId = UUID.randomUUID();
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(customerId.toString());
+        when(securityContext.isUserInRole("OWNER")).thenReturn(false);
+
+        when(vehicleService.isVehicleOwnedByCustomer(vehicleId, customerId)).thenReturn(false);
+
+        Response response = vehicleController.getDeadlines(vehicleId, false);
+
+        assertEquals(403, response.getStatus());
+
+        verify(deadlineService, never()).getDeadlinesByVehicleId(any(), eq(false), any(), eq(false));
     }
 
     @Test
@@ -301,7 +359,7 @@ class VehicleControllerTest {
                 new BigDecimal("45000"), null, null, null, null, true, VehicleStatus.AVAILABLE, null, null);
     }
 
-    private VehicleCustomerResponse buildCustomerResponse(UUID id) {
+    private VehicleCustomerResponse buildVehicleCustomerResponse(UUID id) {
         return new VehicleCustomerResponse(id, "Fiat", "Panda", "Bianco",
                 VehicleCondition.NEW, new BigDecimal("45000"), null, null, null, null);
     }
