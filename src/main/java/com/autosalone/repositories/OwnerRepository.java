@@ -7,8 +7,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -35,6 +37,17 @@ public class OwnerRepository {
             query.setParameter("isActive", isActive);
 
         return query.getResultList();
+    }
+
+    public Set<UUID> filterOwnerIds(Set<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty())
+            return Set.of();
+
+        List<UUID> ownerIds = em.createQuery("SELECT o.id FROM Owner o WHERE o.id IN :ids", UUID.class)
+                .setParameter("ids", userIds)
+                .getResultList();
+
+        return new HashSet<>(ownerIds);
     }
 
     public Owner save(Owner owner) {

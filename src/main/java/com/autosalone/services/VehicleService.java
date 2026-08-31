@@ -208,7 +208,7 @@ public class VehicleService {
         }
 
         deadlineRepository.save(inspectionDeadline);
-        return DeadlineResponse.fromEntity(inspectionDeadline);
+        return DeadlineResponse.fromEntity(inspectionDeadline, true);
     }
 
     @Transactional
@@ -219,7 +219,7 @@ public class VehicleService {
                 request.recalculateFromCompletion());
 
         deadlineRepository.save(deadline);
-        return DeadlineResponse.fromEntity(deadline);
+        return DeadlineResponse.fromEntity(deadline, true);
     }
 
     @Transactional

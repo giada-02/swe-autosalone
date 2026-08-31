@@ -2,7 +2,10 @@ package com.autosalone.services;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.responses.DeadlineCompletionResponse;
@@ -10,6 +13,7 @@ import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Deadline;
 import com.autosalone.repositories.DeadlineRepository;
+import com.autosalone.repositories.OwnerRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,6 +25,9 @@ public class DeadlineService {
     @Inject
     private DeadlineRepository deadlineRepository;
 
+    @Inject
+    private OwnerRepository ownerRepository;
+
     // read
 
     public Deadline getDeadlineById(UUID id) {
@@ -28,17 +35,39 @@ public class DeadlineService {
                 .orElseThrow(() -> new ResourceNotFoundException("Deadline not found of id: " + id));
     }
 
-    public List<DeadlineResponse> getDeadlinesByVehicleId(UUID vehicleId, boolean completed) {
-        if (completed)
-            return deadlineRepository.findHistoryByVehicleId(vehicleId)
-                    .stream().map(DeadlineResponse::fromEntity).toList();
-        else
-            return deadlineRepository.findPendingByVehicleId(vehicleId)
-                    .stream().map(DeadlineResponse::fromEntity).toList();
+    public List<DeadlineResponse> getDeadlinesByVehicleId(UUID vehicleId, boolean completed, UUID currentUserId,
+            boolean isOwner) {
+
+        List<Deadline> deadlines = completed
+                ? deadlineRepository.findHistoryByVehicleId(vehicleId)
+                : deadlineRepository.findPendingByVehicleId(vehicleId);
+
+        Set<UUID> authorIds = deadlines.stream()
+                .map(Deadline::getUpdatedBy)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<UUID> ownerAuthorIds = isOwner && !authorIds.isEmpty()
+                ? ownerRepository.filterOwnerIds(authorIds)
+                : Set.of();
+
+        return deadlines.stream().map(deadline -> {
+            boolean includeNotes = false;
+            UUID updatedBy = deadline.getUpdatedBy();
+
+            if (isOwner) {
+                includeNotes = updatedBy == null || ownerAuthorIds.contains(updatedBy);
+            } else {
+                includeNotes = currentUserId.equals(updatedBy);
+            }
+
+            return DeadlineResponse.fromEntity(deadline, includeNotes);
+        }).toList();
     }
 
     public List<DeadlineResponse> getUrgentDeadlines(LocalDate upToDate) {
-        return deadlineRepository.findUrgentDeadlines(upToDate).stream().map(DeadlineResponse::fromEntity).toList();
+        return deadlineRepository.findUrgentDeadlines(upToDate).stream().map(deadline -> DeadlineResponse.fromEntity(
+                deadline, true)).toList();
     }
 
     // write
@@ -55,8 +84,8 @@ public class DeadlineService {
         }
 
         return new DeadlineCompletionResponse(
-                DeadlineResponse.fromEntity(deadline),
-                DeadlineResponse.fromEntity(nextRecurrence));
+                DeadlineResponse.fromEntity(deadline, true),
+                DeadlineResponse.fromEntity(nextRecurrence, true));
     }
 
     @Transactional
@@ -69,7 +98,7 @@ public class DeadlineService {
         deadline.setRecalculateFromCompletion(request.recalculateFromCompletion());
 
         deadlineRepository.save(deadline);
-        return DeadlineResponse.fromEntity(deadline);
+        return DeadlineResponse.fromEntity(deadline, true);
     }
 
     @Transactional

@@ -16,7 +16,7 @@ public record DeadlineResponse(
         String notes,
         boolean isExpired) {
 
-    public static DeadlineResponse fromEntity(Deadline deadline) {
+    public static DeadlineResponse fromEntity(Deadline deadline, boolean includeNotes) {
         if (deadline == null)
             return null;
 
@@ -39,7 +39,7 @@ public record DeadlineResponse(
                 deadline.isRecalculatedFromCompletion(),
                 deadline.isCompleted(),
                 deadline.getCompletionDate() != null ? deadline.getCompletionDate().toString() : null,
-                deadline.getNotes(),
+                includeNotes ? deadline.getNotes() : null,
                 deadline.isExpired());
     }
 }

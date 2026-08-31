@@ -254,14 +254,19 @@ class VehicleControllerTest {
     }
 
     @Test
-    void getDeadlines_Returns200AndList() {
-        when(deadlineService.getDeadlinesByVehicleId(vehicleId, false)).thenReturn(List.of(deadlineResponse));
+    void getDeadlines_AsOwner_Returns200AndList() {
+        UUID userId = UUID.randomUUID();
+        when(securityContext.getUserPrincipal()).thenReturn(principal);
+        when(principal.getName()).thenReturn(userId.toString());
+        when(securityContext.isUserInRole("OWNER")).thenReturn(true);
+        when(deadlineService.getDeadlinesByVehicleId(vehicleId, false, userId, true))
+                .thenReturn(List.of(deadlineResponse));
 
         Response response = vehicleController.getDeadlines(vehicleId, false);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(deadlineService).getDeadlinesByVehicleId(vehicleId, false);
+        verify(deadlineService).getDeadlinesByVehicleId(vehicleId, false, userId, true);
     }
 
     @Test
