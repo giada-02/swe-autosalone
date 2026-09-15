@@ -41,6 +41,8 @@ public abstract class AuditableEntity {
         this.updatedBy = AuditContext.getCurrentUserId();
     }
 
+    public abstract Object getId();
+
     // getters
 
     public Long getVersion() {
@@ -62,25 +64,6 @@ public abstract class AuditableEntity {
     public UUID getUpdatedBy() {
         return updatedBy;
     }
-
-    // setters
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setCreatedBy(UUID createdBy) {
-        this.createdBy = createdBy;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public void setUpdatedBy(UUID updatedBy) {
-        this.updatedBy = updatedBy;
-    }
-
-    public abstract Object getId();
 
     @Override
     public boolean equals(Object o) {

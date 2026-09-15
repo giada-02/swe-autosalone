@@ -117,7 +117,7 @@ public abstract class User extends AuditableEntity {
         this.isActive = false;
     }
 
-    public abstract static class UserBuilder<T extends User, B extends UserBuilder<T, B>> {
+    protected abstract static class UserBuilder<T extends User, B extends UserBuilder<T, B>> {
         private String firstName;
         private String lastName;
         private String phoneNumber;
