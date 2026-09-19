@@ -1,5 +1,7 @@
 package com.autosalone.controllers;
 
+import java.util.Map;
+
 import com.autosalone.dtos.auth.ForgotPasswordRequest;
 import com.autosalone.dtos.auth.LoginRequest;
 import com.autosalone.dtos.auth.ResetPasswordRequest;
@@ -14,6 +16,7 @@ import com.autosalone.services.JwtService;
 import com.autosalone.services.UserService;
 
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -85,5 +88,13 @@ public class AuthController {
     public Response resetPassword(@Valid ResetPasswordRequest request) {
         userService.completePasswordReset(request.token(), request.newPassword());
         return Response.noContent().build(); // 204 No Content
+    }
+
+    @POST
+    @Path("/cleanup-tokens")
+    @RolesAllowed("OWNER")
+    public Response cleanupExpiredTokens() {
+        int deletedCount = authTokenService.deleteExpiredAuthTokens();
+        return Response.ok(Map.of("deletedTokens", deletedCount)).build(); // 200 OK
     }
 }

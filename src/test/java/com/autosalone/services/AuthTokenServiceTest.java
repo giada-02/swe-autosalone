@@ -109,4 +109,24 @@ class AuthTokenServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> authTokenService.validateToken(tokenString, TokenType.REGISTRATION));
     }
+
+    @Test
+    void deleteToken_Success() {
+        AuthToken mockToken = mock(AuthToken.class);
+
+        authTokenService.deleteToken(mockToken);
+
+        verify(tokenRepository).delete(mockToken);
+    }
+
+    @Test
+    void deleteExpiredAuthTokens_ReturnsDeletedCount() {
+        int expectedDeletedCount = 5;
+        when(tokenRepository.deleteAllExpiredTokens(any(Instant.class))).thenReturn(expectedDeletedCount);
+
+        int actualDeletedCount = authTokenService.deleteExpiredAuthTokens();
+
+        assertEquals(expectedDeletedCount, actualDeletedCount);
+        verify(tokenRepository).deleteAllExpiredTokens(any(Instant.class));
+    }
 }

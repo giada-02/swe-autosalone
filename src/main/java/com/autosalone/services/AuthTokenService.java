@@ -106,9 +106,8 @@ public class AuthTokenService {
     }
 
     @Transactional
-    public void deleteExpiredAuthTokens() {
-        int deletedCount = authTokenRepository.deleteAllExpiredTokens(Instant.now());
-        System.out.println("Deleted " + deletedCount + " expired tokens");
+    public int deleteExpiredAuthTokens() {
+        return authTokenRepository.deleteAllExpiredTokens(Instant.now());
     }
 
     /**

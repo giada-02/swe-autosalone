@@ -9,6 +9,7 @@ import com.autosalone.dtos.requests.CatalogItemIdsRequest;
 import com.autosalone.dtos.requests.CatalogItemPriceUpdateRequest;
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationCleanupResponse;
 import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.QuotationStatus;
@@ -171,5 +172,13 @@ public class QuotationController {
     public Response removeItemsFromQuotation(@PathParam("id") UUID id, @Valid CatalogItemIdsRequest request) {
         QuotationResponse quotation = quotationService.removeItemsFromQuotation(id, request.catalogItemIds());
         return Response.ok(quotation).build(); // 200 OK
+    }
+
+    @POST
+    @Path("/expire-outdated")
+    @RolesAllowed("OWNER")
+    public Response expireOutdatedQuotations() {
+        QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
+        return Response.ok(response).build(); // 200 OK
     }
 }

@@ -26,6 +26,7 @@ import com.autosalone.dtos.requests.CatalogItemPriceUpdateRequest;
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
 import com.autosalone.dtos.responses.CustomerResponse;
+import com.autosalone.dtos.responses.QuotationCleanupResponse;
 import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.ExpirationPolicy;
@@ -290,6 +291,18 @@ class QuotationControllerTest {
 
         assertEquals(200, response.getStatus());
         verify(quotationService).removeItemsFromQuotation(quotationId, Set.of(itemId));
+    }
+
+    @Test
+    void expireOutdatedQuotations_Returns200AndCleanupResponse() {
+        QuotationCleanupResponse cleanupResponse = new QuotationCleanupResponse(3, 1, 2);
+        when(quotationService.expireOutdatedQuotations()).thenReturn(cleanupResponse);
+
+        Response response = quotationController.expireOutdatedQuotations();
+
+        assertEquals(200, response.getStatus());
+        assertEquals(cleanupResponse, response.getEntity());
+        verify(quotationService).expireOutdatedQuotations();
     }
 
     // helper methods

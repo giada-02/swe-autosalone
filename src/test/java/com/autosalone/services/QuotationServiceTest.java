@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationCleanupResponse;
 import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.ExpirationPolicy;
@@ -265,7 +266,12 @@ class QuotationServiceTest {
         when(contractRepository.findConflictingContractsForVehicle(vehicleId, null))
                 .thenReturn(Collections.emptyList());
 
-        quotationService.expireOutdatedQuotations();
+        QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
+
+        assertNotNull(response);
+        assertEquals(1, response.expiredQuotations());
+        assertEquals(1, response.voidedContracts());
+        assertEquals(1, response.freedVehicles());
 
         verify(expiredMock).expire();
         verify(quotationRepository).save(expiredMock);
@@ -291,7 +297,12 @@ class QuotationServiceTest {
         when(quotationRepository.findConflictingQuotationsForVehicle(vehicleId, null))
                 .thenReturn(List.of(activeConflictingMock));
 
-        quotationService.expireOutdatedQuotations();
+        QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
+
+        assertNotNull(response);
+        assertEquals(1, response.expiredQuotations());
+        assertEquals(0, response.voidedContracts());
+        assertEquals(0, response.freedVehicles());
 
         verify(expiredMock).expire();
         verify(quotationRepository).save(expiredMock);
@@ -304,7 +315,12 @@ class QuotationServiceTest {
     void expireOutdatedQuotations_NoExpiredQuotations_DoesNothing() {
         when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(Collections.emptyList());
 
-        quotationService.expireOutdatedQuotations();
+        QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
+
+        assertNotNull(response);
+        assertEquals(0, response.expiredQuotations());
+        assertEquals(0, response.voidedContracts());
+        assertEquals(0, response.freedVehicles());
 
         verify(contractRepository, never()).findDraftContractsBySourceQuotation(any());
         verify(vehicleRepository, never()).save(any());

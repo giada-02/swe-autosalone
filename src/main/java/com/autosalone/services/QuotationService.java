@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
+import com.autosalone.dtos.responses.QuotationCleanupResponse;
 import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.QuotationStatus;
@@ -108,11 +109,13 @@ public class QuotationService {
     }
 
     @Transactional
-    public void expireOutdatedQuotations() {
+    public QuotationCleanupResponse expireOutdatedQuotations() {
         LocalDate today = LocalDate.now();
         List<Quotation> expiredQuotations = quotationRepository.findExpiredQuotations(today);
 
         Set<Vehicle> affectedVehicles = new HashSet<>();
+        int voidedContractsCount = 0;
+        int freedVehiclesCount = 0;
 
         for (Quotation quotation : expiredQuotations) {
             quotation.expire();
@@ -122,6 +125,7 @@ public class QuotationService {
             for (Contract draftContract : linkedDrafts) {
                 draftContract.voidDocument();
                 contractRepository.save(draftContract);
+                voidedContractsCount++;
             }
 
             affectedVehicles.add(quotation.getVehicle());
@@ -135,8 +139,14 @@ public class QuotationService {
             if (!hasOtherActiveDocuments) {
                 vehicle.setStatus(VehicleStatus.AVAILABLE);
                 vehicleRepository.save(vehicle);
+                freedVehiclesCount++;
             }
         }
+
+        return new QuotationCleanupResponse(
+                expiredQuotations.size(),
+                voidedContractsCount,
+                freedVehiclesCount);
     }
 
     @Transactional

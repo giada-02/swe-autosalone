@@ -67,6 +67,22 @@ class TransactionServiceTest {
     }
 
     @Test
+    void getTransactionResponseById_Success() {
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(mockTransaction));
+        TransactionResponse transactionResponse = transactionService.getTransactionResponseById(transactionId);
+        assertNotNull(transactionResponse);
+        assertEquals(TransactionResponse.fromEntity(mockTransaction), transactionResponse);
+    }
+
+    @Test
+    void getTransactionResponseById_NotFound() {
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            transactionService.getTransactionResponseById(transactionId);
+        });
+    }
+
+    @Test
     void getTransactions_Success() {
         LocalDate from = LocalDate.now().minusDays(30);
         LocalDate to = LocalDate.now();

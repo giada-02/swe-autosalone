@@ -146,4 +146,11 @@ class AuthControllerTest {
         verify(userService).completePasswordReset("reset_token", "new_password");
     }
 
+    @Test
+    void cleanupExpiredTokens_Returns200() {
+        Response response = authController.cleanupExpiredTokens();
+
+        assertEquals(200, response.getStatus());
+        verify(authTokenService).deleteExpiredAuthTokens();
+    }
 }
