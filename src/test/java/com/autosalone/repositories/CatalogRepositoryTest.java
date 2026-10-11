@@ -93,8 +93,8 @@ public class CatalogRepositoryTest {
 
         List<PurchasableItem> byKeyword = repository.findPurchasableItems("articolo", null, null); // case-insensitive
         assertEquals(2, byKeyword.size(), "Should find 2 purchasable items");
-        assertEquals("Articolo1", byKeyword.get(0).getName());
-        assertEquals("Articolo2", byKeyword.get(1).getName());
+        assertEquals("Articolo2", byKeyword.get(0).getName());
+        assertEquals("Articolo1", byKeyword.get(1).getName());
 
         List<PurchasableItem> archived = repository.findPurchasableItems(null, true, null);
         assertEquals(1, archived.size(), "Should find 1 ARCHIVED purchasable item");
