@@ -44,7 +44,7 @@ public class CatalogRepository {
             parameters.put("itemType", itemType);
         }
 
-        jpql.append(" ORDER BY p.name ASC");
+        jpql.append(" ORDER BY p.createdAt DESC, p.name ASC");
 
         TypedQuery<PurchasableItem> query = em.createQuery(jpql.toString(), PurchasableItem.class);
         parameters.forEach(query::setParameter);
