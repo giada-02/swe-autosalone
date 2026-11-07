@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.autosalone.dtos.requests.CustomerRequest;
 import com.autosalone.dtos.responses.CustomerListResponse;
 import com.autosalone.dtos.responses.CustomerResponse;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.services.CustomerService;
 
 import jakarta.annotation.security.RolesAllowed;

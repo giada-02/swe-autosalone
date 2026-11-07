@@ -9,6 +9,7 @@ import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.responses.DeadlineCompletionResponse;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.models.Deadline;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.services.VehicleService;

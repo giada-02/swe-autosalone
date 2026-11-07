@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.autosalone.dtos.requests.CustomerRequest;
 import com.autosalone.dtos.responses.CustomerListResponse;
 import com.autosalone.dtos.responses.CustomerResponse;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.services.CustomerService;
 
 import jakarta.ws.rs.core.Response;
@@ -83,9 +84,8 @@ class CustomerControllerTest {
         when(principal.getName()).thenReturn(customerId.toString());
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
 
-        Response response = customerController.getCustomerById(anotherCustomerId);
+        assertThrows(ForbiddenException.class, () -> customerController.getCustomerById(anotherCustomerId));
 
-        assertEquals(403, response.getStatus());
         verify(customerService, never()).getCustomerResponseById(any());
     }
 

@@ -2,6 +2,7 @@ package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,6 +36,7 @@ import com.autosalone.dtos.responses.VehicleCustomerResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.services.TransactionService;
 import com.autosalone.services.VehicleService;
@@ -171,9 +173,8 @@ class VehicleControllerTest {
 
         when(vehicleService.isVehicleOwnedByCustomer(vehicleId, customerId)).thenReturn(false);
 
-        Response response = vehicleController.getVehicleById(vehicleId);
+        assertThrows(ForbiddenException.class, () -> vehicleController.getVehicleById(vehicleId));
 
-        assertEquals(403, response.getStatus());
         verify(vehicleService, never()).getVehicleCustomerResponseById(any());
         verify(vehicleService, never()).getVehicleResponseById(any());
     }
@@ -320,9 +321,7 @@ class VehicleControllerTest {
 
         when(vehicleService.isVehicleOwnedByCustomer(vehicleId, customerId)).thenReturn(false);
 
-        Response response = vehicleController.getDeadlines(vehicleId, false);
-
-        assertEquals(403, response.getStatus());
+        assertThrows(ForbiddenException.class, () -> vehicleController.getDeadlines(vehicleId, false));
 
         verify(deadlineService, never()).getDeadlinesByVehicleId(any(), eq(false), any(), eq(false));
     }

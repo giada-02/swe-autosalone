@@ -2,6 +2,7 @@ package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,6 +35,7 @@ import com.autosalone.dtos.responses.CustomerResponse;
 import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.TransactionType;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.services.ContractService;
 
 import jakarta.ws.rs.core.Response;
@@ -184,9 +186,8 @@ class ContractControllerTest {
 
         when(contractService.getContractCustomerResponseById(contractId)).thenReturn(contractCustomerResponse);
 
-        Response response = contractController.getContractById(contractId);
+        assertThrows(ForbiddenException.class, () -> contractController.getContractById(contractId));
 
-        assertEquals(403, response.getStatus());
         verify(contractService).getContractCustomerResponseById(contractId);
     }
 
@@ -205,9 +206,7 @@ class ContractControllerTest {
 
         when(contractService.getContractCustomerResponseById(contractId)).thenReturn(contractCustomerResponse);
 
-        Response response = contractController.getContractById(contractId);
-
-        assertEquals(403, response.getStatus());
+        assertThrows(ForbiddenException.class, () -> contractController.getContractById(contractId));
     }
 
     @Test

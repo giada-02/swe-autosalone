@@ -2,6 +2,7 @@ package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.PasswordUpdateRequest;
 import com.autosalone.enums.TokenType;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.services.AuthTokenService;
@@ -75,9 +77,8 @@ class UserControllerTest {
         when(principal.getName()).thenReturn(userId.toString());
         PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword", "newPassword");
 
-        Response response = userController.updatePassword(anotherCustomerId, request);
+        assertThrows(ForbiddenException.class, () -> userController.updatePassword(anotherCustomerId, request));
 
-        assertEquals(403, response.getStatus());
         verify(userService, never()).updatePassword(userId, "currentPassword", "newPassword");
     }
 

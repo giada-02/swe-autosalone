@@ -1,6 +1,7 @@
 package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -24,6 +25,7 @@ import com.autosalone.dtos.requests.DeadlineCompletionRequest;
 import com.autosalone.dtos.requests.DeadlineRequest;
 import com.autosalone.dtos.responses.DeadlineResponse;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.models.Deadline;
 import com.autosalone.models.Vehicle;
 import com.autosalone.services.DeadlineService;
@@ -129,9 +131,9 @@ class DeadlineControllerTest {
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.SOLD);
 
-        Response response = deadlineController.completeDeadline(deadlineId, completionRequest);
+        assertThrows(ForbiddenException.class,
+                () -> deadlineController.completeDeadline(deadlineId, completionRequest));
 
-        assertEquals(403, response.getStatus());
         verify(deadlineService, never()).completeDeadline(deadlineId, completionRequest.completionDate(),
                 completionRequest.notes());
     }
@@ -145,9 +147,9 @@ class DeadlineControllerTest {
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.WITHDRAWN);
 
-        Response response = deadlineController.completeDeadline(deadlineId, completionRequest);
+        assertThrows(ForbiddenException.class,
+                () -> deadlineController.completeDeadline(deadlineId, completionRequest));
 
-        assertEquals(403, response.getStatus());
         verify(deadlineService, never()).completeDeadline(deadlineId, completionRequest.completionDate(),
                 completionRequest.notes());
     }
@@ -187,9 +189,9 @@ class DeadlineControllerTest {
         when(mockVehicle.getId()).thenReturn(vehicleId);
         when(vehicleService.isVehicleOwnedByCustomer(mockVehicle.getId(), customerId)).thenReturn(false);
 
-        Response response = deadlineController.completeDeadline(deadlineId, completionRequest);
+        assertThrows(ForbiddenException.class,
+                () -> deadlineController.completeDeadline(deadlineId, completionRequest));
 
-        assertEquals(403, response.getStatus());
         verify(deadlineService, never()).completeDeadline(deadlineId, completionRequest.completionDate(),
                 completionRequest.notes());
     }

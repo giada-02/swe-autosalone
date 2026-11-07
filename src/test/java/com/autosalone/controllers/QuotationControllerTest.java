@@ -2,6 +2,7 @@ package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,6 +32,7 @@ import com.autosalone.dtos.responses.QuotationCustomerResponse;
 import com.autosalone.dtos.responses.QuotationResponse;
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.services.QuotationService;
 
 import jakarta.ws.rs.core.Response;
@@ -175,9 +177,8 @@ class QuotationControllerTest {
 
         when(quotationService.getQuotationCustomerResponseById(quotationId)).thenReturn(quotationCustomerResponse);
 
-        Response response = quotationController.getQuotationById(quotationId);
+        assertThrows(ForbiddenException.class, () -> quotationController.getQuotationById(quotationId));
 
-        assertEquals(403, response.getStatus());
         verify(quotationService).getQuotationCustomerResponseById(quotationId);
     }
 
@@ -196,9 +197,7 @@ class QuotationControllerTest {
 
         when(quotationService.getQuotationCustomerResponseById(quotationId)).thenReturn(quotationCustomerResponse);
 
-        Response response = quotationController.getQuotationById(quotationId);
-
-        assertEquals(403, response.getStatus());
+        assertThrows(ForbiddenException.class, () -> quotationController.getQuotationById(quotationId));
     }
 
     @Test

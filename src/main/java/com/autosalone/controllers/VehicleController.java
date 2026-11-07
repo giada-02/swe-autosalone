@@ -18,6 +18,7 @@ import com.autosalone.dtos.responses.VehicleCustomerResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.services.DeadlineService;
 import com.autosalone.services.TransactionService;
 import com.autosalone.services.VehicleService;

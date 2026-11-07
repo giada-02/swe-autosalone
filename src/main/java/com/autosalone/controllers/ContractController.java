@@ -16,6 +16,7 @@ import com.autosalone.dtos.responses.ContractCustomerResponse;
 import com.autosalone.dtos.responses.ContractResponse;
 import com.autosalone.dtos.responses.TransactionResponse;
 import com.autosalone.enums.ContractStatus;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.services.ContractService;
 import com.autosalone.utils.Utils;
 
