@@ -90,8 +90,7 @@ public class VehicleController {
             UUID customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
 
             if (!vehicleService.isVehicleOwnedByCustomer(id, customerId)) {
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity("{\"error\":\"You do not have access to this vehicle\"}").build();
+                throw new ForbiddenException("You do not have access to this vehicle");
             }
 
             VehicleCustomerResponse vehicle = vehicleService.getVehicleCustomerResponseById(id);
@@ -186,8 +185,7 @@ public class VehicleController {
 
         if (!isOwner) {
             if (!vehicleService.isVehicleOwnedByCustomer(id, currentUserId)) {
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity("{\"error\":\"You do not have access to the deadlines of this vehicle\"}").build();
+                throw new ForbiddenException("You do not have access to the deadlines of this vehicle");
             }
         }
 

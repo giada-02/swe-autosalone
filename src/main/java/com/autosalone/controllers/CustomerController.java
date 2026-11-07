@@ -48,8 +48,7 @@ public class CustomerController {
         String loggedInUserId = securityContext.getUserPrincipal().getName();
 
         if (securityContext.isUserInRole("CUSTOMER") && !loggedInUserId.equals(id.toString())) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity("{\"error\":\"You can only access your own profile\"}").build();
+            throw new ForbiddenException("You can only access your own profile");
         }
 
         CustomerResponse customer = customerService.getCustomerResponseById(id);

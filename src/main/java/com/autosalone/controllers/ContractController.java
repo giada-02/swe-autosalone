@@ -88,8 +88,7 @@ public class ContractController {
 
             if (!contract.customer().id().toString().equals(loggedInUserId)
                     || contract.status() == ContractStatus.DRAFT) {
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity("{\"error\":\"You do not have access to this contract\"}").build();
+                throw new ForbiddenException("You do not have access to this contract");
             }
 
             return Response.ok(contract).build();// 200 OK

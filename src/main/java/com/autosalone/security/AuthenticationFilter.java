@@ -1,6 +1,7 @@
 package com.autosalone.security;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.autosalone.dtos.errors.ApiErrorResponse;
 import com.autosalone.services.JwtService;
 import com.autosalone.utils.AuditContext;
 
@@ -11,6 +12,7 @@ import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.ext.Provider;
@@ -71,8 +73,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         } catch (Exception e) {
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
-                            .entity("{\"error\":\"Invalid or expired token\"}")
-                            .type("application/json")
+                            .entity(new ApiErrorResponse(401, "Invalid or expired token"))
+                            .type(MediaType.APPLICATION_JSON)
                             .build());
         }
     }

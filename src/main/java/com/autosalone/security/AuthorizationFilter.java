@@ -9,11 +9,14 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+
+import com.autosalone.dtos.errors.ApiErrorResponse;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION)
@@ -45,11 +48,12 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         }
 
         if (rolesAllowed == null) {
+            abortWithForbidden(requestContext, "Access denied: No access policy defined for this resource");
             return;
         }
 
         if (requestContext.getSecurityContext().getUserPrincipal() == null) {
-            abortWithUnauthorized(requestContext, "Authentication required (Missing or invalid token)");
+            abortWithUnauthorized(requestContext, "Authentication required: Missing or invalid token");
             return;
         }
 
@@ -64,16 +68,16 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     private void abortWithUnauthorized(ContainerRequestContext requestContext, String message) {
         requestContext.abortWith(
                 Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"error\":\"" + message + "\"}")
-                        .type("application/json")
+                        .entity(new ApiErrorResponse(401, message))
+                        .type(MediaType.APPLICATION_JSON)
                         .build());
     }
 
     private void abortWithForbidden(ContainerRequestContext requestContext, String message) {
         requestContext.abortWith(
                 Response.status(Response.Status.FORBIDDEN)
-                        .entity("{\"error\":\"" + message + "\"}")
-                        .type("application/json")
+                        .entity(new ApiErrorResponse(403, message))
+                        .type(MediaType.APPLICATION_JSON)
                         .build());
     }
 }

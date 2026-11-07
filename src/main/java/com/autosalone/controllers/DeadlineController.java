@@ -69,15 +69,13 @@ public class DeadlineController {
             UUID customerId = UUID.fromString(securityContext.getUserPrincipal().getName());
 
             if (!vehicleService.isVehicleOwnedByCustomer(deadline.getVehicle().getId(), customerId)) {
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity("{\"error\":\"You cannot complete a deadline for a vehicle you do not own\"}").build();
+                throw new ForbiddenException("You cannot complete a deadline for a vehicle you do not own");
             }
         } else {
             VehicleStatus status = deadline.getVehicle().getStatus();
             if (status == VehicleStatus.SOLD || status == VehicleStatus.WITHDRAWN) {
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity("{\"error\":\"Owners cannot complete deadlines for vehicles that are SOLD or WITHDRAWN\"}")
-                        .build();
+                throw new ForbiddenException(
+                        "Owners cannot complete deadlines for vehicles that are SOLD or WITHDRAWN");
             }
         }
 

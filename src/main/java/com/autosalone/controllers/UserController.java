@@ -3,6 +3,7 @@ package com.autosalone.controllers;
 import java.util.UUID;
 
 import com.autosalone.dtos.requests.PasswordUpdateRequest;
+import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.models.AuthToken;
 import com.autosalone.models.User;
 import com.autosalone.services.AuthTokenService;
@@ -47,8 +48,7 @@ public class UserController {
         String loggedInUserId = securityContext.getUserPrincipal().getName();
 
         if (!loggedInUserId.equals(id.toString())) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity("{\"error\":\"You can only update your own password\"}").build();
+            throw new ForbiddenException("You can only update your own password");
         }
 
         userService.updatePassword(id, request.currentPassword(), request.newPassword());

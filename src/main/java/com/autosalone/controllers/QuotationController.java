@@ -85,8 +85,7 @@ public class QuotationController {
 
             if (!quotation.customer().id().toString().equals(loggedInUserId)
                     || quotation.status() == QuotationStatus.DRAFT) {
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity("{\"error\":\"You do not have access to this quotation\"}").build();
+                throw new ForbiddenException("You do not have access to this quotation");
             }
 
             return Response.ok(quotation).build(); // 200 OK
