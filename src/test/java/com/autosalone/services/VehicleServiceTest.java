@@ -260,10 +260,10 @@ class VehicleServiceTest {
         when(mockDraftContract.getStatus()).thenReturn(ContractStatus.DRAFT);
         when(mockConfirmedContract.getStatus()).thenReturn(ContractStatus.CONFIRMED);
 
-        when(quotationRepository.findQuotations(any(), any(), anyBoolean(), eq(vehicleId), any(), any()))
+        when(quotationRepository.findOpenQuotationsByVehicle(eq(vehicleId), any()))
                 .thenReturn(List.of(mockQuotation));
 
-        when(contractRepository.findContracts(any(), any(), anyBoolean(), eq(vehicleId), any(), any()))
+        when(contractRepository.findContracts(any(), any(), any(), eq(vehicleId), any(), any()))
                 .thenReturn(List.of(mockDraftContract, mockConfirmedContract));
 
         Deadline mockPendingDeadline = mock(Deadline.class);

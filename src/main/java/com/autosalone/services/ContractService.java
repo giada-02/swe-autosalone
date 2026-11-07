@@ -75,15 +75,15 @@ public class ContractService {
         return ContractCustomerResponse.fromEntity(contract);
     }
 
-    public List<ContractResponse> getContractsForOwner(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived,
+    public List<ContractResponse> getContractsForOwner(LocalDate dateFrom, LocalDate dateTo, Boolean isArchived,
             UUID vehicleId, UUID customerId, List<ContractStatus> statusList) {
-        return contractRepository.findContracts(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+        return contractRepository.findContracts(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList)
                 .stream().map(ContractResponse::fromEntity).toList();
     }
 
     public List<ContractCustomerResponse> getContractsForCustomer(LocalDate dateFrom, LocalDate dateTo,
-            Boolean IsArchived, UUID vehicleId, UUID customerId, List<ContractStatus> statusList) {
-        return contractRepository.findContracts(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+            Boolean isArchived, UUID vehicleId, UUID customerId, List<ContractStatus> statusList) {
+        return contractRepository.findContracts(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList)
                 .stream().map(ContractCustomerResponse::fromEntity).toList();
     }
 
@@ -125,7 +125,7 @@ public class ContractService {
         Contract contract = getContractById(contractId);
 
         Transaction deposit = null;
-        if (depositAmount != null && depositDate != null)
+        if (depositAmount != null)
             deposit = TransactionFactory.createContractDeposit(contract, depositAmount, depositDate);
 
         contract.confirm(deposit);
@@ -142,8 +142,8 @@ public class ContractService {
 
         UUID quotationIdToExclude = quotation != null ? quotation.getId() : null;
         List<Quotation> quotations = quotationRepository
-                .findConflictingQuotationsForVehicle(vehicle.getId(), quotationIdToExclude);
-        List<Contract> contracts = contractRepository.findConflictingContractsForVehicle(vehicle.getId(),
+                .findOpenQuotationsByVehicle(vehicle.getId(), quotationIdToExclude);
+        List<Contract> contracts = contractRepository.findDraftContractsByVehicle(vehicle.getId(),
                 contractId);
 
         for (Quotation q : quotations) {
@@ -167,7 +167,6 @@ public class ContractService {
         contract.complete();
 
         Vehicle vehicle = contract.getVehicle();
-        vehicle.setIsInShowroom(false);
         if (vehicle.getCondition() == VehicleCondition.NEW)
             vehicle.generateStandardInspectionDeadline();
         vehicle.setStatus(VehicleStatus.SOLD);

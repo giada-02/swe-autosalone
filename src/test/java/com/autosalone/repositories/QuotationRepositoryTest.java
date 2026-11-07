@@ -1,10 +1,13 @@
 package com.autosalone.repositories;
 
+import com.autosalone.enums.DiscountType;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.models.Customer;
 import com.autosalone.models.Quotation;
 import com.autosalone.models.Vehicle;
+import com.autosalone.models.discounts.DiscountStrategy;
+import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -194,7 +197,7 @@ public class QuotationRepositoryTest {
     }
 
     @Test
-    public void findConflictingQuotationsForVehicle() {
+    public void findOpenQuotationsByVehicle() {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer1 = persistMockCustomer();
@@ -220,7 +223,7 @@ public class QuotationRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        List<Quotation> conflictingQuotations = repository.findConflictingQuotationsForVehicle(vehicle.getId(),
+        List<Quotation> conflictingQuotations = repository.findOpenQuotationsByVehicle(vehicle.getId(),
                 q1.getId());
         assertEquals(2, conflictingQuotations.size(),
                 "Should find 2 conflicting quotations for the same vehicle");
@@ -249,6 +252,29 @@ public class QuotationRepositoryTest {
 
         Quotation updatedQuotation = repository.findById(quotationId).get();
         assertEquals(LocalDate.of(2025, 10, 30), updatedQuotation.getDate(), "Date should be updated");
+    }
+
+    @Test
+    public void cloneQuotation_PersistsDiscount() {
+        em.getTransaction().begin();
+        Vehicle vehicle = persistMockVehicle();
+        Customer customer = persistMockCustomer();
+        Quotation original = new Quotation(vehicle, customer);
+        DiscountStrategy percentageDiscountStrategy = new PercentageDiscountStrategy(new BigDecimal("10"));
+        original.setDiscountStrategy(percentageDiscountStrategy);
+
+        Quotation quotation = new Quotation(original);
+        repository.save(quotation);
+        em.getTransaction().commit();
+
+        UUID quotationId = quotation.getId();
+
+        em.clear();
+
+        Quotation clonedQuotation = repository.findById(quotationId)
+                .orElseThrow(() -> new AssertionError("Quotation not persisted"));
+        assertEquals(DiscountType.PERCENTAGE, clonedQuotation.getDiscountType());
+        assertEquals(0, clonedQuotation.getDiscountValue().compareTo(new BigDecimal("10")));
     }
 
     @Test

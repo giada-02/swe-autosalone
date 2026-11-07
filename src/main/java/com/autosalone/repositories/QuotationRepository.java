@@ -26,7 +26,7 @@ public class QuotationRepository {
         return Optional.ofNullable(quotation);
     }
 
-    public List<Quotation> findQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
+    public List<Quotation> findQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean isArchived, UUID vehicleId,
             UUID customerId, List<QuotationStatus> statusList) {
 
         StringBuilder jpql = new StringBuilder("SELECT q FROM Quotation q WHERE 1=1");
@@ -40,9 +40,9 @@ public class QuotationRepository {
             jpql.append(" AND q.date <= :to");
             parameters.put("to", dateTo);
         }
-        if (IsArchived != null) {
-            jpql.append(" AND q.isArchived = :IsArchived");
-            parameters.put("IsArchived", IsArchived);
+        if (isArchived != null) {
+            jpql.append(" AND q.isArchived = :isArchived");
+            parameters.put("isArchived", isArchived);
         }
         if (vehicleId != null) {
             jpql.append(" AND q.vehicle.id = :vehicleId");
@@ -82,8 +82,7 @@ public class QuotationRepository {
                 .getResultList();
     }
 
-    public List<Quotation> findConflictingQuotationsForVehicle(UUID vehicleId,
-            UUID excludeQuotationId) {
+    public List<Quotation> findOpenQuotationsByVehicle(UUID vehicleId, UUID excludeQuotationId) {
 
         StringBuilder jpql = new StringBuilder(
                 "SELECT q FROM Quotation q WHERE q.vehicle.id = :vehicleId AND q.status IN (:draft, :issued)");
@@ -102,6 +101,14 @@ public class QuotationRepository {
         }
 
         return query.getResultList();
+    }
+
+    public boolean existsIssuedQuotationForVehicle(UUID vehicleId) {
+        Long issuedQuotationCount = em.createQuery(
+                "SELECT COUNT(q) FROM Quotation q WHERE q.vehicle.id = :vehicleId AND q.status = :issued", Long.class)
+                .setParameter("vehicleId", vehicleId)
+                .setParameter("issued", QuotationStatus.ISSUED).getSingleResult();
+        return issuedQuotationCount > 0;
     }
 
     public Quotation save(Quotation quotation) {

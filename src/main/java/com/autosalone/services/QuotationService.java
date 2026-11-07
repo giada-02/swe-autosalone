@@ -68,15 +68,15 @@ public class QuotationService {
         return QuotationCustomerResponse.fromEntity(quotation);
     }
 
-    public List<QuotationResponse> getQuotationsForOwner(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived,
+    public List<QuotationResponse> getQuotationsForOwner(LocalDate dateFrom, LocalDate dateTo, Boolean isArchived,
             UUID vehicleId, UUID customerId, List<QuotationStatus> statusList) {
-        return quotationRepository.findQuotations(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+        return quotationRepository.findQuotations(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList)
                 .stream().map(QuotationResponse::fromEntity).toList();
     }
 
     public List<QuotationCustomerResponse> getQuotationsForCustomer(LocalDate dateFrom, LocalDate dateTo,
-            Boolean IsArchived, UUID vehicleId, UUID customerId, List<QuotationStatus> statusList) {
-        return quotationRepository.findQuotations(dateFrom, dateTo, IsArchived, vehicleId, customerId, statusList)
+            Boolean isArchived, UUID vehicleId, UUID customerId, List<QuotationStatus> statusList) {
+        return quotationRepository.findQuotations(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList)
                 .stream().map(QuotationCustomerResponse::fromEntity).toList();
     }
 
@@ -132,11 +132,8 @@ public class QuotationService {
         }
 
         for (Vehicle vehicle : affectedVehicles) {
-            boolean hasOtherActiveDocuments = !quotationRepository
-                    .findConflictingQuotationsForVehicle(vehicle.getId(), null).isEmpty()
-                    || !contractRepository.findConflictingContractsForVehicle(vehicle.getId(), null).isEmpty();
-
-            if (!hasOtherActiveDocuments) {
+            if (vehicle.getStatus() == VehicleStatus.QUOTED
+                    && !quotationRepository.existsIssuedQuotationForVehicle(vehicle.getId())) {
                 vehicle.setStatus(VehicleStatus.AVAILABLE);
                 vehicleRepository.save(vehicle);
                 freedVehiclesCount++;

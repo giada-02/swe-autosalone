@@ -26,7 +26,7 @@ public class ContractRepository {
         return Optional.ofNullable(contract);
     }
 
-    public List<Contract> findContracts(LocalDate dateFrom, LocalDate dateTo, Boolean IsArchived, UUID vehicleId,
+    public List<Contract> findContracts(LocalDate dateFrom, LocalDate dateTo, Boolean isArchived, UUID vehicleId,
             UUID customerId, List<ContractStatus> statusList) {
 
         StringBuilder jpql = new StringBuilder("SELECT c FROM Contract c WHERE 1=1");
@@ -40,9 +40,9 @@ public class ContractRepository {
             jpql.append(" AND c.date <= :to");
             parameters.put("to", dateTo);
         }
-        if (IsArchived != null) {
-            jpql.append(" AND c.isArchived = :IsArchived");
-            parameters.put("IsArchived", IsArchived);
+        if (isArchived != null) {
+            jpql.append(" AND c.isArchived = :isArchived");
+            parameters.put("isArchived", isArchived);
         }
         if (vehicleId != null) {
             jpql.append(" AND c.vehicle.id = :vehicleId");
@@ -74,7 +74,7 @@ public class ContractRepository {
                 .getResultList();
     }
 
-    public List<Contract> findConflictingContractsForVehicle(UUID vehicleId, UUID excludeContractId) {
+    public List<Contract> findDraftContractsByVehicle(UUID vehicleId, UUID excludeContractId) {
         StringBuilder jpql = new StringBuilder(
                 "SELECT c FROM Contract c WHERE c.vehicle.id = :vehicleId AND c.status = :draft");
 

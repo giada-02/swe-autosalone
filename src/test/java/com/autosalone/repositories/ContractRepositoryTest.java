@@ -1,10 +1,15 @@
 package com.autosalone.repositories;
 
 import com.autosalone.enums.ContractStatus;
+import com.autosalone.enums.DiscountType;
+import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.models.Customer;
+import com.autosalone.models.Quotation;
 import com.autosalone.models.Contract;
 import com.autosalone.models.Vehicle;
+import com.autosalone.models.discounts.DiscountStrategy;
+import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -27,13 +32,16 @@ public class ContractRepositoryTest {
     private EntityManagerFactory emf;
     private EntityManager em;
     private ContractRepository repository;
+    private QuotationRepository quotationRepository;
 
     @BeforeEach
     public void setUp() {
         emf = Persistence.createEntityManagerFactory("autosalonePU-test");
         em = emf.createEntityManager();
         repository = new ContractRepository();
+        quotationRepository = new QuotationRepository();
         repository.em = this.em;
+        quotationRepository.em = this.em;
     }
 
     @AfterEach
@@ -166,7 +174,7 @@ public class ContractRepositoryTest {
     }
 
     @Test
-    public void findConflictingContractsForVehicle() {
+    public void findDraftContractsByVehicle() {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer1 = persistMockCustomer();
@@ -190,7 +198,7 @@ public class ContractRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        List<Contract> conflictingContracts = repository.findConflictingContractsForVehicle(vehicle.getId(),
+        List<Contract> conflictingContracts = repository.findDraftContractsByVehicle(vehicle.getId(),
                 c1.getId());
         assertEquals(2, conflictingContracts.size(),
                 "Should find 2 conflicting contracts for the same vehicle");
@@ -219,6 +227,33 @@ public class ContractRepositoryTest {
 
         Contract updatedContract = repository.findById(contractId).get();
         assertEquals(LocalDate.of(2025, 10, 30), updatedContract.getDate(), "Date should be updated");
+    }
+
+    @Test
+    public void contractFromQuotation_PersistsDiscount() {
+        em.getTransaction().begin();
+        Vehicle vehicle = persistMockVehicle();
+        Customer customer = persistMockCustomer();
+        Quotation source = new Quotation(vehicle, customer);
+        DiscountStrategy percentageDiscountStrategy = new PercentageDiscountStrategy(new BigDecimal("10"));
+        source.setDiscountStrategy(percentageDiscountStrategy);
+        source.setDate(LocalDate.now());
+        source.updateExpiration(ExpirationPolicy.TEN_DAYS);
+        source.issue();
+        quotationRepository.save(source);
+
+        Contract contract = new Contract(source);
+        repository.save(contract);
+        em.getTransaction().commit();
+
+        UUID contractId = contract.getId();
+
+        em.clear();
+
+        Contract contractFromQuotation = repository.findById(contractId)
+                .orElseThrow(() -> new AssertionError("Contract not persisted"));
+        assertEquals(DiscountType.PERCENTAGE, contractFromQuotation.getDiscountType());
+        assertEquals(0, contractFromQuotation.getDiscountValue().compareTo(new BigDecimal("10")));
     }
 
     @Test

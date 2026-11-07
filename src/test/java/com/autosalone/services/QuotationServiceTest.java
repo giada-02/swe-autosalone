@@ -261,10 +261,9 @@ class QuotationServiceTest {
         when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(List.of(expiredMock));
         when(contractRepository.findDraftContractsBySourceQuotation(quotationId))
                 .thenReturn(List.of(draftContractMock));
-        when(quotationRepository.findConflictingQuotationsForVehicle(vehicleId, null))
-                .thenReturn(Collections.emptyList());
-        when(contractRepository.findConflictingContractsForVehicle(vehicleId, null))
-                .thenReturn(Collections.emptyList());
+
+        when(mockVehicle.getStatus()).thenReturn(VehicleStatus.QUOTED);
+        when(quotationRepository.existsIssuedQuotationForVehicle(vehicleId)).thenReturn(false);
 
         QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
 
@@ -283,9 +282,8 @@ class QuotationServiceTest {
     }
 
     @Test
-    void expireOutdatedQuotations_WithActiveConflictingQuotation_VehicleStatusRemainsQuoted() {
+    void expireOutdatedQuotations_WithIssuedQuotation_VehicleStatusRemainsQuoted() {
         Quotation expiredMock = mock(Quotation.class);
-        Quotation activeConflictingMock = mock(Quotation.class);
 
         when(expiredMock.getId()).thenReturn(quotationId);
         when(expiredMock.getVehicle()).thenReturn(mockVehicle);
@@ -294,8 +292,8 @@ class QuotationServiceTest {
         when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(List.of(expiredMock));
         when(contractRepository.findDraftContractsBySourceQuotation(quotationId)).thenReturn(Collections.emptyList());
 
-        when(quotationRepository.findConflictingQuotationsForVehicle(vehicleId, null))
-                .thenReturn(List.of(activeConflictingMock));
+        when(mockVehicle.getStatus()).thenReturn(VehicleStatus.QUOTED);
+        when(quotationRepository.existsIssuedQuotationForVehicle(vehicleId)).thenReturn(true);
 
         QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
 

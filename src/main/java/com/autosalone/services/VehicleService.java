@@ -14,7 +14,6 @@ import com.autosalone.dtos.responses.ExpenseResponse;
 import com.autosalone.dtos.responses.VehicleCustomerResponse;
 import com.autosalone.dtos.responses.VehicleResponse;
 import com.autosalone.enums.ContractStatus;
-import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
 import com.autosalone.exceptions.ResourceNotFoundException;
@@ -153,10 +152,7 @@ public class VehicleService {
 
         vehicleRepository.save(vehicle);
 
-        List<Quotation> openQuotations = quotationRepository.findQuotations(
-                null, null, false, vehicleId, null, List.of(
-                        QuotationStatus.DRAFT,
-                        QuotationStatus.ISSUED));
+        List<Quotation> openQuotations = quotationRepository.findOpenQuotationsByVehicle(vehicleId, null);
 
         for (Quotation quotation : openQuotations) {
             quotation.voidDocument();
@@ -164,7 +160,7 @@ public class VehicleService {
         }
 
         List<Contract> activeContracts = contractRepository.findContracts(
-                null, null, false, vehicleId, null, List.of(
+                null, null, null, vehicleId, null, List.of(
                         ContractStatus.DRAFT,
                         ContractStatus.CONFIRMED));
 

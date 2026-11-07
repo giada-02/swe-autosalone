@@ -217,9 +217,9 @@ class ContractServiceTest {
         when(linkedQuotation.getId()).thenReturn(quotationId);
         when(mockVehicle.getId()).thenReturn(vehicleId);
 
-        when(quotationRepository.findConflictingQuotationsForVehicle(vehicleId, quotationId))
+        when(quotationRepository.findOpenQuotationsByVehicle(vehicleId, quotationId))
                 .thenReturn(List.of(conflictQuotation));
-        when(contractRepository.findConflictingContractsForVehicle(vehicleId, contractId))
+        when(contractRepository.findDraftContractsByVehicle(vehicleId, contractId))
                 .thenReturn(List.of(conflictContract));
 
         when(mockContract.getCustomer()).thenReturn(mockCustomer);
@@ -251,9 +251,9 @@ class ContractServiceTest {
         when(mockContract.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getId()).thenReturn(vehicleId);
 
-        when(quotationRepository.findConflictingQuotationsForVehicle(vehicleId, null))
+        when(quotationRepository.findOpenQuotationsByVehicle(vehicleId, null))
                 .thenReturn(Collections.emptyList());
-        when(contractRepository.findConflictingContractsForVehicle(vehicleId, contractId))
+        when(contractRepository.findDraftContractsByVehicle(vehicleId, contractId))
                 .thenReturn(Collections.emptyList());
 
         contractService.confirmContract(contractId, null, null);
@@ -272,9 +272,9 @@ class ContractServiceTest {
         contractService.completeContract(contractId);
 
         verify(mockContract).complete();
-        verify(mockVehicle).setIsInShowroom(false);
         verify(mockVehicle).generateStandardInspectionDeadline();
         verify(mockVehicle).setStatus(VehicleStatus.SOLD);
+        assertFalse(mockVehicle.isInShowroom());
 
         verify(vehicleRepository).save(mockVehicle);
         verify(contractRepository).save(mockContract);
