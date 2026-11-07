@@ -8,11 +8,8 @@ public class FixedAmountDiscountStrategy implements DiscountStrategy {
     private final BigDecimal discountAmount;
 
     public FixedAmountDiscountStrategy(BigDecimal discountAmount) {
+        validateDiscountValue(discountAmount);
         this.discountAmount = discountAmount;
-    }
-
-    public BigDecimal getDiscountAmount() {
-        return discountAmount;
     }
 
     @Override
@@ -21,6 +18,12 @@ public class FixedAmountDiscountStrategy implements DiscountStrategy {
             return subtotal;
         }
         return discountAmount;
+    }
+
+    private void validateDiscountValue(BigDecimal discountAmount) {
+        if (discountAmount == null || discountAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("The discount value cannot be null or negative");
+        }
     }
 
     @Override
@@ -41,16 +44,11 @@ public class FixedAmountDiscountStrategy implements DiscountStrategy {
             return false;
         FixedAmountDiscountStrategy that = (FixedAmountDiscountStrategy) o;
 
-        if (this.discountAmount == null && that.discountAmount == null)
-            return true;
-        if (this.discountAmount == null || that.discountAmount == null)
-            return false;
-
         return this.discountAmount.compareTo(that.discountAmount) == 0;
     }
 
     @Override
     public int hashCode() {
-        return discountAmount != null ? discountAmount.stripTrailingZeros().hashCode() : 0;
+        return discountAmount.stripTrailingZeros().hashCode();
     }
 }
