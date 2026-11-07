@@ -12,12 +12,12 @@ public record ContractConfirmRequest(
     public ContractConfirmRequest {
         if (depositAmount == null && depositDate != null) {
             throw new IllegalArgumentException(
-                    "Cannot confirm contract: a deposit amount was specified, but the date is missing.");
+                    "Cannot confirm contract: a deposit date was specified, but the value is missing.");
         }
 
         if (depositAmount != null && depositDate == null) {
             throw new IllegalArgumentException(
-                    "Cannot confirm contract: a deposit date was specified, but the value is missing.");
+                    "Cannot confirm contract: a deposit amount was specified, but the date is missing.");
         }
     }
 }
