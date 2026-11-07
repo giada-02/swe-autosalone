@@ -95,7 +95,7 @@ public abstract class SalesDocument extends AuditableEntity {
         this.vehicle = vehicle;
         this.customer = customer;
         this.additionalFees = BigDecimal.ZERO;
-        this.discountStrategy = new NoDiscountStrategy();
+        assignDiscount(new NoDiscountStrategy());
         this.isArchived = false;
         this.vehicleSellingPriceSnapshot = vehicle.getSellingPrice();
     }
@@ -104,16 +104,7 @@ public abstract class SalesDocument extends AuditableEntity {
     // Conserva i prezzi stabiliti e gli item presenti (anche archiviati) nel
     // documento originale
     protected SalesDocument(SalesDocument original) {
-        original.getVehicle().validateVehicleStatusForDocument("Cannot create sales document");
-
-        this.date = LocalDate.now(); // current date
-        this.vehicle = original.getVehicle();
-        this.customer = original.getCustomer();
-        this.additionalFees = original.getAdditionalFees();
-        this.discountStrategy = original.getDiscountStrategy();
-        this.isArchived = false;
-        this.publicNotes = original.getPublicNotes();
-        this.internalNotes = original.getInternalNotes();
+        copyCommonFieldsFrom(original);
         this.vehicleSellingPriceSnapshot = original.getVehicleSellingPriceSnapshot(); // snapshot selling price
 
         this.items = new ArrayList<>(); // items deep copy
@@ -126,16 +117,7 @@ public abstract class SalesDocument extends AuditableEntity {
     // Aggiorna ai prezzi di listino attuali e fa pulizia degli accessori
     // archiviati
     protected SalesDocument(SalesDocument original, boolean skipArchived) {
-        original.getVehicle().validateVehicleStatusForDocument("Cannot create sales document");
-
-        this.date = LocalDate.now();
-        this.vehicle = original.getVehicle();
-        this.customer = original.getCustomer();
-        this.additionalFees = original.getAdditionalFees();
-        this.discountStrategy = original.getDiscountStrategy();
-        this.isArchived = false;
-        this.publicNotes = original.getPublicNotes();
-        this.internalNotes = original.getInternalNotes();
+        copyCommonFieldsFrom(original);
         this.vehicleSellingPriceSnapshot = original.getVehicle().getSellingPrice(); // updated vehicle selling price
 
         this.items = new ArrayList<>(); // items deep copy
@@ -153,6 +135,19 @@ public abstract class SalesDocument extends AuditableEntity {
             }
             this.items.add(new AppliedItem(originalItem, true)); // updated items price
         }
+    }
+
+    private void copyCommonFieldsFrom(SalesDocument source) {
+        source.getVehicle().validateVehicleStatusForDocument("Cannot create sales document");
+
+        this.date = LocalDate.now(); // current date
+        this.vehicle = source.getVehicle();
+        this.customer = source.getCustomer();
+        this.additionalFees = source.getAdditionalFees();
+        assignDiscount(source.getDiscountStrategy());
+        this.isArchived = false;
+        this.publicNotes = source.getPublicNotes();
+        this.internalNotes = source.getInternalNotes();
     }
 
     // getters
@@ -316,9 +311,13 @@ public abstract class SalesDocument extends AuditableEntity {
 
         validateIsEditable();
 
-        this.discountStrategy = newDiscountStrategy;
-        this.dbDiscountType = this.discountStrategy.getType();
-        this.dbDiscountValue = this.discountStrategy.getValue();
+        assignDiscount(newDiscountStrategy);
+    }
+
+    private void assignDiscount(DiscountStrategy discountStrategy) {
+        this.discountStrategy = discountStrategy;
+        this.dbDiscountType = discountStrategy.getType();
+        this.dbDiscountValue = discountStrategy.getValue();
     }
 
     // items
