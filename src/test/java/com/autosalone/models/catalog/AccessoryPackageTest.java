@@ -1,5 +1,6 @@
 package com.autosalone.models.catalog;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -91,7 +92,7 @@ public class AccessoryPackageTest {
 
         BigDecimal grandTotal = ultimateWinterPack.getPrice();
 
-        assertTrue(new BigDecimal("750.00").equals(grandTotal),
+        assertEquals(0, grandTotal.compareTo(new BigDecimal("750.00")),
                 "The composite pattern should recursively sum all nested items and packages");
     }
 

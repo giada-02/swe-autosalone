@@ -59,12 +59,12 @@ public class CatalogRepositoryTest {
         assertTrue(foundAccessory.isPresent());
         assertEquals("Articolo", foundAccessory.get().getName());
         assertNull(foundAccessory.get().getDescription());
-        assertTrue(new BigDecimal("50.00").equals(foundAccessory.get().getPrice()));
+        assertEquals(0, foundAccessory.get().getPrice().compareTo(new BigDecimal("50.00")));
         Optional<PurchasableItem> foundAccessoryPackage = repository.findById(accessoryPackage.getId());
         assertTrue(foundAccessoryPackage.isPresent());
         assertEquals("Pacchetto", foundAccessoryPackage.get().getName());
         assertEquals("Generico", foundAccessoryPackage.get().getDescription());
-        assertTrue(new BigDecimal("50.00").equals(foundAccessoryPackage.get().getPrice()));
+        assertEquals(0, foundAccessoryPackage.get().getPrice().compareTo(new BigDecimal("50.00")));
     }
 
     @Test

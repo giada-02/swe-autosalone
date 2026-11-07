@@ -115,8 +115,8 @@ public class AppliedItemTest {
         AppliedItem appliedItem = new AppliedItem(accessory);
 
         appliedItem.setAppliedPrice(new BigDecimal("40.00"));
-        assertTrue(new BigDecimal("40.00").equals(appliedItem.getAppliedPrice()));
-        assertTrue(new BigDecimal("50.00").equals(accessory.getPrice()));
+        assertEquals(0, appliedItem.getAppliedPrice().compareTo(new BigDecimal("40.00")));
+        assertEquals(0, accessory.getPrice().compareTo(new BigDecimal("50.00")));
     }
 
 }

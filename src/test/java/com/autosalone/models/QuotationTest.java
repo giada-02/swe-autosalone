@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.autosalone.enums.DiscountType;
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
@@ -62,7 +63,7 @@ public class QuotationTest {
                 () -> assertNull(quote.getExpirationPolicy()),
                 () -> assertEquals(defaultCustomer, quote.getCustomer()),
                 () -> assertEquals(defaultCar, quote.getVehicle()),
-                () -> assertTrue(new BigDecimal("10000.00").equals(quote.getVehicleSellingPriceSnapshot())),
+                () -> assertEquals(0, quote.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))),
                 () -> assertTrue(quote.getItems().size() == 0),
                 () -> assertTrue(BigDecimal.ZERO.equals(quote.getAdditionalFees())),
                 () -> assertTrue(BigDecimal.ZERO.equals(quote.getDiscountAmount())),
@@ -113,8 +114,9 @@ public class QuotationTest {
                 () -> assertNull(quote.getExpirationPolicy()),
                 () -> assertEquals(defaultCar, quote.getVehicle()),
                 () -> assertEquals(defaultCustomer, quote.getCustomer()),
-                () -> assertTrue(new BigDecimal("300.00").equals(quote.getAdditionalFees())),
-                () -> assertTrue(new BigDecimal("10000.00").equals(sourceQuote.getVehicleSellingPriceSnapshot())));
+                () -> assertEquals(0, quote.getAdditionalFees().compareTo(new BigDecimal("300.00"))),
+                () -> assertEquals(0,
+                        sourceQuote.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))));
 
     }
 
@@ -204,11 +206,13 @@ public class QuotationTest {
         assertAll(
                 () -> assertTrue(sourceQuote.getItems().size() == 1),
                 () -> assertTrue(quote.getItems().size() == 1),
-                () -> assertTrue(new BigDecimal("10000.00").equals(sourceQuote.getVehicleSellingPriceSnapshot())),
-                () -> assertTrue(new BigDecimal("15000.00").equals(quote.getVehicleSellingPriceSnapshot()),
+                () -> assertEquals(0,
+                        sourceQuote.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))),
+                () -> assertEquals(0, quote.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("15000.00")),
                         "The cloned quotation should get the current vehicle selling price"),
-                () -> assertTrue(new BigDecimal("50.00").equals(sourceQuote.getItems().getFirst().getAppliedPrice())),
-                () -> assertTrue(new BigDecimal("40.00").equals(quote.getItems().getFirst().getAppliedPrice()),
+                () -> assertEquals(0,
+                        sourceQuote.getItems().getFirst().getAppliedPrice().compareTo(new BigDecimal("50.00"))),
+                () -> assertEquals(0, quote.getItems().getFirst().getAppliedPrice().compareTo(new BigDecimal("40.00")),
                         "The cloned quotation should get the current item base price"));
     }
 
@@ -224,6 +228,20 @@ public class QuotationTest {
         assertTrue(quote.getItems().isEmpty(),
                 "The cloned quotation should not contain archived items");
 
+    }
+
+    @Test
+    public void copyConstructor_CopiesDiscountFields() {
+        Quotation original = new Quotation(defaultCar, defaultCustomer);
+        original.setDiscountStrategy(new FixedAmountDiscountStrategy(new BigDecimal("500.00")));
+
+        Quotation clone = new Quotation(original);
+
+        assertAll(
+                () -> assertEquals(DiscountType.FIXED, clone.getDiscountType()),
+                () -> assertNotNull(clone.getDiscountValue()),
+                () -> assertEquals(0, new BigDecimal("500.00").compareTo(clone.getDiscountValue())),
+                () -> assertEquals(original.getDiscountStrategy(), clone.getDiscountStrategy()));
     }
 
     @Test
@@ -368,11 +386,11 @@ public class QuotationTest {
     @Test
     public void setVehicleSellingPriceSnapshot_WhenStatusDraft_ActualVehicleSellingPriceDoesNotChange() {
         Quotation quote = new Quotation(defaultCar, defaultCustomer);
-        assertTrue(new BigDecimal("10000.00").equals(quote.getVehicleSellingPriceSnapshot()));
+        assertEquals(0, quote.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00")));
 
         quote.setVehicleSellingPriceSnapshot(new BigDecimal("9800.00"));
-        assertTrue(new BigDecimal("9800.00").equals(quote.getVehicleSellingPriceSnapshot()));
-        assertTrue(new BigDecimal("10000.00").equals(quote.getVehicle().getSellingPrice()));
+        assertEquals(0, quote.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("9800.00")));
+        assertEquals(0, quote.getVehicle().getSellingPrice().compareTo(new BigDecimal("10000.00")));
     }
 
     @Test
@@ -670,8 +688,8 @@ public class QuotationTest {
         assertDoesNotThrow(() -> {
             quote.setAppliedItemPrice(accessoryItem, new BigDecimal("980.00"));
         }, "Should be able to change the applied price of items in a DRAFT quotation");
-        assertTrue(new BigDecimal("980.00").equals(accessoryItem.getAppliedPrice()));
-        assertTrue(new BigDecimal("1000.00").equals(accessoryItem.getItem().getPrice()),
+        assertEquals(0, accessoryItem.getAppliedPrice().compareTo(new BigDecimal("980.00")));
+        assertEquals(0, accessoryItem.getItem().getPrice().compareTo(new BigDecimal("1000.00")),
                 "Should not apply the change to the base price of the item");
     }
 
@@ -772,7 +790,7 @@ public class QuotationTest {
         // discount (10%) = 1,100
         // discounted subtotal = 11,000 - 1,100 = 9,900
         // total (plus additional fees) = 9,900 + 500 = 10,400
-        assertTrue(new BigDecimal("10400.00").equals(finalPrice),
+        assertEquals(0, finalPrice.compareTo(new BigDecimal("10400.00")),
                 "The final price should strictly exempt additional fees from the discount strategy");
     }
 
@@ -790,7 +808,7 @@ public class QuotationTest {
         // discount (15%) = 1,575.225 => HALF_UP must round to 1,575.23
         // discounted subtotal = 10,501.50 - 1,575.23 = 8,926.27
         // total (plus additional fees) = 8,926.27 + 250 = 9,176.27
-        assertTrue(new BigDecimal("9176.27").equals(finalPrice),
+        assertEquals(0, finalPrice.compareTo(new BigDecimal("9176.27")),
                 "Should round .225 up to .23 and calculate total price accurately");
     }
 
@@ -806,7 +824,7 @@ public class QuotationTest {
         // discount (fixed) 50,000 > 10,000 => discount = subtotal = 10,000
         // discounted subtotal = 10,000 - 10,000 = 0
         // total (plus additional fees) = 0 + 300 = 300
-        assertTrue(new BigDecimal("300.00").equals(finalPrice),
+        assertEquals(0, finalPrice.compareTo(new BigDecimal("300.00")),
                 "If the fixed discount is higher than the vehicle selling price, the subtotal becomes zero, but fees remain");
     }
 

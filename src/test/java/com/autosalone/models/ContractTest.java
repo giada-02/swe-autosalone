@@ -17,6 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.autosalone.enums.ContractStatus;
+import com.autosalone.enums.DiscountType;
+import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
@@ -100,7 +102,7 @@ public class ContractTest {
                 () -> assertNull(contract.getCancelationReason()),
                 () -> assertEquals(defaultCustomer, contract.getCustomer()),
                 () -> assertEquals(defaultCar, contract.getVehicle()),
-                () -> assertTrue(new BigDecimal("10000.00").equals(contract.getVehicleSellingPriceSnapshot())),
+                () -> assertEquals(0, contract.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))),
                 () -> assertTrue(contract.getItems().size() == 0),
                 () -> assertTrue(BigDecimal.ZERO.equals(contract.getAdditionalFees())),
                 () -> assertTrue(BigDecimal.ZERO.equals(contract.getDiscountAmount())),
@@ -196,14 +198,14 @@ public class ContractTest {
                 () -> assertNull(contract.getCancelationReason()),
                 () -> assertEquals(defaultCustomer, contract.getCustomer()),
                 () -> assertEquals(defaultCar, contract.getVehicle()),
-                () -> assertTrue(new BigDecimal("10000.00").equals(contract.getVehicleSellingPriceSnapshot())),
+                () -> assertEquals(0, contract.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))),
                 () -> assertTrue(
                         quote.getVehicleSellingPriceSnapshot().equals(contract.getVehicleSellingPriceSnapshot())),
                 () -> assertTrue(contract.getItems().size() == 0),
-                () -> assertTrue(new BigDecimal("350.00").equals(contract.getAdditionalFees())),
+                () -> assertEquals(0, contract.getAdditionalFees().compareTo(new BigDecimal("350.00"))),
                 () -> assertTrue(quote.getAdditionalFees().equals(contract.getAdditionalFees())),
                 () -> assertTrue(quote.getDiscountStrategy().equals(contract.getDiscountStrategy())),
-                () -> assertTrue(new BigDecimal("1000.00").equals(contract.getDiscountAmount())),
+                () -> assertEquals(0, contract.getDiscountAmount().compareTo(new BigDecimal("1000.00"))),
                 () -> assertTrue(quote.getDiscountAmount().equals(contract.getDiscountAmount())),
                 () -> assertTrue(quote.getPublicNotes().equals(contract.getPublicNotes())),
                 () -> assertTrue(quote.getInternalNotes().equals(contract.getInternalNotes())));
@@ -270,9 +272,10 @@ public class ContractTest {
 
         assertAll(
                 () -> assertTrue(contract.getItems().size() == 1),
-                () -> assertTrue(new BigDecimal("10000.00").equals(contract.getVehicleSellingPriceSnapshot()),
+                () -> assertEquals(0, contract.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00")),
                         "The contract created from a quotation should get the snapshot vehicle selling price"),
-                () -> assertTrue(new BigDecimal("50.00").equals(contract.getItems().getFirst().getAppliedPrice()),
+                () -> assertEquals(0,
+                        contract.getItems().getFirst().getAppliedPrice().compareTo(new BigDecimal("50.00")),
                         "The contract created from a quotation should get the snapshot applied price of the item"));
 
     }
@@ -291,6 +294,22 @@ public class ContractTest {
 
         assertTrue(contract.getItems().size() == 1,
                 "The contract created from a quotation should have all items of the original quotation source even if they have been archived");
+    }
+
+    @Test
+    public void copyConstructor_CopiesDiscountFields() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal("10")));
+        quote.updateExpiration(ExpirationPolicy.TEN_DAYS);
+        quote.issue();
+
+        Contract contract = new Contract(quote);
+
+        assertAll(
+                () -> assertEquals(DiscountType.PERCENTAGE, contract.getDiscountType()),
+                () -> assertNotNull(contract.getDiscountValue()),
+                () -> assertEquals(0, new BigDecimal("10").compareTo(contract.getDiscountValue())),
+                () -> assertEquals(quote.getDiscountStrategy(), contract.getDiscountStrategy()));
     }
 
     @Test
@@ -471,6 +490,34 @@ public class ContractTest {
             contract.confirm(null);
         });
         assertEquals(ContractStatus.DRAFT, contract.getStatus());
+    }
+
+    @Test
+    public void confirm_WhenStatusDraft_WithDepositOverTotal_ThrowsException() {
+        Contract contract = new Contract(defaultCar, defaultCustomer);
+        contract.setEstimatedHandoverDate(LocalDate.now());
+
+        BigDecimal depositAmount = contract.getFinalPrice().add(new BigDecimal("1000.00"));
+        Transaction deposit = TransactionFactory.createContractDeposit(contract, depositAmount, LocalDate.now());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            contract.confirm(deposit);
+        });
+        assertEquals(ContractStatus.DRAFT, contract.getStatus());
+    }
+
+    @Test
+    public void confirm_WhenStatusDraft_WithDepositEqualTotal_Success() {
+        Contract contract = new Contract(defaultCar, defaultCustomer);
+        contract.setEstimatedHandoverDate(LocalDate.now());
+
+        BigDecimal contractTotal = contract.getFinalPrice();
+        Transaction deposit = TransactionFactory.createContractDeposit(contract, contractTotal, LocalDate.now());
+
+        assertDoesNotThrow(() -> {
+            contract.confirm(deposit);
+        });
+        assertEquals(ContractStatus.CONFIRMED, contract.getStatus());
     }
 
     @Test
@@ -658,19 +705,19 @@ public class ContractTest {
                 LocalDate.now());
         contract.registerPayment(p1);
 
-        assertTrue(new BigDecimal("4000.00").equals(contract.getTotalPayment()));
-        assertTrue(new BigDecimal("10000.00").equals(contract.getFinalPrice()));
-        assertTrue(new BigDecimal("6000.00").equals(contract.getRemainingBalance()));
+        assertEquals(0, contract.getTotalPayment().compareTo(new BigDecimal("4000.00")));
+        assertEquals(0, contract.getFinalPrice().compareTo(new BigDecimal("10000.00")));
+        assertEquals(0, contract.getRemainingBalance().compareTo(new BigDecimal("6000.00")));
 
         Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("3000.00"),
                 LocalDate.now());
         contract.registerRefund(refund);
 
         assertEquals(2, contract.getPayments().size(), "List should contain both IN and OUT transactions");
-        assertTrue(new BigDecimal("1000.00").equals(contract.getTotalPayment()),
+        assertEquals(0, contract.getTotalPayment().compareTo(new BigDecimal("1000.00")),
                 "Total payment should be reduced by the refund");
-        assertTrue(new BigDecimal("10000.00").equals(contract.getFinalPrice()));
-        assertTrue(new BigDecimal("9000.00").equals(contract.getRemainingBalance()),
+        assertEquals(0, contract.getFinalPrice().compareTo(new BigDecimal("10000.00")));
+        assertEquals(0, contract.getRemainingBalance().compareTo(new BigDecimal("9000.00")),
                 "Remaining balance should increase after a refund");
     }
 
@@ -700,9 +747,9 @@ public class ContractTest {
         contract.registerPayment(p2);
 
         assertEquals(2, contract.getPayments().size());
-        assertTrue(new BigDecimal("6000.00").equals(contract.getTotalPayment()));
-        assertTrue(new BigDecimal("10000.00").equals(contract.getFinalPrice()));
-        assertTrue(new BigDecimal("4000.00").equals(contract.getRemainingBalance()));
+        assertEquals(0, contract.getTotalPayment().compareTo(new BigDecimal("6000.00")));
+        assertEquals(0, contract.getFinalPrice().compareTo(new BigDecimal("10000.00")));
+        assertEquals(0, contract.getRemainingBalance().compareTo(new BigDecimal("4000.00")));
     }
 
     // archive

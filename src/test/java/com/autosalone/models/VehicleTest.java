@@ -72,7 +72,7 @@ public class VehicleTest {
     public void setSellingPrice_ToPositive_Success() {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
         assertDoesNotThrow(() -> car.setSellingPrice(new BigDecimal("30000")));
-        assertTrue(new BigDecimal("30000").equals(car.getSellingPrice()));
+        assertEquals(0, car.getSellingPrice().compareTo(new BigDecimal("30000")));
     }
 
     @Test

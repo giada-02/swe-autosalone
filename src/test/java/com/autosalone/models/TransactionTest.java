@@ -60,7 +60,7 @@ public class TransactionTest {
                 TransactionType.OUT);
 
         assertEquals("Spesa", transaction.getReason());
-        assertTrue(new BigDecimal("500.00").equals(transaction.getAmount()));
+        assertEquals(0, transaction.getAmount().compareTo(new BigDecimal("500.00")));
         assertTrue(LocalDate.now().equals(transaction.getDate()));
         assertEquals(TransactionType.OUT, transaction.getType());
     }
