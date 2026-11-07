@@ -44,7 +44,7 @@ public class Quotation extends SalesDocument {
     // getters
     public QuotationStatus getStatus() {
         if (this.status == QuotationStatus.ISSUED && isPastExpiration()) // lazy expired status evaluation
-            this.status = QuotationStatus.EXPIRED;
+            return QuotationStatus.EXPIRED;
         return status;
     }
 
@@ -90,14 +90,16 @@ public class Quotation extends SalesDocument {
         if (this.expirationDate == null) {
             throw new IllegalStateException("Cannot issue a quotation without an expiration date");
         }
-        if (isPastExpiration()) {
+        if (isPastExpiration())
             throw new IllegalStateException("Cannot issue a quotation with an expiration date already in the past");
-        }
 
         this.status = QuotationStatus.ISSUED;
     }
 
     public void accept() {
+        if (isPastExpiration())
+            throw new IllegalStateException("Cannot accept a quotation with an expiration date already in the past");
+
         if (this.status != QuotationStatus.ISSUED) {
             throw new IllegalStateException("Only an ISSUED quotation can be accepted");
         }
@@ -112,6 +114,9 @@ public class Quotation extends SalesDocument {
     }
 
     public void voidDocument() {
+        if (isPastExpiration())
+            return;
+
         if (this.status != QuotationStatus.ISSUED && this.status != QuotationStatus.DRAFT) {
             throw new IllegalStateException("Only an ISSUED or DRAFT quotation can be voided");
         }
@@ -145,6 +150,8 @@ public class Quotation extends SalesDocument {
 
     @Override
     protected void validateIsArchivable() {
+        if (isPastExpiration())
+            return;
         if (this.status == QuotationStatus.ISSUED)
             throw new IllegalStateException("Cannot archive ISSUED quotation");
     }
