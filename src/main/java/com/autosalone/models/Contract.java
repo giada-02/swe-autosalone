@@ -162,8 +162,13 @@ public class Contract extends SalesDocument {
                     "The estimated handover date of the contract must be set before confirming");
         }
 
-        if (deposit != null && deposit.getType() != TransactionType.IN) {
-            throw new IllegalArgumentException("Deposit must be an IN transaction");
+        if (deposit != null) {
+            if (deposit.getType() != TransactionType.IN)
+                throw new IllegalArgumentException("Deposit must be an IN transaction");
+            BigDecimal contractTotal = this.getFinalPrice();
+            if (contractTotal.compareTo(deposit.getAmount()) < 0)
+                throw new IllegalArgumentException("The deposit amount (" + deposit.getAmount()
+                        + "€) cannot be over the contract total (" + contractTotal + "€)");
         }
 
         this.getVehicle().validateVehicleStatusForDocument("Cannot confirm the contract");
