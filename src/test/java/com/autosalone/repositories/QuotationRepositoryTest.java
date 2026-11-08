@@ -129,8 +129,8 @@ public class QuotationRepositoryTest {
         List<Quotation> byStatus = repository.findQuotations(null, null, null,
                 null, null, statusList);
         assertEquals(2, byStatus.size(), "Should find 2 quotations matching the status");
-        assertEquals(LocalDate.of(2026, 4, 2), byDateFrom.get(0).getDate());
-        assertEquals(LocalDate.of(2026, 3, 12), byDateFrom.get(1).getDate());
+        assertEquals(LocalDate.of(2026, 4, 2), byStatus.get(0).getDate());
+        assertEquals(LocalDate.of(2026, 3, 12), byStatus.get(1).getDate());
     }
 
     @Test

@@ -48,7 +48,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         }
 
         if (rolesAllowed == null) {
-            return;
+            return; // endpoints without security annotations are public
         }
 
         if (requestContext.getSecurityContext().getUserPrincipal() == null) {

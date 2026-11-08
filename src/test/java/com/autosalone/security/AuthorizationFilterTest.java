@@ -53,7 +53,7 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    void filter_WhenEndpointHasNoAnnotation_Returns403() throws Exception {
+    void filter_WhenEndpointHasNoAnnotation_LetsRequestThrough() throws Exception {
         requestTo("unannotated");
 
         filter.filter(requestContext);

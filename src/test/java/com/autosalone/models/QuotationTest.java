@@ -551,7 +551,18 @@ public class QuotationTest {
 
         assertDoesNotThrow(() -> {
             quote.voidDocument();
-        }, "Should be able to void an ACCEPTED quotation");
+        }, "Should be able to void a DRAFT quotation");
+        assertEquals(QuotationStatus.VOIDED, quote.getStatus());
+    }
+
+    @Test
+    public void voidDocument_DraftPastExpiration_Success() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        setPastExpirationDateForTesting(quote, 1);
+
+        assertDoesNotThrow(() -> {
+            quote.voidDocument();
+        });
         assertEquals(QuotationStatus.VOIDED, quote.getStatus());
     }
 
@@ -563,7 +574,7 @@ public class QuotationTest {
 
         assertDoesNotThrow(() -> {
             quote.voidDocument();
-        }, "Should be able to void an ACCEPTED quotation");
+        });
         assertEquals(QuotationStatus.VOIDED, quote.getStatus());
     }
 

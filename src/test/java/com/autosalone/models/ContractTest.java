@@ -593,6 +593,7 @@ public class ContractTest {
         assertDoesNotThrow(() -> {
             contract.voidDocument();
         }, "Should be able to void a DRAFT contract");
+        assertEquals(ContractStatus.VOIDED, contract.getStatus());
     }
 
     @Test
