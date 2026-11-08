@@ -21,8 +21,7 @@ public class AuthTokenExpirationScheduler {
     @Asynchronous(runAt = @Schedule(cron = "0 0 3 * * SUN", zone = "Europe/Rome"))
     public void deleteExpiredAuthTokens(@Observes Startup event) {
         try {
-            System.out
-                    .println("[AuthTokenCleanupJob] Started: removing expired tokens");
+            System.out.println("[AuthTokenCleanupJob] Started: removing expired tokens");
 
             int deletedTokens = authTokenService.deleteExpiredAuthTokens();
 
