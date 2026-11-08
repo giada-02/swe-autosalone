@@ -134,6 +134,68 @@ public class QuotationRepositoryTest {
     }
 
     @Test
+    public void findQuotations_WithEffectiveStatusFilters_ReturnsCorrectResults() {
+        em.getTransaction().begin();
+        Vehicle vehicle = persistMockVehicle();
+        Customer customer = persistMockCustomer();
+
+        Quotation q1 = new Quotation(vehicle, customer);
+        q1.setDate(LocalDate.of(2026, 4, 2));
+        q1.updateExpiration(LocalDate.of(9999, 1, 1));
+        q1.issue(); // ISSUED
+        repository.save(q1);
+
+        Quotation q2 = new Quotation(vehicle, customer);
+        q2.setDate(LocalDate.of(2026, 3, 12));
+        q2.updateExpiration(LocalDate.now());
+        q2.issue(); // ISSUED
+        setPastExpirationDateForTesting(q2, 1); // expired
+        repository.save(q2);
+
+        Quotation q3 = new Quotation(vehicle, customer);
+        q3.setDate(LocalDate.of(2026, 2, 20));
+        q3.updateExpiration(LocalDate.now());
+        q3.issue();
+        q3.expire(); // EXPIRED
+        repository.save(q3);
+
+        Quotation q4 = new Quotation(vehicle, customer); // DRAFT
+        q4.setDate(LocalDate.of(2026, 1, 15));
+        repository.save(q4);
+
+        em.getTransaction().commit();
+        em.clear();
+
+        List<Quotation> issued = repository.findQuotations(null, null, null, null, null,
+                List.of(QuotationStatus.ISSUED));
+        assertEquals(1, issued.size(), "Should find only the ISSUED quotation that is still valid");
+        assertEquals(LocalDate.of(2026, 4, 2), issued.get(0).getDate());
+
+        List<Quotation> expired = repository.findQuotations(null, null, null, null, null,
+                List.of(QuotationStatus.EXPIRED));
+        assertEquals(2, expired.size(),
+                "Should find the EXPIRED quotation and the ISSUED one past its expiration date");
+        assertEquals(LocalDate.of(2026, 3, 12), expired.get(0).getDate());
+        assertEquals(LocalDate.of(2026, 2, 20), expired.get(1).getDate());
+
+        List<Quotation> issuedOrDraft = repository.findQuotations(null, null, null, null, null,
+                List.of(QuotationStatus.ISSUED, QuotationStatus.DRAFT));
+        assertEquals(2, issuedOrDraft.size(), "Should find the valid ISSUED quotation and the DRAFT one");
+        assertEquals(LocalDate.of(2026, 4, 2), issuedOrDraft.get(0).getDate());
+        assertEquals(LocalDate.of(2026, 1, 15), issuedOrDraft.get(1).getDate());
+
+        List<Quotation> issuedOrExpired = repository.findQuotations(null, null, null, null, null,
+                List.of(QuotationStatus.ISSUED, QuotationStatus.EXPIRED));
+        assertEquals(3, issuedOrExpired.size(), "Should find each quotation only once");
+        assertEquals(LocalDate.of(2026, 4, 2), issuedOrExpired.get(0).getDate());
+        assertEquals(LocalDate.of(2026, 3, 12), issuedOrExpired.get(1).getDate());
+        assertEquals(LocalDate.of(2026, 2, 20), issuedOrExpired.get(2).getDate());
+
+        List<Quotation> all = repository.findQuotations(null, null, null, null, null, null);
+        assertEquals(4, all.size(), "Without a status filter should find all quotations");
+    }
+
+    @Test
     public void findVisibleQuotationsByCustomerId() {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
@@ -223,10 +285,74 @@ public class QuotationRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        List<Quotation> conflictingQuotations = repository.findOpenQuotationsByVehicle(vehicle.getId(),
-                q1.getId());
-        assertEquals(2, conflictingQuotations.size(),
-                "Should find 2 conflicting quotations for the same vehicle");
+        List<Quotation> openQuotations = repository.findOpenQuotationsByVehicle(vehicle.getId(), q1.getId());
+        assertEquals(2, openQuotations.size(), "Should find 2 open (draft and issued) quotations for the same vehicle");
+    }
+
+    @Test
+    public void existsIssuedQuotationForVehicle_True() {
+        em.getTransaction().begin();
+        Vehicle vehicle = persistMockVehicle();
+        Customer customer1 = persistMockCustomer();
+        Customer customer2 = persistMockOtherCustomer();
+
+        Quotation q1 = new Quotation(vehicle, customer1);
+        q1.setDate(LocalDate.of(2026, 4, 2));
+        q1.updateExpiration(LocalDate.of(9999, 1, 1));
+        q1.issue(); // ISSUED
+        repository.save(q1);
+
+        Quotation q2 = new Quotation(vehicle, customer1); // DRAFT
+        q2.setDate(LocalDate.of(2025, 11, 7));
+        q2.archive(); // archived
+        repository.save(q2);
+
+        Quotation q3 = new Quotation(vehicle, customer2);
+        q3.setDate(LocalDate.of(2026, 3, 12));
+        q3.updateExpiration(LocalDate.of(9999, 1, 1));
+        q3.issue(); // ISSUED
+        repository.save(q3);
+
+        em.getTransaction().commit();
+        em.clear();
+
+        boolean existsIssuedQuotation = repository.existsIssuedQuotationForVehicle(vehicle.getId());
+        assertTrue(existsIssuedQuotation);
+    }
+
+    @Test
+    public void existsIssuedQuotationForVehicle_False() {
+        em.getTransaction().begin();
+        Vehicle vehicle = persistMockVehicle();
+        Customer customer1 = persistMockCustomer();
+        Customer customer2 = persistMockOtherCustomer();
+
+        Quotation q1 = new Quotation(vehicle, customer1);
+        q1.setDate(LocalDate.of(2026, 4, 2));
+        q1.updateExpiration(LocalDate.of(9999, 1, 1));
+        q1.issue();
+        q1.accept(); // ACCEPTED
+        repository.save(q1);
+
+        Quotation q2 = new Quotation(vehicle, customer2); // DRAFT
+        repository.save(q2);
+
+        Quotation q3 = new Quotation(vehicle, customer1); // DRAFT
+        q3.setDate(LocalDate.of(2025, 11, 7));
+        q3.archive(); // archived
+        repository.save(q3);
+
+        Quotation q4 = new Quotation(vehicle, customer2);
+        q4.setDate(LocalDate.of(2026, 4, 2));
+        q4.updateExpiration(LocalDate.now());
+        q4.issue(); // ISSUED
+        q4.expire(); // EXPIRED
+        repository.save(q4);
+        em.getTransaction().commit();
+        em.clear();
+
+        boolean existsIssuedQuotation = repository.existsIssuedQuotationForVehicle(vehicle.getId());
+        assertFalse(existsIssuedQuotation);
     }
 
     @Test

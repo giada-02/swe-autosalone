@@ -198,10 +198,8 @@ public class ContractRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        List<Contract> conflictingContracts = repository.findDraftContractsByVehicle(vehicle.getId(),
-                c1.getId());
-        assertEquals(2, conflictingContracts.size(),
-                "Should find 2 conflicting contracts for the same vehicle");
+        List<Contract> draftContracts = repository.findDraftContractsByVehicle(vehicle.getId(), c1.getId());
+        assertEquals(2, draftContracts.size(), "Should find 2 draft contracts for the same vehicle");
     }
 
     @Test

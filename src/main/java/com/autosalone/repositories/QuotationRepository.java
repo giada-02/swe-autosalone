@@ -9,6 +9,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class QuotationRepository {
 
     public List<Quotation> findQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean isArchived, UUID vehicleId,
             UUID customerId, List<QuotationStatus> statusList) {
+        LocalDate today = LocalDate.now();
 
         StringBuilder jpql = new StringBuilder("SELECT q FROM Quotation q WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
@@ -52,10 +54,32 @@ public class QuotationRepository {
             jpql.append(" AND q.customer.id = :customerId");
             parameters.put("customerId", customerId);
         }
+
         if (statusList != null && !statusList.isEmpty()) {
-            jpql.append(" AND q.status IN :statusList");
-            parameters.put("statusList", statusList);
+            List<QuotationStatus> otherStatusList = new ArrayList<>(statusList);
+            List<String> conditions = new ArrayList<>();
+
+            if (otherStatusList.removeIf(status -> status == QuotationStatus.ISSUED)) {
+                conditions.add("(q.status = :issued AND q.expirationDate >= :today)");
+                parameters.put("issued", QuotationStatus.ISSUED);
+                parameters.put("today", today);
+            }
+
+            if (otherStatusList.removeIf(status -> status == QuotationStatus.EXPIRED)) {
+                conditions.add("(q.status = :expired OR (q.status = :issued AND q.expirationDate < :today))");
+                parameters.put("expired", QuotationStatus.EXPIRED);
+                parameters.put("issued", QuotationStatus.ISSUED);
+                parameters.put("today", today);
+            }
+
+            if (!otherStatusList.isEmpty()) {
+                conditions.add("q.status IN :otherStatusList");
+                parameters.put("otherStatusList", otherStatusList);
+            }
+
+            jpql.append(" AND (").append(String.join(" OR ", conditions)).append(")");
         }
+
         jpql.append(" ORDER BY q.date DESC, q.createdAt DESC");
 
         TypedQuery<Quotation> query = em.createQuery(jpql.toString(), Quotation.class);

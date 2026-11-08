@@ -282,18 +282,15 @@ class QuotationServiceTest {
     }
 
     @Test
-    void expireOutdatedQuotations_WithIssuedQuotation_VehicleStatusRemainsQuoted() {
+    void expireOutdatedQuotations_WhenVehicleNotQuoted_VehicleIsNotFreed() {
         Quotation expiredMock = mock(Quotation.class);
 
         when(expiredMock.getId()).thenReturn(quotationId);
         when(expiredMock.getVehicle()).thenReturn(mockVehicle);
-        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockVehicle.getStatus()).thenReturn(VehicleStatus.RESERVED);
 
         when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(List.of(expiredMock));
         when(contractRepository.findDraftContractsBySourceQuotation(quotationId)).thenReturn(Collections.emptyList());
-
-        when(mockVehicle.getStatus()).thenReturn(VehicleStatus.QUOTED);
-        when(quotationRepository.existsIssuedQuotationForVehicle(vehicleId)).thenReturn(true);
 
         QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
 
@@ -305,6 +302,7 @@ class QuotationServiceTest {
         verify(expiredMock).expire();
         verify(quotationRepository).save(expiredMock);
 
+        verify(quotationRepository, never()).existsIssuedQuotationForVehicle(any());
         verify(mockVehicle, never()).setStatus(VehicleStatus.AVAILABLE);
         verify(vehicleRepository, never()).save(mockVehicle);
     }

@@ -97,12 +97,12 @@ public class Quotation extends SalesDocument {
     }
 
     public void accept() {
-        if (isPastExpiration())
-            throw new IllegalStateException("Cannot accept a quotation with an expiration date already in the past");
-
         if (this.status != QuotationStatus.ISSUED) {
             throw new IllegalStateException("Only an ISSUED quotation can be accepted");
         }
+        if (isPastExpiration())
+            throw new IllegalStateException("Cannot accept a quotation with an expiration date already in the past");
+
         this.status = QuotationStatus.ACCEPTED;
     }
 
@@ -114,8 +114,10 @@ public class Quotation extends SalesDocument {
     }
 
     public void voidDocument() {
-        if (isPastExpiration())
+        if (this.status == QuotationStatus.ISSUED && isPastExpiration()) {
+            expire();
             return;
+        }
 
         if (this.status != QuotationStatus.ISSUED && this.status != QuotationStatus.DRAFT) {
             throw new IllegalStateException("Only an ISSUED or DRAFT quotation can be voided");

@@ -95,6 +95,19 @@ public class QuotationTest {
                 "Should be able to create a quotation from a QUOTED vehicle");
     }
 
+    @Test
+    public void getStatus_IssuedPastExpiration_ReturnsExpiredWithoutChangingState() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.updateExpiration(LocalDate.now());
+        quote.issue();
+        setPastExpirationDateForTesting(quote, 1);
+
+        assertEquals(QuotationStatus.EXPIRED, quote.getStatus());
+        assertDoesNotThrow(() -> {
+            quote.expire();
+        });
+    }
+
     // cloning copy construsctor
     @Test
     public void copyConstructor_FromDraftQuotation_Success() {
@@ -517,6 +530,19 @@ public class QuotationTest {
             quote.voidDocument();
         }, "Cannot void an ACCEPTED quotation");
         assertEquals(QuotationStatus.ACCEPTED, quote.getStatus());
+    }
+
+    @Test
+    public void voidDocument_IssuedPastExpiration_BecomesExpired() {
+        Quotation quote = new Quotation(defaultCar, defaultCustomer);
+        quote.updateExpiration(LocalDate.now());
+        quote.issue();
+        setPastExpirationDateForTesting(quote, 1);
+
+        quote.voidDocument();
+
+        assertEquals(QuotationStatus.EXPIRED, quote.getStatus());
+        assertThrows(IllegalStateException.class, () -> quote.expire());
     }
 
     @Test
