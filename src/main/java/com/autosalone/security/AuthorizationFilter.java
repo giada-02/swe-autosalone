@@ -48,7 +48,6 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         }
 
         if (rolesAllowed == null) {
-            abortWithForbidden(requestContext, "Access denied: No access policy defined for this resource");
             return;
         }
 
