@@ -79,7 +79,7 @@ public class VehicleService {
 
     public List<VehicleCustomerResponse> getVehiclesForCustomer(UUID customerId) {
         List<Contract> customerContracts = contractRepository.findContracts(
-                null, null, false, null, customerId,
+                null, null, null, null, customerId,
                 List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED));
 
         return customerContracts.stream()

@@ -160,7 +160,7 @@ class VehicleServiceTest {
         Contract mockContract = mock(Contract.class);
 
         when(contractRepository.findContracts(
-                null, null, false, null, customerId,
+                null, null, null, null, customerId,
                 List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED)))
                 .thenReturn(List.of(mockContract));
 
@@ -172,7 +172,7 @@ class VehicleServiceTest {
         assertEquals(1, responses.size());
         assertEquals(vehicleId, responses.get(0).id());
 
-        verify(contractRepository).findContracts(null, null, false, null, customerId,
+        verify(contractRepository).findContracts(null, null, null, null, customerId,
                 List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED));
         verifyNoInteractions(vehicleRepository);
     }
