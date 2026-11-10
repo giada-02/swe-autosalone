@@ -42,7 +42,7 @@ class AuthTokenServiceTest {
     }
 
     @Test
-    void createRegistrationToken_ShouldGenerateValidTokenFor48Hours() {
+    void createRegistrationToken_GeneratesRegistrationToken() {
         when(mockUser.getEmail()).thenReturn("test@email.com");
         AuthToken token = authTokenService.createRegistrationToken(mockUser);
 
@@ -53,7 +53,7 @@ class AuthTokenServiceTest {
     }
 
     @Test
-    void createPasswordResetToken_GeneratesResetToken() {
+    void createPasswordResetToken_GeneratesPasswordResetToken() {
         when(mockUser.getEmail()).thenReturn("test@email.com");
         when(mockUser.isActive()).thenReturn(true);
         AuthToken token = authTokenService.createPasswordResetToken(mockUser);
