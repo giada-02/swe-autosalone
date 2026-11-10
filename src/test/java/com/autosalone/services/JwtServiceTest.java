@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +45,7 @@ public class JwtServiceTest {
     }
 
     @Test
-    void testGenerateAndValidateToken_ForOwner() {
+    void generateAndValidateToken_ForOwner() {
         UUID ownerId = UUID.randomUUID();
         when(mockOwner.getId()).thenReturn(ownerId);
         when(mockOwner.getEmail()).thenReturn("owner@autosalone.com");
@@ -60,7 +61,7 @@ public class JwtServiceTest {
     }
 
     @Test
-    void testGenerateAndValidateToken_ForCustomer() {
+    void generateAndValidateToken_ForCustomer() {
         UUID customerId = UUID.randomUUID();
         when(mockCustomer.getId()).thenReturn(customerId);
         when(mockCustomer.getEmail()).thenReturn("customer@email.com");
@@ -72,12 +73,23 @@ public class JwtServiceTest {
     }
 
     @Test
-    void testValidateToken_InvalidToken_ThrowsException() {
+    void validateToken_InvalidToken_ThrowsException() {
         String fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fakePayload.fakeSignature";
 
         assertThrows(JWTVerificationException.class, () -> {
             jwtService.validateToken(fakeToken);
         }, "An invalid token must throw a JWTVerificationException");
+    }
+
+    @Test
+    void generateToken_ExpiresExactly24HoursAfterIssue() {
+        when(mockOwner.getId()).thenReturn(UUID.randomUUID());
+        when(mockOwner.getEmail()).thenReturn("owner@autosalone.com");
+
+        DecodedJWT decodedJWT = jwtService.validateToken(jwtService.generateToken(mockOwner));
+
+        Duration validity = Duration.between(decodedJWT.getIssuedAtAsInstant(), decodedJWT.getExpiresAtAsInstant());
+        assertEquals(Duration.ofHours(24), validity);
     }
 
     private void injectPrivateField(Object target, String fieldName, Object value) throws Exception {

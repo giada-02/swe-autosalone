@@ -46,13 +46,14 @@ public class JwtService {
 
     public String generateToken(User user) {
         String role = user instanceof Owner ? "OWNER" : "CUSTOMER";
+        Instant now = Instant.now();
         return JWT.create()
                 .withIssuer(this.issuer)
                 .withSubject(user.getId().toString())
                 .withClaim("role", role)
                 .withClaim("email", user.getEmail())
-                .withIssuedAt(Instant.now())
-                .withExpiresAt(Instant.now().plus(EXPIRATION_HOURS, ChronoUnit.HOURS))
+                .withIssuedAt(now)
+                .withExpiresAt(now.plus(EXPIRATION_HOURS, ChronoUnit.HOURS))
                 .sign(this.algorithm);
     }
 
