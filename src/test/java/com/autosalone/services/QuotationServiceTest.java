@@ -8,7 +8,6 @@ import static org.mockito.Mockito.*;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.config.ClockProducer;
 import com.autosalone.dtos.requests.QuotationUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
 import com.autosalone.dtos.responses.QuotationCleanupResponse;
@@ -45,11 +45,11 @@ import com.autosalone.repositories.VehicleRepository;
 @ExtendWith(MockitoExtension.class)
 class QuotationServiceTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private Clock clock = Clock.fixed(TODAY.atTime(12, 0).atZone(ClockProducer.TIME_ZONE_ID).toInstant(),
+            ClockProducer.TIME_ZONE_ID);
 
     @Mock
     private QuotationRepository quotationRepository;
@@ -88,7 +88,7 @@ class QuotationServiceTest {
         mockVehicle = mock(Vehicle.class);
         mockCustomer = mock(Customer.class);
 
-        quotation = new Quotation(mockVehicle, mockCustomer, today);
+        quotation = new Quotation(mockVehicle, mockCustomer, TODAY);
     }
 
     // read
@@ -141,25 +141,25 @@ class QuotationServiceTest {
 
     @Test
     void getQuotationsForOwner_Success() {
-        when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any(), eq(today)))
+        when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any(), eq(TODAY)))
                 .thenReturn(List.of(quotation));
 
         List<QuotationResponse> results = quotationService.getQuotationsForOwner(null, null, null, null, null, null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
-        verify(quotationRepository).findQuotations(null, null, null, null, null, null, today);
+        verify(quotationRepository).findQuotations(null, null, null, null, null, null, TODAY);
     }
 
     @Test
     void getQuotationsForCustomer_Success() {
-        when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any(), eq(today)))
+        when(quotationRepository.findQuotations(any(), any(), any(), any(), any(), any(), eq(TODAY)))
                 .thenReturn(List.of(quotation));
 
         List<QuotationCustomerResponse> results = quotationService.getQuotationsForCustomer(null, null, null, null,
                 null, null);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
-        verify(quotationRepository).findQuotations(null, null, null, null, null, null, today);
+        verify(quotationRepository).findQuotations(null, null, null, null, null, null, TODAY);
     }
 
     @Test
@@ -202,11 +202,11 @@ class QuotationServiceTest {
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.AVAILABLE);
 
-        quotation.updateExpiration(today.plusDays(10));
+        quotation.updateExpiration(TODAY.plusDays(10));
 
         quotationService.issueQuotation(quotationId);
 
-        assertEquals(QuotationStatus.ISSUED, quotation.getStatus(today));
+        assertEquals(QuotationStatus.ISSUED, quotation.getStatus(TODAY));
         verify(mockVehicle).setStatus(VehicleStatus.QUOTED);
         verify(vehicleRepository).save(mockVehicle);
         verify(quotationRepository).save(quotation);
@@ -217,11 +217,11 @@ class QuotationServiceTest {
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.QUOTED);
 
-        quotation.updateExpiration(today.plusDays(10));
+        quotation.updateExpiration(TODAY.plusDays(10));
 
         quotationService.issueQuotation(quotationId);
 
-        assertEquals(QuotationStatus.ISSUED, quotation.getStatus(today));
+        assertEquals(QuotationStatus.ISSUED, quotation.getStatus(TODAY));
         verify(mockVehicle, never()).setStatus(VehicleStatus.QUOTED);
         verify(vehicleRepository, never()).save(any());
         verify(quotationRepository).save(quotation);
@@ -251,7 +251,7 @@ class QuotationServiceTest {
     @Test
     void unarchiveQuotation_Success() {
         when(quotationRepository.findById(quotationId)).thenReturn(Optional.of(quotation));
-        quotation.archive(today);
+        quotation.archive(TODAY);
 
         quotationService.unarchiveQuotation(quotationId);
 
@@ -268,7 +268,7 @@ class QuotationServiceTest {
         when(expiredMock.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getId()).thenReturn(vehicleId);
 
-        when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(List.of(expiredMock));
+        when(quotationRepository.findExpiredQuotations(TODAY)).thenReturn(List.of(expiredMock));
         when(contractRepository.findDraftContractsBySourceQuotation(quotationId))
                 .thenReturn(List.of(draftContractMock));
 
@@ -299,7 +299,7 @@ class QuotationServiceTest {
         when(expiredMock.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getId()).thenReturn(vehicleId);
 
-        when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(List.of(expiredMock));
+        when(quotationRepository.findExpiredQuotations(TODAY)).thenReturn(List.of(expiredMock));
         when(contractRepository.findDraftContractsBySourceQuotation(quotationId)).thenReturn(Collections.emptyList());
 
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.QUOTED);
@@ -327,7 +327,7 @@ class QuotationServiceTest {
         when(expiredMock.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getStatus()).thenReturn(VehicleStatus.RESERVED);
 
-        when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(List.of(expiredMock));
+        when(quotationRepository.findExpiredQuotations(TODAY)).thenReturn(List.of(expiredMock));
         when(contractRepository.findDraftContractsBySourceQuotation(quotationId)).thenReturn(Collections.emptyList());
 
         QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
@@ -347,7 +347,7 @@ class QuotationServiceTest {
 
     @Test
     void expireOutdatedQuotations_NoExpiredQuotations_DoesNothing() {
-        when(quotationRepository.findExpiredQuotations(any(LocalDate.class))).thenReturn(Collections.emptyList());
+        when(quotationRepository.findExpiredQuotations(TODAY)).thenReturn(Collections.emptyList());
 
         QuotationCleanupResponse response = quotationService.expireOutdatedQuotations();
 
@@ -450,9 +450,9 @@ class QuotationServiceTest {
         when(mockCustomer.getId()).thenReturn(customerId);
 
         QuotationUpdateRequest request = new QuotationUpdateRequest(
-                today.plusDays(7),
+                TODAY.plusDays(7),
                 ExpirationPolicy.CUSTOM,
-                today,
+                TODAY,
                 vehicleId,
                 customerId,
                 BigDecimal.ZERO,
@@ -465,7 +465,7 @@ class QuotationServiceTest {
         assertDoesNotThrow(() -> quotationService.updateQuotation(quotationId, request));
 
         assertEquals("Note pubbliche", quotation.getPublicNotes());
-        assertEquals(today, quotation.getDate());
+        assertEquals(TODAY, quotation.getDate());
 
         verify(vehicleService, never()).getVehicleById(any());
         verify(customerService, never()).getCustomerById(any());
@@ -489,9 +489,9 @@ class QuotationServiceTest {
         when(customerService.getCustomerById(newCustomerId)).thenReturn(newMockCustomer);
 
         QuotationUpdateRequest request = new QuotationUpdateRequest(
-                today.plusDays(7),
+                TODAY.plusDays(7),
                 ExpirationPolicy.CUSTOM,
-                today,
+                TODAY,
                 newVehicleId,
                 newCustomerId,
                 BigDecimal.ZERO,

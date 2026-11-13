@@ -1,5 +1,6 @@
 package com.autosalone.schedulers;
 
+import com.autosalone.config.ClockProducer;
 import com.autosalone.services.AuthTokenService;
 
 import jakarta.enterprise.concurrent.Asynchronous;
@@ -18,7 +19,7 @@ public class AuthTokenExpirationScheduler {
 
     // Esecuzione: ogni Domenica alle 03:00:00, ora italiana.
     // Si attiva all'avvio dell'applicazione.
-    @Asynchronous(runAt = @Schedule(cron = "0 0 3 * * SUN", zone = "Europe/Rome"))
+    @Asynchronous(runAt = @Schedule(cron = "0 0 3 * * SUN", zone = ClockProducer.TIME_ZONE))
     public void deleteExpiredAuthTokens(@Observes Startup event) {
         try {
             System.out.println("[AuthTokenCleanupJob] Started: removing expired tokens");

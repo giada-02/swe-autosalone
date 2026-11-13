@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ContractRepositoryTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     private EntityManagerFactory emf;
     private EntityManager em;
@@ -59,7 +59,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer, today);
+        Contract contract = new Contract(vehicle, customer, TODAY);
 
         repository.save(contract);
         em.getTransaction().commit();
@@ -87,20 +87,20 @@ public class ContractRepositoryTest {
         Vehicle vehicle3 = persistMockVehicle();
         Customer customer = persistMockCustomer();
 
-        Contract c1 = new Contract(vehicle1, customer, today);
+        Contract c1 = new Contract(vehicle1, customer, TODAY);
         c1.setDate(LocalDate.of(2026, 4, 2));
-        c1.setEstimatedHandoverDate(today);
+        c1.setEstimatedHandoverDate(TODAY);
         c1.confirm(null); // CONFIRMED
         repository.save(c1);
 
-        Contract c2 = new Contract(vehicle2, customer, today); // DRAFT
+        Contract c2 = new Contract(vehicle2, customer, TODAY); // DRAFT
         c2.setDate(LocalDate.of(2025, 11, 7));
-        c2.archive(today); // archived
+        c2.archive(TODAY); // archived
         repository.save(c2);
 
-        Contract c3 = new Contract(vehicle3, customer, today);
+        Contract c3 = new Contract(vehicle3, customer, TODAY);
         c3.setDate(LocalDate.of(2026, 3, 12));
-        c3.setEstimatedHandoverDate(today);
+        c3.setEstimatedHandoverDate(TODAY);
         c3.confirm(null);
         c3.cancel("Ripensamento"); // CANCELED
         repository.save(c3);
@@ -146,19 +146,19 @@ public class ContractRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Contract c1 = new Contract(vehicle, customer1, today);
+        Contract c1 = new Contract(vehicle, customer1, TODAY);
         c1.setDate(LocalDate.of(2026, 4, 2));
-        c1.setEstimatedHandoverDate(today);
+        c1.setEstimatedHandoverDate(TODAY);
         c1.confirm(null); // CONFIRMED
         repository.save(c1);
 
-        Contract c2 = new Contract(vehicle, customer2, today); // DRAFT
+        Contract c2 = new Contract(vehicle, customer2, TODAY); // DRAFT
         c2.setDate(LocalDate.of(2025, 11, 7));
         repository.save(c2);
 
-        Contract c3 = new Contract(vehicle, customer2, today);
+        Contract c3 = new Contract(vehicle, customer2, TODAY);
         c3.setDate(LocalDate.of(2026, 3, 12));
-        c3.setEstimatedHandoverDate(today);
+        c3.setEstimatedHandoverDate(TODAY);
         c3.confirm(null);
         c3.cancel("Ripensamento"); // CANCELED
         repository.save(c3);
@@ -182,18 +182,18 @@ public class ContractRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Contract c1 = new Contract(vehicle, customer1, today);
+        Contract c1 = new Contract(vehicle, customer1, TODAY);
         c1.setDate(LocalDate.of(2026, 4, 2));
-        c1.setEstimatedHandoverDate(today);
+        c1.setEstimatedHandoverDate(TODAY);
         c1.confirm(null); // CONFIRMED
         repository.save(c1);
 
-        Contract c2 = new Contract(vehicle, customer1, today); // DRAFT
+        Contract c2 = new Contract(vehicle, customer1, TODAY); // DRAFT
         c2.setDate(LocalDate.of(2025, 11, 7));
-        c2.archive(today); // archived
+        c2.archive(TODAY); // archived
         repository.save(c2);
 
-        Contract c3 = new Contract(vehicle, customer2, today); // DRAFT
+        Contract c3 = new Contract(vehicle, customer2, TODAY); // DRAFT
         c3.setDate(LocalDate.of(2026, 3, 12));
         repository.save(c3);
 
@@ -209,7 +209,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer, today);
+        Contract contract = new Contract(vehicle, customer, TODAY);
         repository.save(contract);
         em.getTransaction().commit();
 
@@ -234,15 +234,15 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Quotation source = new Quotation(vehicle, customer, today);
+        Quotation source = new Quotation(vehicle, customer, TODAY);
         DiscountStrategy percentageDiscountStrategy = new PercentageDiscountStrategy(new BigDecimal("10"));
         source.setDiscountStrategy(percentageDiscountStrategy);
-        source.setDate(today);
+        source.setDate(TODAY);
         source.updateExpiration(ExpirationPolicy.TEN_DAYS);
-        source.issue(today);
+        source.issue(TODAY);
         quotationRepository.save(source);
 
-        Contract contract = new Contract(source, today);
+        Contract contract = new Contract(source, TODAY);
         repository.save(contract);
         em.getTransaction().commit();
 
@@ -261,7 +261,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer, today);
+        Contract contract = new Contract(vehicle, customer, TODAY);
         repository.save(contract);
 
         repository.delete(contract); // em.remove(contract)
@@ -277,7 +277,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer, today);
+        Contract contract = new Contract(vehicle, customer, TODAY);
 
         repository.save(contract);
         em.getTransaction().commit();

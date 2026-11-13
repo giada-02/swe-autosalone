@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TransactionRepositoryTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     private EntityManagerFactory emf;
     private EntityManager em;
@@ -52,7 +52,7 @@ public class TransactionRepositoryTest {
     @Test
     public void saveTransaction_Success() {
         em.getTransaction().begin();
-        Transaction transaction = TransactionFactory.createGeneralIncome("Vendita", new BigDecimal("500.00"), today);
+        Transaction transaction = TransactionFactory.createGeneralIncome("Vendita", new BigDecimal("500.00"), TODAY);
 
         repository.save(transaction);
         em.getTransaction().commit();
@@ -109,11 +109,11 @@ public class TransactionRepositoryTest {
         Vehicle vehicle = persistMockVehicle();
 
         Transaction expense = TransactionFactory.createVehicleExpense(vehicle, "Cambio gomme", new BigDecimal("300.00"),
-                today);
+                TODAY);
         repository.save(expense);
 
         Transaction unrelated = TransactionFactory.createGeneralExpense("Spesa generale", new BigDecimal("50.00"),
-                today);
+                TODAY);
         repository.save(unrelated);
 
         em.getTransaction().commit();
@@ -129,14 +129,14 @@ public class TransactionRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer, today);
+        Contract contract = new Contract(vehicle, customer, TODAY);
         em.persist(contract);
 
         Transaction payment = TransactionFactory.createContractPayment(contract, "Bonifico", new BigDecimal("500.00"),
-                today);
+                TODAY);
         repository.save(payment);
 
-        Transaction unrelated = TransactionFactory.createGeneralIncome("Vendita", new BigDecimal("50.00"), today);
+        Transaction unrelated = TransactionFactory.createGeneralIncome("Vendita", new BigDecimal("50.00"), TODAY);
         repository.save(unrelated);
 
         em.getTransaction().commit();

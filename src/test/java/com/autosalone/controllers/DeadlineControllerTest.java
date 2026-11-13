@@ -8,9 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.security.Principal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineCompletionRequest;
@@ -38,11 +35,7 @@ import jakarta.ws.rs.core.SecurityContext;
 @ExtendWith(MockitoExtension.class)
 class DeadlineControllerTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
-
-    @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Mock
     private DeadlineService deadlineService;
@@ -67,17 +60,17 @@ class DeadlineControllerTest {
     void setUp() {
         deadlineId = UUID.randomUUID();
 
-        deadlineRequest = new DeadlineRequest("Revisione", today.plusDays(10), null, false);
-        completionRequest = new DeadlineCompletionRequest(today, null);
+        deadlineRequest = new DeadlineRequest("Revisione", TODAY.plusDays(10), null, false);
+        completionRequest = new DeadlineCompletionRequest(TODAY, null);
 
         UUID vehicleId = UUID.randomUUID();
-        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", today.plusDays(10).toString(),
+        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", TODAY.plusDays(10).toString(),
                 vehicleId, null, false, false, null, null, false);
     }
 
     @Test
     void getUrgentDeadlines_WithDate_Returns200AndList() {
-        LocalDate upToDate = today.plusDays(15);
+        LocalDate upToDate = TODAY.plusDays(15);
         String upToDateString = upToDate.toString();
         when(deadlineService.getUrgentDeadlines(upToDate)).thenReturn(List.of(deadlineResponse));
 

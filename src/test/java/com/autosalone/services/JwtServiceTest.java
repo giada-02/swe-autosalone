@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
+import com.autosalone.config.ClockProducer;
 import com.autosalone.models.Customer;
 import com.autosalone.models.Owner;
 import com.autosalone.models.User;
@@ -16,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +44,7 @@ public class JwtServiceTest {
         injectPrivateField(jwtService, "issuer", "test-issuer");
         injectPrivateField(jwtService, "algorithm", testAlgorithm);
         injectPrivateField(jwtService, "verifier", testVerifier);
-        injectPrivateField(jwtService, "clock", Clock.system(ZoneId.of("Europe/Rome")));
+        injectPrivateField(jwtService, "clock", Clock.system(ClockProducer.TIME_ZONE_ID));
     }
 
     @Test

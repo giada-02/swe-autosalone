@@ -28,7 +28,7 @@ import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
 public class QuotationTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     private Customer defaultCustomer;
     private Vehicle defaultCar;
@@ -53,13 +53,13 @@ public class QuotationTest {
     // base constructor
     @Test
     public void constructor() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer, today);
+        Quotation quote = new Quotation(defaultCar, defaultCustomer, TODAY);
 
         assertAll(
                 () -> assertNotNull(quote),
-                () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus(today)),
+                () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY)),
                 () -> assertFalse(quote.isArchived()),
-                () -> assertTrue(today.equals(quote.getDate())),
+                () -> assertTrue(TODAY.equals(quote.getDate())),
                 () -> assertNull(quote.getExpirationDate()),
                 () -> assertNull(quote.getExpirationPolicy()),
                 () -> assertEquals(defaultCustomer, quote.getCustomer()),
@@ -76,7 +76,7 @@ public class QuotationTest {
     public void constructor_WhenVehicleIsSold_ThrowsException() {
         defaultCar.setStatus(VehicleStatus.SOLD);
 
-        assertThrows(IllegalStateException.class, () -> new Quotation(defaultCar, defaultCustomer, today),
+        assertThrows(IllegalStateException.class, () -> new Quotation(defaultCar, defaultCustomer, TODAY),
                 "Cannot create a quotation from a SOLD vehicle");
     }
 
@@ -84,7 +84,7 @@ public class QuotationTest {
     public void constructor_WhenVehicleIsReserved_ThrowsException() {
         defaultCar.setStatus(VehicleStatus.RESERVED);
 
-        assertThrows(IllegalStateException.class, () -> new Quotation(defaultCar, defaultCustomer, today),
+        assertThrows(IllegalStateException.class, () -> new Quotation(defaultCar, defaultCustomer, TODAY),
                 "Cannot create a quotation from a RESERVED vehicle");
     }
 
@@ -92,17 +92,17 @@ public class QuotationTest {
     public void constructor_WhenVehicleIsQuoted_Success() {
         defaultCar.setStatus(VehicleStatus.QUOTED);
 
-        assertDoesNotThrow(() -> new Quotation(defaultCar, defaultCustomer, today),
+        assertDoesNotThrow(() -> new Quotation(defaultCar, defaultCustomer, TODAY),
                 "Should be able to create a quotation from a QUOTED vehicle");
     }
 
     @Test
     public void getStatus_IssuedPastExpiration_ReturnsExpiredWithoutChangingState() {
-        Quotation quote = new Quotation(defaultCar, defaultCustomer, today);
-        quote.updateExpiration(today);
-        quote.issue(today);
+        Quotation quote = new Quotation(defaultCar, defaultCustomer, TODAY);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
-        assertEquals(QuotationStatus.EXPIRED, quote.getStatus(today.plusDays(1)));
+        assertEquals(QuotationStatus.EXPIRED, quote.getStatus(TODAY.plusDays(1)));
         assertDoesNotThrow(() -> {
             quote.expire();
         });
@@ -111,18 +111,18 @@ public class QuotationTest {
     // cloning copy construsctor
     @Test
     public void copyConstructor_FromDraftQuotation_Success() {
-        LocalDate date = today.plusDays(10);
+        LocalDate date = TODAY.plusDays(10);
         Quotation sourceQuote = getDefaultQuotation();
         sourceQuote.setDate(date);
         sourceQuote.updateExpiration(ExpirationPolicy.TEN_DAYS);
         sourceQuote.setAdditionalFees(new BigDecimal("300.00"));
 
-        Quotation quote = new Quotation(sourceQuote, today);
+        Quotation quote = new Quotation(sourceQuote, TODAY);
 
         assertAll(
-                () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus(today)),
+                () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY)),
                 () -> assertFalse(quote.isArchived()),
-                () -> assertTrue(today.equals(quote.getDate())),
+                () -> assertTrue(TODAY.equals(quote.getDate())),
                 () -> assertNull(quote.getExpirationDate()),
                 () -> assertNull(quote.getExpirationPolicy()),
                 () -> assertEquals(defaultCar, quote.getVehicle()),
@@ -136,10 +136,10 @@ public class QuotationTest {
     @Test
     public void copyConstructor_FromArchivedQuotation_Success() {
         Quotation sourceQuote = getDefaultQuotation();
-        sourceQuote.archive(today);
+        sourceQuote.archive(TODAY);
         assertTrue(sourceQuote.isArchived());
 
-        Quotation quote = new Quotation(sourceQuote, today);
+        Quotation quote = new Quotation(sourceQuote, TODAY);
 
         assertFalse(quote.isArchived(), "The cloned quotation should not be archived");
     }
@@ -147,46 +147,46 @@ public class QuotationTest {
     @Test
     public void copyConstructor_FromIssuedQuotation_Success() {
         Quotation sourceQuote = getDefaultQuotation();
-        sourceQuote.updateExpiration(today);
-        sourceQuote.issue(today);
-        assertEquals(QuotationStatus.ISSUED, sourceQuote.getStatus(today));
+        sourceQuote.updateExpiration(TODAY);
+        sourceQuote.issue(TODAY);
+        assertEquals(QuotationStatus.ISSUED, sourceQuote.getStatus(TODAY));
 
-        Quotation quote = new Quotation(sourceQuote, today);
+        Quotation quote = new Quotation(sourceQuote, TODAY);
 
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus(today), "The cloned quotation should be DRAFT");
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY), "The cloned quotation should be DRAFT");
     }
 
     @Test
     public void copyConstructor_FromAcceptedQuotation_Success() {
         Quotation sourceQuote = getDefaultQuotation();
-        sourceQuote.updateExpiration(today);
-        sourceQuote.issue(today);
-        sourceQuote.accept(today);
-        assertEquals(QuotationStatus.ACCEPTED, sourceQuote.getStatus(today));
+        sourceQuote.updateExpiration(TODAY);
+        sourceQuote.issue(TODAY);
+        sourceQuote.accept(TODAY);
+        assertEquals(QuotationStatus.ACCEPTED, sourceQuote.getStatus(TODAY));
 
-        Quotation quote = new Quotation(sourceQuote, today);
+        Quotation quote = new Quotation(sourceQuote, TODAY);
 
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus(today), "The cloned quotation should be DRAFT");
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY), "The cloned quotation should be DRAFT");
     }
 
     @Test
     public void copyConstructor_FromVoidedQuotation_Success() {
         Quotation sourceQuote = getDefaultQuotation();
-        sourceQuote.voidDocument(today);
-        assertEquals(QuotationStatus.VOIDED, sourceQuote.getStatus(today));
+        sourceQuote.voidDocument(TODAY);
+        assertEquals(QuotationStatus.VOIDED, sourceQuote.getStatus(TODAY));
 
-        Quotation quote = new Quotation(sourceQuote, today);
+        Quotation quote = new Quotation(sourceQuote, TODAY);
 
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus(today), "The cloned quotation should be DRAFT");
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY), "The cloned quotation should be DRAFT");
     }
 
     @Test
     public void copyConstructor_FromExpiredQuotation_Success() {
         Quotation sourceQuote = getDefaultQuotation();
-        sourceQuote.updateExpiration(today);
-        sourceQuote.issue(today);
+        sourceQuote.updateExpiration(TODAY);
+        sourceQuote.issue(TODAY);
 
-        LocalDate tomorrow = today.plusDays(1);
+        LocalDate tomorrow = TODAY.plusDays(1);
 
         assertTrue(sourceQuote.isPastExpiration(tomorrow));
         assertEquals(QuotationStatus.EXPIRED, sourceQuote.getStatus(tomorrow));
@@ -203,7 +203,7 @@ public class QuotationTest {
         Quotation sourceQuote = getDefaultQuotation();
         defaultCar.withdraw("Distrutto");
 
-        assertThrows(IllegalStateException.class, () -> new Quotation(sourceQuote, today));
+        assertThrows(IllegalStateException.class, () -> new Quotation(sourceQuote, TODAY));
     }
 
     @Test
@@ -215,7 +215,7 @@ public class QuotationTest {
         accessory.setBasePrice(new BigDecimal("40.00"));
         defaultCar.setSellingPrice(new BigDecimal("15000.00"));
 
-        Quotation quote = new Quotation(sourceQuote, today);
+        Quotation quote = new Quotation(sourceQuote, TODAY);
 
         assertAll(
                 () -> assertTrue(sourceQuote.getItems().size() == 1),
@@ -237,7 +237,7 @@ public class QuotationTest {
         sourceQuote.addItem(new AppliedItem(accessory));
         accessory.archive();
 
-        Quotation quote = new Quotation(sourceQuote, today);
+        Quotation quote = new Quotation(sourceQuote, TODAY);
 
         assertTrue(quote.getItems().isEmpty(),
                 "The cloned quotation should not contain archived items");
@@ -249,7 +249,7 @@ public class QuotationTest {
         Quotation sourceQuote = getDefaultQuotation();
         sourceQuote.setDiscountStrategy(new FixedAmountDiscountStrategy(new BigDecimal("500.00")));
 
-        Quotation clone = new Quotation(sourceQuote, today);
+        Quotation clone = new Quotation(sourceQuote, TODAY);
 
         assertAll(
                 () -> assertEquals(DiscountType.FIXED, clone.getDiscountType()),
@@ -305,18 +305,18 @@ public class QuotationTest {
     @Test
     public void updateExpiration_WhenStatusIsNotDraft_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
         assertThrows(IllegalStateException.class, () -> quote.updateExpiration(ExpirationPolicy.END_OF_MONTH));
         assertEquals(ExpirationPolicy.CUSTOM, quote.getExpirationPolicy());
-        assertEquals(today, quote.getExpirationDate());
+        assertEquals(TODAY, quote.getExpirationDate());
     }
 
     @Test
     public void updateExpiration_ToNullExpirationPolicy_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        assertThrows(NullPointerException.class, () -> quote.updateExpiration(null, today),
+        assertThrows(NullPointerException.class, () -> quote.updateExpiration(null, TODAY),
                 "Expiration policy is required to update the expiration");
     }
 
@@ -330,21 +330,21 @@ public class QuotationTest {
     @Test
     public void updateExpiration_ToCustomExpirationPolicyWithExpirationDateBeforeDocumentDate_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.setDate(today);
+        quote.setDate(TODAY);
         assertThrows(IllegalArgumentException.class,
-                () -> quote.updateExpiration(ExpirationPolicy.CUSTOM, today.minusDays(1)),
+                () -> quote.updateExpiration(ExpirationPolicy.CUSTOM, TODAY.minusDays(1)),
                 "Cannot set the expiration date before the document date");
     }
 
     @Test
     public void updateExpiration_ToCustomExpirationPolicyWhenStatusIsDraft_Success() {
         Quotation quote = getDefaultQuotation();
-        quote.setDate(today);
+        quote.setDate(TODAY);
 
-        quote.updateExpiration(today.plusDays(1));
+        quote.updateExpiration(TODAY.plusDays(1));
 
         assertEquals(ExpirationPolicy.CUSTOM, quote.getExpirationPolicy());
-        assertEquals(today.plusDays(1), quote.getExpirationDate());
+        assertEquals(TODAY.plusDays(1), quote.getExpirationDate());
     }
 
     @Test
@@ -424,21 +424,21 @@ public class QuotationTest {
     @Test
     public void issue_WhenStatusExpired_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.issue(today.plusDays(1));
+            quote.issue(TODAY.plusDays(1));
         }, "Cannot issue an EXPIRED quotation (the expiration date is already in the past)");
     }
 
     @Test
     public void issue_WhenArchived_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.archive(today);
+        quote.archive(TODAY);
 
         assertTrue(quote.isArchived());
         assertThrows(IllegalStateException.class, () -> {
-            quote.issue(today);
+            quote.issue(TODAY);
         }, "Cannot issue an ARCHIVED quotation");
     }
 
@@ -448,7 +448,7 @@ public class QuotationTest {
         defaultCar.setStatus(VehicleStatus.SOLD);
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.issue(today);
+            quote.issue(TODAY);
         }, "Cannot issue a quotation from a SOLD vehicle");
     }
 
@@ -458,7 +458,7 @@ public class QuotationTest {
         defaultCar.setStatus(VehicleStatus.RESERVED);
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.issue(today);
+            quote.issue(TODAY);
         }, "Cannot issue a quotation from a RESERVED vehicle");
     }
 
@@ -468,7 +468,7 @@ public class QuotationTest {
         defaultCar.withdraw("Restituito al fornitore");
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.issue(today);
+            quote.issue(TODAY);
         }, "Cannot issue a quotation from a WITHDRAWN vehicle");
     }
 
@@ -478,7 +478,7 @@ public class QuotationTest {
         defaultCar.setStatus(VehicleStatus.QUOTED);
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.issue(today);
+            quote.issue(TODAY);
         }, "Should be able to issue a quotation from a QUOTED vehicle");
     }
 
@@ -487,55 +487,54 @@ public class QuotationTest {
         Quotation quote = getDefaultQuotation();
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.accept(today);
+            quote.accept(TODAY);
         }, "Cannot accept a DRAFT quotation");
     }
 
     @Test
     public void accept_WhenStatusExpired_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.accept(today.plusDays(1));
+            quote.accept(TODAY.plusDays(1));
         }, "Cannot accept an EXPIRED quotation");
     }
 
     @Test
     public void accept_WhenStatusVoided_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        quote.voidDocument(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        quote.voidDocument(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.accept(today);
+            quote.accept(TODAY);
         }, "Cannot accept a VOIDED quotation");
     }
 
     @Test
     public void voidDocument_WhenStatusAccepted_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        quote.accept(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        quote.accept(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            quote.voidDocument(today);
+            quote.voidDocument(TODAY);
         }, "Cannot void an ACCEPTED quotation");
     }
 
     @Test
     public void voidDocument_IssuedPastExpiration_BecomesExpired() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
-        quote.voidDocument(today.plusDays(1));
+        quote.voidDocument(TODAY.plusDays(1));
 
-        assertEquals(QuotationStatus.EXPIRED, quote.getStatus(today.plusDays(1)));
-        assertThrows(IllegalStateException.class, () -> quote.expire());
+        assertEquals(QuotationStatus.EXPIRED, quote.getStatus(TODAY));
     }
 
     @Test
@@ -543,32 +542,32 @@ public class QuotationTest {
         Quotation quote = getDefaultQuotation();
 
         assertDoesNotThrow(() -> {
-            quote.voidDocument(today);
+            quote.voidDocument(TODAY);
         }, "Should be able to void a DRAFT quotation");
-        assertEquals(QuotationStatus.VOIDED, quote.getStatus(today));
+        assertEquals(QuotationStatus.VOIDED, quote.getStatus(TODAY));
     }
 
     @Test
     public void voidDocument_DraftPastExpiration_Success() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
 
         assertDoesNotThrow(() -> {
-            quote.voidDocument(today.plusDays(1));
+            quote.voidDocument(TODAY.plusDays(1));
         });
-        assertEquals(QuotationStatus.VOIDED, quote.getStatus(today.plusDays(1)));
+        assertEquals(QuotationStatus.VOIDED, quote.getStatus(TODAY.plusDays(1)));
     }
 
     @Test
     public void voidDocument_WhenStatusIssued_Success() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
         assertDoesNotThrow(() -> {
-            quote.voidDocument(today);
+            quote.voidDocument(TODAY);
         });
-        assertEquals(QuotationStatus.VOIDED, quote.getStatus(today));
+        assertEquals(QuotationStatus.VOIDED, quote.getStatus(TODAY));
     }
 
     // add item
@@ -586,8 +585,8 @@ public class QuotationTest {
     @Test
     public void addItem_WhenStatusIssued_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             AppliedItem accessoryItem = new AppliedItem(
@@ -599,9 +598,9 @@ public class QuotationTest {
     @Test
     public void addItem_WhenStatusAccepted_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        quote.accept(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        quote.accept(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             AppliedItem accessoryItem = new AppliedItem(
@@ -613,8 +612,8 @@ public class QuotationTest {
     @Test
     public void addItem_WhenStatusExpired_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
         quote.expire();
 
         assertThrows(IllegalStateException.class, () -> {
@@ -627,7 +626,7 @@ public class QuotationTest {
     @Test
     public void addItem_WhenStatusVoided_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.voidDocument(today);
+        quote.voidDocument(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             AppliedItem accessoryItem = new AppliedItem(
@@ -653,11 +652,11 @@ public class QuotationTest {
     @Test
     public void removeItem_WhenStatusIssued_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.issue(today);
+        quote.issue(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             quote.removeItem(accessoryItem);
@@ -667,12 +666,12 @@ public class QuotationTest {
     @Test
     public void removeItem_WhenStatusAccepted_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.issue(today);
-        quote.accept(today);
+        quote.issue(TODAY);
+        quote.accept(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             quote.removeItem(accessoryItem);
@@ -682,11 +681,11 @@ public class QuotationTest {
     @Test
     public void removeItem_WhenStatusExpired_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.issue(today);
+        quote.issue(TODAY);
         quote.expire();
 
         assertThrows(IllegalStateException.class, () -> {
@@ -700,7 +699,7 @@ public class QuotationTest {
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.voidDocument(today);
+        quote.voidDocument(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             quote.removeItem(accessoryItem);
@@ -750,11 +749,11 @@ public class QuotationTest {
     @Test
     public void setAppliedItemPrice_WhenStatusIssued_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.issue(today);
+        quote.issue(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             quote.setAppliedItemPrice(accessoryItem, new BigDecimal("950.00"));
@@ -764,12 +763,12 @@ public class QuotationTest {
     @Test
     public void setAppliedItemPrice_WhenStatusAccepted_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.issue(today);
-        quote.accept(today);
+        quote.issue(TODAY);
+        quote.accept(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             quote.setAppliedItemPrice(accessoryItem, new BigDecimal("950.00"));
@@ -779,11 +778,11 @@ public class QuotationTest {
     @Test
     public void setAppliedItemPrice_WhenStatusExpired_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.issue(today);
+        quote.issue(TODAY);
         quote.expire();
 
         assertThrows(IllegalStateException.class, () -> {
@@ -797,7 +796,7 @@ public class QuotationTest {
         AppliedItem accessoryItem = new AppliedItem(
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
-        quote.voidDocument(today);
+        quote.voidDocument(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             quote.setAppliedItemPrice(accessoryItem, new BigDecimal("950.00"));
@@ -862,34 +861,34 @@ public class QuotationTest {
     @Test
     public void archive_WhenStatusDraft_Success() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today.plusMonths(1));
+        quote.updateExpiration(TODAY.plusMonths(1));
 
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus(today));
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY));
 
-        quote.archive(today);
+        quote.archive(TODAY);
         assertTrue(quote.isArchived(), "Should be able to archive a DRAFT quotation");
     }
 
     @Test
     public void archive_WhenStatusExpired_Success() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
 
-        quote.archive(today.plusDays(1));
+        quote.archive(TODAY.plusDays(1));
 
         assertTrue(quote.isArchived(), "Should be able to archive an EXPIRED quotation");
-        assertEquals(QuotationStatus.DRAFT, quote.getStatus(today.plusDays(1)),
+        assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY.plusDays(1)),
                 "A DRAFT quotation with expiration date in the past should still be DRAFT");
     }
 
     @Test
     public void archive_WhenStatusAccepted_Success() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        quote.accept(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        quote.accept(TODAY);
 
-        quote.archive(today);
+        quote.archive(TODAY);
 
         assertTrue(quote.isArchived(), "Should be able to archive an ACCEPTED quotation");
     }
@@ -897,9 +896,9 @@ public class QuotationTest {
     @Test
     public void archive_WhenStatusVoided_Success() {
         Quotation quote = getDefaultQuotation();
-        quote.voidDocument(today);
+        quote.voidDocument(TODAY);
 
-        quote.archive(today);
+        quote.archive(TODAY);
 
         assertTrue(quote.isArchived(), "Should be able to archive a VOIDED quotation");
     }
@@ -907,15 +906,15 @@ public class QuotationTest {
     @Test
     public void archive_WhenStatusIssued_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
-        assertThrows(IllegalStateException.class, () -> quote.archive(today), "Cannot archive an ISSUED quotation");
+        assertThrows(IllegalStateException.class, () -> quote.archive(TODAY), "Cannot archive an ISSUED quotation");
 
         assertFalse(quote.isArchived());
     }
 
     private Quotation getDefaultQuotation() {
-        return new Quotation(defaultCar, defaultCustomer, today);
+        return new Quotation(defaultCar, defaultCustomer, TODAY);
     }
 }

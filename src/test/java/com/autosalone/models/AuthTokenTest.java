@@ -13,7 +13,7 @@ import com.autosalone.enums.TokenType;
 
 class AuthTokenTest {
 
-    private static final Instant now = Instant.parse("2026-09-15T10:00:00Z");
+    private static final Instant NOW = Instant.parse("2026-09-15T10:00:00Z");
 
     private User user;
 
@@ -25,17 +25,17 @@ class AuthTokenTest {
 
     @Test
     public void isExpired_ReturnsTrue_WhenDateIsInThePast() {
-        Instant past = now.minus(1, ChronoUnit.HOURS);
+        Instant past = NOW.minus(1, ChronoUnit.HOURS);
         AuthToken token = new AuthToken("token_123", user, TokenType.REGISTRATION, past);
 
-        assertTrue(token.isExpired(now), "The token must be expired");
+        assertTrue(token.isExpired(NOW), "The token must be expired");
     }
 
     @Test
     public void isExpired_ReturnsFalse_WhenDateIsInTheFuture() {
-        Instant future = now.plus(1, ChronoUnit.HOURS);
+        Instant future = NOW.plus(1, ChronoUnit.HOURS);
         AuthToken token = new AuthToken("token_123", user, TokenType.REGISTRATION, future);
 
-        assertFalse(token.isExpired(now), "The token should not be expired");
+        assertFalse(token.isExpired(NOW), "The token should not be expired");
     }
 }

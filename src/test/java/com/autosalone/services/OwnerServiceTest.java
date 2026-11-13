@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.config.ClockProducer;
 import com.autosalone.dtos.requests.OwnerRequest;
 import com.autosalone.dtos.responses.OwnerListResponse;
 import com.autosalone.dtos.responses.OwnerResponse;
@@ -34,11 +34,10 @@ import com.autosalone.repositories.UserRepository;
 @ExtendWith(MockitoExtension.class)
 class OwnerServiceTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final Instant now = Instant.parse("2026-09-15T10:00:00Z");
+    private static final Instant NOW = Instant.parse("2026-09-15T10:00:00Z");
 
     @Spy
-    private Clock clock = Clock.fixed(now, romeTZ);
+    private Clock clock = Clock.fixed(NOW, ClockProducer.TIME_ZONE_ID);
 
     @Mock
     private UserRepository userRepository;
@@ -102,7 +101,7 @@ class OwnerServiceTest {
     @Test
     void getOwnerResponseById_WithActiveInvitation_Success() {
         AuthToken activeToken = mock(AuthToken.class);
-        when(activeToken.isExpired(now)).thenReturn(false);
+        when(activeToken.isExpired(NOW)).thenReturn(false);
         when(mockOwner.getId()).thenReturn(ownerId);
 
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));

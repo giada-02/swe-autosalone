@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.config.ClockProducer;
 import com.autosalone.dtos.requests.ContractUpdateRequest;
 import com.autosalone.dtos.requests.SalesDocumentCreateRequest;
 import com.autosalone.dtos.responses.ContractCustomerResponse;
@@ -44,11 +44,11 @@ import com.autosalone.repositories.VehicleRepository;
 @ExtendWith(MockitoExtension.class)
 class ContractServiceTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private Clock clock = Clock.fixed(TODAY.atTime(12, 0).atZone(ClockProducer.TIME_ZONE_ID).toInstant(),
+            ClockProducer.TIME_ZONE_ID);
 
     @Mock
     private TransactionRepository transactionRepository;
@@ -202,9 +202,9 @@ class ContractServiceTest {
     @Test
     void createContractFromQuotation_Success() {
         when(mockVehicle.getSellingPrice()).thenReturn(BigDecimal.valueOf(10000));
-        Quotation sourceQuotation = new Quotation(mockVehicle, mockCustomer, today);
-        sourceQuotation.updateExpiration(today.plusDays(10));
-        sourceQuotation.issue(today);
+        Quotation sourceQuotation = new Quotation(mockVehicle, mockCustomer, TODAY);
+        sourceQuotation.updateExpiration(TODAY.plusDays(10));
+        sourceQuotation.issue(TODAY);
 
         when(quotationService.getQuotationById(quotationId)).thenReturn(sourceQuotation);
 
@@ -235,16 +235,16 @@ class ContractServiceTest {
         when(mockCustomer.getFirstName()).thenReturn("Mario");
         when(mockCustomer.getLastName()).thenReturn("Rossi");
 
-        contractService.confirmContract(contractId, BigDecimal.TEN, today);
+        contractService.confirmContract(contractId, BigDecimal.TEN, TODAY);
 
         verify(mockContract).confirm(any());
-        verify(linkedQuotation).accept(today);
+        verify(linkedQuotation).accept(TODAY);
         verify(quotationRepository).save(linkedQuotation);
 
         verify(mockVehicle).setStatus(VehicleStatus.RESERVED);
         verify(vehicleRepository).save(mockVehicle);
 
-        verify(conflictQuotation).voidDocument(today);
+        verify(conflictQuotation).voidDocument(TODAY);
         verify(quotationRepository).save(conflictQuotation);
 
         verify(conflictContract).voidDocument();
@@ -281,7 +281,7 @@ class ContractServiceTest {
         contractService.completeContract(contractId);
 
         verify(mockContract).complete();
-        verify(mockVehicle).generateStandardInspectionDeadline(today);
+        verify(mockVehicle).generateStandardInspectionDeadline(TODAY);
         verify(mockVehicle).setStatus(VehicleStatus.SOLD);
         assertFalse(mockVehicle.isInShowroom());
 
@@ -334,7 +334,7 @@ class ContractServiceTest {
         when(mockCustomer.getLastName()).thenReturn("Rossi");
         when(mockContract.getVehicle()).thenReturn(mockVehicle);
 
-        contractService.addPaymentToContract(contractId, "Bonifico", BigDecimal.TEN, today);
+        contractService.addPaymentToContract(contractId, "Bonifico", BigDecimal.TEN, TODAY);
 
         verify(mockContract).registerPayment(any(Transaction.class));
         verify(transactionRepository).save(any(Transaction.class));
@@ -349,7 +349,7 @@ class ContractServiceTest {
         when(mockCustomer.getLastName()).thenReturn("Rossi");
         when(mockContract.getVehicle()).thenReturn(mockVehicle);
 
-        contractService.addRefundToContract(contractId, "Rimborso", BigDecimal.TEN, today);
+        contractService.addRefundToContract(contractId, "Rimborso", BigDecimal.TEN, TODAY);
 
         verify(mockContract).registerRefund(any(Transaction.class));
         verify(transactionRepository).save(any(Transaction.class));
@@ -450,8 +450,8 @@ class ContractServiceTest {
         when(mockCustomer.getId()).thenReturn(customerId);
 
         ContractUpdateRequest request = new ContractUpdateRequest(
-                today.plusDays(10),
-                today,
+                TODAY.plusDays(10),
+                TODAY,
                 vehicleId,
                 customerId,
                 BigDecimal.ZERO,
@@ -463,7 +463,7 @@ class ContractServiceTest {
 
         assertDoesNotThrow(() -> contractService.updateContract(contractId, request));
 
-        assertEquals(today.plusDays(10), contract.getEstimatedHandoverDate());
+        assertEquals(TODAY.plusDays(10), contract.getEstimatedHandoverDate());
         assertEquals("Note interne", contract.getInternalNotes());
 
         verify(vehicleService, never()).getVehicleById(any());
@@ -489,8 +489,8 @@ class ContractServiceTest {
         when(customerService.getCustomerById(newCustomerId)).thenReturn(newMockCustomer);
 
         ContractUpdateRequest request = new ContractUpdateRequest(
-                today.plusDays(10),
-                today,
+                TODAY.plusDays(10),
+                TODAY,
                 newVehicleId,
                 newCustomerId,
                 BigDecimal.ZERO,
@@ -514,6 +514,6 @@ class ContractServiceTest {
     // helper
     private Contract getContract() {
         when(mockVehicle.getSellingPrice()).thenReturn(BigDecimal.valueOf(10000));
-        return new Contract(mockVehicle, mockCustomer, today);
+        return new Contract(mockVehicle, mockCustomer, TODAY);
     }
 }

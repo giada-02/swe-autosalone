@@ -27,7 +27,7 @@ import com.autosalone.models.discounts.PercentageDiscountStrategy;
 
 public class ContractTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     private Customer defaultCustomer;
     private Vehicle defaultCar;
@@ -58,7 +58,7 @@ public class ContractTest {
         defaultCar.setStatus(VehicleStatus.RESERVED);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(defaultCar, defaultCustomer, today);
+            new Contract(defaultCar, defaultCustomer, TODAY);
         }, "Cannot create a contract from a RESERVED vehicle");
     }
 
@@ -67,7 +67,7 @@ public class ContractTest {
         defaultCar.setStatus(VehicleStatus.SOLD);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(defaultCar, defaultCustomer, today);
+            new Contract(defaultCar, defaultCustomer, TODAY);
         }, "Cannot create a contract from a SOLD vehicle");
     }
 
@@ -76,25 +76,25 @@ public class ContractTest {
         defaultCar.withdraw("Furto");
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(defaultCar, defaultCustomer, today);
+            new Contract(defaultCar, defaultCustomer, TODAY);
         }, "Cannot create a contract from a WITHDRAWN vehicle");
     }
 
     @Test
     public void constructor_WhenVehicleIsQuoted_Success() {
         defaultCar.setStatus(VehicleStatus.QUOTED);
-        assertDoesNotThrow(() -> new Contract(defaultCar, defaultCustomer, today));
+        assertDoesNotThrow(() -> new Contract(defaultCar, defaultCustomer, TODAY));
     }
 
     @Test
     public void constructor_WhenVehicleIsAvailable_Success() {
-        Contract contract = assertDoesNotThrow(() -> new Contract(defaultCar, defaultCustomer, today));
+        Contract contract = assertDoesNotThrow(() -> new Contract(defaultCar, defaultCustomer, TODAY));
 
         assertAll(
                 () -> assertNotNull(contract),
                 () -> assertEquals(ContractStatus.DRAFT, contract.getStatus()),
                 () -> assertFalse(contract.isArchived()),
-                () -> assertTrue(today.equals(contract.getDate())),
+                () -> assertTrue(TODAY.equals(contract.getDate())),
                 () -> assertNull(contract.getDeposit()),
                 () -> assertTrue(contract.getPayments().isEmpty()),
                 () -> assertNull(contract.getQuotationReference()),
@@ -116,74 +116,74 @@ public class ContractTest {
         Quotation quote = getSourceQuotation();
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today);
+            new Contract(quote, TODAY);
         }, "Cannot create a contract from a DRAFT quotation");
     }
 
     @Test
     public void copyConstructor_FromAcceptedQuotation_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        quote.accept(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        quote.accept(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today);
+            new Contract(quote, TODAY);
         }, "Cannot create a contract from an ACCEPTED quotation");
     }
 
     @Test
     public void copyConstructor_FromExpiredQuotation_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today.plusDays(1));
+            new Contract(quote, TODAY.plusDays(1));
         }, "Cannot create a contract from an EXPIRED quotation");
     }
 
     @Test
     public void copyConstructor_FromVoidedQuotation_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        quote.voidDocument(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        quote.voidDocument(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today);
+            new Contract(quote, TODAY);
         }, "Cannot create a contract from a VOIDED quotation");
     }
 
     @Test
     public void copyConstructor_FromArchivedQuotation_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.archive(today);
+        quote.updateExpiration(TODAY);
+        quote.archive(TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today);
+            new Contract(quote, TODAY);
         }, "Cannot create a contract from an archived quotation");
     }
 
     @Test
     public void copyConstructor_FromValidIssuedQuotation_Success_CreatesDraftContract() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today.plusDays(10));
+        quote.updateExpiration(TODAY.plusDays(10));
         quote.setAdditionalFees(new BigDecimal("350.00"));
         quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal("10")));
         quote.setPublicNotes("Note pubbliche");
         quote.setInternalNotes("Note interne");
-        quote.issue(today);
+        quote.issue(TODAY);
 
-        Contract contract = assertDoesNotThrow(() -> new Contract(quote, today),
+        Contract contract = assertDoesNotThrow(() -> new Contract(quote, TODAY),
                 "Should be able to create a contract from an ISSUED quotation");
 
         assertAll(
                 () -> assertNotNull(contract),
                 () -> assertEquals(ContractStatus.DRAFT, contract.getStatus()),
                 () -> assertFalse(contract.isArchived()),
-                () -> assertTrue(today.equals(contract.getDate())),
+                () -> assertTrue(TODAY.equals(contract.getDate())),
                 () -> assertNull(contract.getDeposit()),
                 () -> assertTrue(contract.getPayments().isEmpty()),
                 () -> assertEquals(quote, contract.getQuotationReference()),
@@ -207,61 +207,61 @@ public class ContractTest {
     @Test
     public void copyConstructor_WhenVehicleIsReserved_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
         defaultCar.setStatus(VehicleStatus.RESERVED);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today);
+            new Contract(quote, TODAY);
         }, "Cannot create a contract from a quotation with a RESERVED vehicle");
     }
 
     @Test
     public void copyConstructor_WhenVehicleIsSold_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
         defaultCar.setStatus(VehicleStatus.SOLD);
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today);
+            new Contract(quote, TODAY);
         }, "Cannot create a contract from a quotation with a SOLD vehicle");
     }
 
     @Test
     public void copyConstructor_WhenVehicleIsWithdrawn_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
         defaultCar.withdraw("Restituito al fornitore");
 
         assertThrows(IllegalStateException.class, () -> {
-            new Contract(quote, today);
+            new Contract(quote, TODAY);
         }, "Cannot create a contract from a quotation with a WITHDRAWN vehicle");
     }
 
     @Test
     public void copyConstructor_WhenVehicleIsQuoted_Success() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
         defaultCar.setStatus(VehicleStatus.QUOTED);
 
-        assertDoesNotThrow(() -> new Contract(quote, today));
+        assertDoesNotThrow(() -> new Contract(quote, TODAY));
     }
 
     @Test
     public void copyConstructor_AfterOriginalPricesHaveBeenUpdatedAndItemHasBeenArchived_Success() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
         quote.addItem(new AppliedItem(accessory));
-        quote.issue(today);
+        quote.issue(TODAY);
 
         accessory.setBasePrice(new BigDecimal("40.00"));
         defaultCar.setSellingPrice(new BigDecimal("15000.00"));
 
-        Contract contract = new Contract(quote, today);
+        Contract contract = new Contract(quote, TODAY);
 
         assertAll(
                 () -> assertTrue(contract.getItems().size() == 1),
@@ -276,14 +276,14 @@ public class ContractTest {
     @Test
     public void copyConstructor_AfterOriginalItemHasBeenArchived_Success() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
+        quote.updateExpiration(TODAY);
         Accessory accessory = new Accessory("Accessorio", null, new BigDecimal("50.00"));
         quote.addItem(new AppliedItem(accessory));
-        quote.issue(today);
+        quote.issue(TODAY);
 
         accessory.archive();
 
-        Contract contract = new Contract(quote, today);
+        Contract contract = new Contract(quote, TODAY);
 
         assertTrue(contract.getItems().size() == 1,
                 "The contract created from a quotation should have all items of the original quotation source even if they have been archived");
@@ -294,9 +294,9 @@ public class ContractTest {
         Quotation quote = getSourceQuotation();
         quote.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal("10")));
         quote.updateExpiration(ExpirationPolicy.TEN_DAYS);
-        quote.issue(today);
+        quote.issue(TODAY);
 
-        Contract contract = new Contract(quote, today);
+        Contract contract = new Contract(quote, TODAY);
 
         assertAll(
                 () -> assertEquals(DiscountType.PERCENTAGE, contract.getDiscountType()),
@@ -307,7 +307,7 @@ public class ContractTest {
 
     @Test
     public void changeCustomer_WhenStatusDraft_Success() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
         Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi")
                 .setPhoneNumber("1234567890")
                 .build();
@@ -319,9 +319,9 @@ public class ContractTest {
     @Test
     public void changeCustomer_WhenStatusDraft_CreatedFromQuotation_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        Contract contract = new Contract(quote, today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        Contract contract = new Contract(quote, TODAY);
         Customer newCustomer = new CustomerBuilder().setFirstName("Luigi").setLastName("Verdi")
                 .setPhoneNumber("1234567890")
                 .build();
@@ -332,9 +332,9 @@ public class ContractTest {
     @Test
     public void changeVehicle_WhenStatusDraft_CreatedFromQuotation_ThrowsException() {
         Quotation quote = getSourceQuotation();
-        quote.updateExpiration(today);
-        quote.issue(today);
-        Contract contract = new Contract(quote, today);
+        quote.updateExpiration(TODAY);
+        quote.issue(TODAY);
+        Contract contract = new Contract(quote, TODAY);
         Vehicle newVehicle = new Vehicle.VehicleBuilder()
                 .setBrand("Fiat")
                 .setModel("Panda")
@@ -391,7 +391,7 @@ public class ContractTest {
 
     @Test
     public void cancel_WhenStatusDraft_ThrowsException() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
 
         assertEquals(ContractStatus.DRAFT, contract.getStatus());
         assertThrows(IllegalStateException.class, () -> {
@@ -429,7 +429,7 @@ public class ContractTest {
 
     @Test
     public void confirm_WhenStausDraft_WithoutEstimatedHandoverDate_ThrowsException() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             contract.confirm(null);
@@ -445,7 +445,7 @@ public class ContractTest {
                 .setResidenceCity("Roma")
                 .setZipCode("00000")
                 .build();
-        Contract contract = new Contract(defaultCar, incompleteCustomer, today);
+        Contract contract = new Contract(defaultCar, incompleteCustomer, TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             contract.confirm(null);
@@ -461,7 +461,7 @@ public class ContractTest {
                 .setFiscalCode("RSSMRA00X00X000X")
                 .setZipCode("00000")
                 .build();
-        Contract contract = new Contract(defaultCar, incompleteCustomer, today);
+        Contract contract = new Contract(defaultCar, incompleteCustomer, TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             contract.confirm(null);
@@ -477,7 +477,7 @@ public class ContractTest {
                 .setFiscalCode("RSSMRA00X00X000X")
                 .setResidenceCity("Roma")
                 .build();
-        Contract contract = new Contract(defaultCar, incompleteCustomer, today);
+        Contract contract = new Contract(defaultCar, incompleteCustomer, TODAY);
 
         assertThrows(IllegalStateException.class, () -> {
             contract.confirm(null);
@@ -487,11 +487,11 @@ public class ContractTest {
 
     @Test
     public void confirm_WhenStatusDraft_WithDepositOverTotal_ThrowsException() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
-        contract.setEstimatedHandoverDate(today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
+        contract.setEstimatedHandoverDate(TODAY);
 
         BigDecimal depositAmount = contract.getFinalPrice().add(new BigDecimal("1000.00"));
-        Transaction deposit = TransactionFactory.createContractDeposit(contract, depositAmount, today);
+        Transaction deposit = TransactionFactory.createContractDeposit(contract, depositAmount, TODAY);
 
         assertThrows(IllegalArgumentException.class, () -> {
             contract.confirm(deposit);
@@ -501,11 +501,11 @@ public class ContractTest {
 
     @Test
     public void confirm_WhenStatusDraft_WithDepositEqualTotal_Success() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
-        contract.setEstimatedHandoverDate(today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
+        contract.setEstimatedHandoverDate(TODAY);
 
         BigDecimal contractTotal = contract.getFinalPrice();
-        Transaction deposit = TransactionFactory.createContractDeposit(contract, contractTotal, today);
+        Transaction deposit = TransactionFactory.createContractDeposit(contract, contractTotal, TODAY);
 
         assertDoesNotThrow(() -> {
             contract.confirm(deposit);
@@ -515,8 +515,8 @@ public class ContractTest {
 
     @Test
     public void confirm_WhenStatusDraft_WithNullDepositTransaction_Success() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
-        contract.setEstimatedHandoverDate(today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
+        contract.setEstimatedHandoverDate(TODAY);
 
         assertDoesNotThrow(() -> {
             contract.confirm(null);
@@ -542,8 +542,8 @@ public class ContractTest {
 
     @Test
     public void confirm_WhenStatusVoided_ThrowsException() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
-        contract.setEstimatedHandoverDate(today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
+        contract.setEstimatedHandoverDate(TODAY);
         contract.voidDocument();
 
         assertThrows(IllegalStateException.class, () -> {
@@ -581,7 +581,7 @@ public class ContractTest {
 
     @Test
     public void voidDocument_WhenStatusDraft_Success() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
 
         assertDoesNotThrow(() -> {
             contract.voidDocument();
@@ -591,8 +591,8 @@ public class ContractTest {
 
     @Test
     public void registerPayment_WhenStatusDraft_ThrowsException() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
-        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("500.00"), today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
+        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("500.00"), TODAY);
 
         assertEquals(ContractStatus.DRAFT, contract.getStatus());
         assertThrows(IllegalStateException.class, () -> {
@@ -603,7 +603,7 @@ public class ContractTest {
     @Test
     public void registerPayment_WhenStatusCompleted_ThrowsException() {
         Contract contract = getCompletedContract();
-        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("500.00"), today);
+        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("500.00"), TODAY);
 
         assertEquals(ContractStatus.COMPLETED, contract.getStatus());
         assertThrows(IllegalStateException.class, () -> {
@@ -615,7 +615,7 @@ public class ContractTest {
     public void registerPayment_WhenStatusCanceled_ThrowsException() {
         Contract contract = getConfirmedContract("500");
         contract.cancel("Ripensamento");
-        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("500.00"), today);
+        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("500.00"), TODAY);
 
         assertEquals(ContractStatus.CANCELED, contract.getStatus());
         assertThrows(IllegalStateException.class, () -> {
@@ -625,8 +625,8 @@ public class ContractTest {
 
     @Test
     public void registerRefund_WhenStatusDraft_ThrowsException() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
-        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), TODAY);
 
         assertEquals(ContractStatus.DRAFT, contract.getStatus());
         assertThrows(IllegalStateException.class, () -> {
@@ -637,7 +637,7 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenStatusCompleted_ThrowsException() {
         Contract contract = getCompletedContract();
-        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), today);
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), TODAY);
 
         assertEquals(ContractStatus.COMPLETED, contract.getStatus());
         assertThrows(IllegalStateException.class, () -> {
@@ -648,7 +648,7 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenStatusConfirmed_Success() {
         Contract contract = getConfirmedContract("500.00");
-        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), today);
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), TODAY);
 
         assertEquals(ContractStatus.CONFIRMED, contract.getStatus());
         assertDoesNotThrow(() -> {
@@ -659,7 +659,7 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenStatusCanceled_Success() {
         Contract contract = getConfirmedContract("500.00");
-        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), today);
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("500.00"), TODAY);
         contract.cancel("Ripensamento");
 
         assertEquals(ContractStatus.CANCELED, contract.getStatus());
@@ -671,10 +671,10 @@ public class ContractTest {
     @Test
     public void registerRefund_WhenAmountExceedsTotalPaid_ThrowsException() {
         Contract contract = getConfirmedContract("1000.00");
-        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("200.00"), today);
+        Transaction payment = TransactionFactory.createContractPayment(contract, null, new BigDecimal("200.00"), TODAY);
         contract.registerPayment(payment);
 
-        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("1500.00"), today);
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("1500.00"), TODAY);
 
         assertEquals(ContractStatus.CONFIRMED, contract.getStatus());
         assertThrows(IllegalArgumentException.class, () -> {
@@ -687,14 +687,14 @@ public class ContractTest {
         Contract contract = getConfirmedContract("1000.00");
 
         Transaction p1 = TransactionFactory.createContractPayment(contract, "Acconto", new BigDecimal("3000.00"),
-                today);
+                TODAY);
         contract.registerPayment(p1);
 
         assertEquals(0, contract.getTotalPayment().compareTo(new BigDecimal("4000.00")));
         assertEquals(0, contract.getFinalPrice().compareTo(new BigDecimal("10000.00")));
         assertEquals(0, contract.getRemainingBalance().compareTo(new BigDecimal("6000.00")));
 
-        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("3000.00"), today);
+        Transaction refund = TransactionFactory.createContractRefund(contract, null, new BigDecimal("3000.00"), TODAY);
         contract.registerRefund(refund);
 
         assertEquals(2, contract.getPayments().size(), "List should contain both IN and OUT transactions");
@@ -710,7 +710,7 @@ public class ContractTest {
         Contract contract = getConfirmedContract("1000.00");
 
         Transaction overPayment = TransactionFactory.createContractPayment(contract, "Acconto",
-                new BigDecimal("15000.00"), today);
+                new BigDecimal("15000.00"), TODAY);
 
         assertThrows(IllegalArgumentException.class, () -> {
             contract.registerPayment(overPayment);
@@ -722,9 +722,9 @@ public class ContractTest {
         Contract contract = getConfirmedContract("1000.00");
 
         Transaction p1 = TransactionFactory.createContractPayment(contract, "Acconto 1", new BigDecimal("2000.00"),
-                today);
+                TODAY);
         Transaction p2 = TransactionFactory.createContractPayment(contract, "Acconto 2", new BigDecimal("3000.00"),
-                today);
+                TODAY);
 
         contract.registerPayment(p1);
         contract.registerPayment(p2);
@@ -738,9 +738,9 @@ public class ContractTest {
     // archive
     @Test
     public void archive_WhenStatusDraft_Success() {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
 
-        contract.archive(today);
+        contract.archive(TODAY);
         assertTrue(contract.isArchived(), "Should be able to archive a DRAFT contract");
     }
 
@@ -748,14 +748,14 @@ public class ContractTest {
     public void archive_WhenStatusConfirmed_ThrowsException() {
         Contract contract = getConfirmedContract("1000.00");
 
-        assertThrows(IllegalStateException.class, () -> contract.archive(today), "Cannot archive a CONFIRMED contract");
+        assertThrows(IllegalStateException.class, () -> contract.archive(TODAY), "Cannot archive a CONFIRMED contract");
     }
 
     @Test
     public void archive_WhenStatusCompleted_Success() {
         Contract contract = getCompletedContract();
 
-        contract.archive(today);
+        contract.archive(TODAY);
 
         assertTrue(contract.isArchived(), "Should be able to archive a COMPLETED contract");
     }
@@ -765,7 +765,7 @@ public class ContractTest {
         Contract contract = getConfirmedContract("1000.00");
         contract.cancel("Finanziamento Rifiutato");
 
-        contract.archive(today);
+        contract.archive(TODAY);
 
         assertTrue(contract.isArchived(), "Should be able to archive a CANCELED contract");
     }
@@ -793,7 +793,7 @@ public class ContractTest {
                 () -> assertThrows(IllegalStateException.class,
                         () -> document.setDiscountStrategy(new PercentageDiscountStrategy(new BigDecimal("10"))),
                         "Discount"),
-                () -> assertThrows(IllegalStateException.class, () -> document.setDate(today.plusDays(1)),
+                () -> assertThrows(IllegalStateException.class, () -> document.setDate(TODAY.plusDays(1)),
                         "Date"),
                 () -> assertThrows(IllegalStateException.class,
                         () -> document.setVehicleSellingPriceSnapshot(new BigDecimal("12000.00")), "Price Snapshot"),
@@ -803,28 +803,28 @@ public class ContractTest {
     private Contract getCompletedContract() {
         Contract contract = getConfirmedContract("500.00");
         Transaction remainingAmout = TransactionFactory.createContractPayment(contract, "Rimanente",
-                new BigDecimal("9500.00"), today);
+                new BigDecimal("9500.00"), TODAY);
         contract.registerPayment(remainingAmout);
-        defaultCar.setHandoverDate(today);
+        defaultCar.setHandoverDate(TODAY);
         defaultCar.setLicensePlate("AB123CD");
-        defaultCar.setRegistrationDate(today);
+        defaultCar.setRegistrationDate(TODAY);
         contract.complete();
         return contract;
     }
 
     private Contract getConfirmedContract(String depositValue) {
-        Contract contract = new Contract(defaultCar, defaultCustomer, today);
+        Contract contract = new Contract(defaultCar, defaultCustomer, TODAY);
         Transaction deposit = null;
         if (depositValue != null)
             deposit = TransactionFactory.createContractDeposit(contract, new BigDecimal(depositValue),
-                    today);
+                    TODAY);
         contract.setEstimatedHandoverDate(
-                today);
+                TODAY);
         contract.confirm(deposit);
         return contract;
     }
 
     private Quotation getSourceQuotation() {
-        return new Quotation(defaultCar, defaultCustomer, today);
+        return new Quotation(defaultCar, defaultCustomer, TODAY);
     }
 }

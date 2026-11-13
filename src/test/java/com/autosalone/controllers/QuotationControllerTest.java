@@ -10,9 +10,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.security.Principal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -22,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.CatalogItemIdsRequest;
@@ -44,11 +41,7 @@ import jakarta.ws.rs.core.SecurityContext;
 @ExtendWith(MockitoExtension.class)
 class QuotationControllerTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
-
-    @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Mock
     private QuotationService quotationService;
@@ -65,14 +58,12 @@ class QuotationControllerTest {
     private UUID vehicleId;
     private UUID customerId;
     private UUID itemId;
-    private LocalDate now;
 
     private QuotationResponse quotationResponse;
     private QuotationCustomerResponse quotationCustomerResponse;
 
     @BeforeEach
     void setUp() {
-        now = today;
         quotationId = UUID.randomUUID();
         vehicleId = UUID.randomUUID();
         customerId = UUID.randomUUID();
@@ -86,15 +77,15 @@ class QuotationControllerTest {
     void getQuotations_AsOwner_Returns200AndList() {
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
         List<QuotationStatus> statusList = List.of(QuotationStatus.DRAFT, QuotationStatus.ISSUED);
-        when(quotationService.getQuotationsForOwner(now, now, false, vehicleId, customerId, statusList))
+        when(quotationService.getQuotationsForOwner(TODAY, TODAY, false, vehicleId, customerId, statusList))
                 .thenReturn(List.of(quotationResponse));
 
-        Response response = quotationController.getQuotations(now.toString(), now.toString(), false, vehicleId,
+        Response response = quotationController.getQuotations(TODAY.toString(), TODAY.toString(), false, vehicleId,
                 customerId, statusList);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(quotationService).getQuotationsForOwner(now, now, false, vehicleId, customerId, statusList);
+        verify(quotationService).getQuotationsForOwner(TODAY, TODAY, false, vehicleId, customerId, statusList);
     }
 
     @Test
@@ -106,15 +97,16 @@ class QuotationControllerTest {
         List<QuotationStatus> statusList = List.of(QuotationStatus.ISSUED, QuotationStatus.ACCEPTED,
                 QuotationStatus.EXPIRED, QuotationStatus.VOIDED);
 
-        when(quotationService.getQuotationsForCustomer(now, now, false, vehicleId, customerId, statusList))
+        when(quotationService.getQuotationsForCustomer(TODAY, TODAY, false, vehicleId, customerId, statusList))
                 .thenReturn(List.of(quotationCustomerResponse));
 
-        Response response = quotationController.getQuotations(now.toString(), now.toString(), false, vehicleId, null,
+        Response response = quotationController.getQuotations(TODAY.toString(), TODAY.toString(), false, vehicleId,
+                null,
                 List.of());
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(quotationService).getQuotationsForCustomer(now, now, false, vehicleId, customerId, statusList);
+        verify(quotationService).getQuotationsForCustomer(TODAY, TODAY, false, vehicleId, customerId, statusList);
     }
 
     @Test
@@ -126,15 +118,16 @@ class QuotationControllerTest {
         List<QuotationStatus> statusList = List.of(QuotationStatus.DRAFT, QuotationStatus.ISSUED);
         List<QuotationStatus> expectedStatusList = List.of(QuotationStatus.ISSUED);
 
-        when(quotationService.getQuotationsForCustomer(now, now, false, vehicleId, customerId, expectedStatusList))
+        when(quotationService.getQuotationsForCustomer(TODAY, TODAY, false, vehicleId, customerId, expectedStatusList))
                 .thenReturn(List.of(quotationCustomerResponse));
 
-        Response response = quotationController.getQuotations(now.toString(), now.toString(), false, vehicleId, null,
-                statusList);
+        Response response = quotationController.getQuotations(TODAY.toString(), TODAY.toString(), false, vehicleId,
+                null, statusList);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(quotationService).getQuotationsForCustomer(now, now, false, vehicleId, customerId, expectedStatusList);
+        verify(quotationService).getQuotationsForCustomer(TODAY, TODAY, false, vehicleId, customerId,
+                expectedStatusList);
     }
 
     @Test
@@ -158,9 +151,9 @@ class QuotationControllerTest {
         CustomerResponse customerResponse = new CustomerResponse(customerId, "Mario", "Rossi", "0123456789", null,
                 false, null, null, null, null, false);
 
-        QuotationCustomerResponse quotationCustomerResponse = new QuotationCustomerResponse(quotationId, now.toString(),
-                QuotationStatus.ISSUED, null, customerResponse, null, null, null, null, null, null, null, null,
-                null, null, null);
+        QuotationCustomerResponse quotationCustomerResponse = new QuotationCustomerResponse(quotationId,
+                TODAY.toString(), QuotationStatus.ISSUED, null, customerResponse, null, null, null, null, null, null,
+                null, null, null, null, null);
 
         when(quotationService.getQuotationCustomerResponseById(quotationId)).thenReturn(quotationCustomerResponse);
 
@@ -180,9 +173,9 @@ class QuotationControllerTest {
         CustomerResponse customerResponse = new CustomerResponse(anotherCustomerId, "Luigi", "Verdi", "1234567890",
                 null, false, null, null, null, null, false);
 
-        QuotationCustomerResponse quotationCustomerResponse = new QuotationCustomerResponse(quotationId, now.toString(),
-                QuotationStatus.ISSUED, null, customerResponse, null, null, null, null, null, null, null, null,
-                null, null, null);
+        QuotationCustomerResponse quotationCustomerResponse = new QuotationCustomerResponse(quotationId,
+                TODAY.toString(), QuotationStatus.ISSUED, null, customerResponse, null, null, null, null, null, null,
+                null, null, null, null, null);
 
         when(quotationService.getQuotationCustomerResponseById(quotationId)).thenReturn(quotationCustomerResponse);
 
@@ -200,9 +193,9 @@ class QuotationControllerTest {
         CustomerResponse customerResponse = new CustomerResponse(customerId, "Mario", "Rossi", "0123456789", null,
                 false, null, null, null, null, false);
 
-        QuotationCustomerResponse quotationCustomerResponse = new QuotationCustomerResponse(quotationId, now.toString(),
-                QuotationStatus.DRAFT, null, customerResponse, null, null, null, null, null, null, null, null,
-                null, null, null);
+        QuotationCustomerResponse quotationCustomerResponse = new QuotationCustomerResponse(quotationId,
+                TODAY.toString(), QuotationStatus.DRAFT, null, customerResponse, null, null, null, null, null, null,
+                null, null, null, null, null);
 
         when(quotationService.getQuotationCustomerResponseById(quotationId)).thenReturn(quotationCustomerResponse);
 
@@ -224,7 +217,7 @@ class QuotationControllerTest {
 
     @Test
     void updateQuotation_Returns200() {
-        QuotationUpdateRequest request = new QuotationUpdateRequest(now, ExpirationPolicy.CUSTOM, now, vehicleId,
+        QuotationUpdateRequest request = new QuotationUpdateRequest(TODAY, ExpirationPolicy.CUSTOM, TODAY, vehicleId,
                 customerId, BigDecimal.ZERO, "Pub", "Int", BigDecimal.TEN, null, null);
         when(quotationService.updateQuotation(quotationId, request)).thenReturn(quotationResponse);
 

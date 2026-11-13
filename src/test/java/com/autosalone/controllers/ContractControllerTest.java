@@ -10,9 +10,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.security.Principal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -22,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.CatalogItemIdsRequest;
@@ -47,11 +44,7 @@ import jakarta.ws.rs.core.SecurityContext;
 @ExtendWith(MockitoExtension.class)
 class ContractControllerTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
-
-    @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Mock
     private ContractService contractService;
@@ -70,7 +63,6 @@ class ContractControllerTest {
     private UUID customerId;
     private UUID transactionId;
     private UUID itemId;
-    private LocalDate now;
 
     private ContractResponse contractResponse;
     private ContractCustomerResponse contractCustomerResponse;
@@ -78,7 +70,6 @@ class ContractControllerTest {
 
     @BeforeEach
     void setUp() {
-        now = today;
         contractId = UUID.randomUUID();
         quotationId = UUID.randomUUID();
         vehicleId = UUID.randomUUID();
@@ -95,15 +86,15 @@ class ContractControllerTest {
     void getContracts_AsOwner_Returns200AndList() {
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
         List<ContractStatus> statusList = List.of(ContractStatus.DRAFT, ContractStatus.CONFIRMED);
-        when(contractService.getContractsForOwner(now, now, false, vehicleId, customerId, statusList))
+        when(contractService.getContractsForOwner(TODAY, TODAY, false, vehicleId, customerId, statusList))
                 .thenReturn(List.of(contractResponse));
 
-        Response response = contractController.getContracts(now.toString(), now.toString(), false, vehicleId,
+        Response response = contractController.getContracts(TODAY.toString(), TODAY.toString(), false, vehicleId,
                 customerId, statusList);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(contractService).getContractsForOwner(now, now, false, vehicleId, customerId, statusList);
+        verify(contractService).getContractsForOwner(TODAY, TODAY, false, vehicleId, customerId, statusList);
     }
 
     @Test
@@ -115,15 +106,15 @@ class ContractControllerTest {
         List<ContractStatus> statusList = List.of(ContractStatus.CONFIRMED, ContractStatus.COMPLETED,
                 ContractStatus.CANCELED, ContractStatus.VOIDED);
 
-        when(contractService.getContractsForCustomer(now, now, false, vehicleId, customerId, statusList))
+        when(contractService.getContractsForCustomer(TODAY, TODAY, false, vehicleId, customerId, statusList))
                 .thenReturn(List.of(contractCustomerResponse));
 
-        Response response = contractController.getContracts(now.toString(), now.toString(), false, vehicleId, null,
+        Response response = contractController.getContracts(TODAY.toString(), TODAY.toString(), false, vehicleId, null,
                 List.of());
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(contractService).getContractsForCustomer(now, now, false, vehicleId, customerId, statusList);
+        verify(contractService).getContractsForCustomer(TODAY, TODAY, false, vehicleId, customerId, statusList);
     }
 
     @Test
@@ -135,15 +126,15 @@ class ContractControllerTest {
         List<ContractStatus> statusList = List.of(ContractStatus.DRAFT, ContractStatus.CONFIRMED);
         List<ContractStatus> expectedStatusList = List.of(ContractStatus.CONFIRMED);
 
-        when(contractService.getContractsForCustomer(now, now, false, vehicleId, customerId, expectedStatusList))
+        when(contractService.getContractsForCustomer(TODAY, TODAY, false, vehicleId, customerId, expectedStatusList))
                 .thenReturn(List.of(contractCustomerResponse));
 
-        Response response = contractController.getContracts(now.toString(), now.toString(), false, vehicleId, null,
+        Response response = contractController.getContracts(TODAY.toString(), TODAY.toString(), false, vehicleId, null,
                 statusList);
 
         assertEquals(200, response.getStatus());
         assertEquals(1, ((List<?>) response.getEntity()).size());
-        verify(contractService).getContractsForCustomer(now, now, false, vehicleId, customerId, expectedStatusList);
+        verify(contractService).getContractsForCustomer(TODAY, TODAY, false, vehicleId, customerId, expectedStatusList);
     }
 
     @Test
@@ -167,7 +158,7 @@ class ContractControllerTest {
         CustomerResponse customerResponse = new CustomerResponse(customerId, "Mario", "Rossi", "0123456789", null,
                 false, null, null, null, null, false);
 
-        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, now.toString(),
+        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, TODAY.toString(),
                 ContractStatus.CONFIRMED, null, customerResponse, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null);
 
@@ -189,7 +180,7 @@ class ContractControllerTest {
         CustomerResponse customerResponse = new CustomerResponse(anotherCustomerId, "Luigi", "Verdi", "1234567890",
                 null, false, null, null, null, null, false);
 
-        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, now.toString(),
+        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, TODAY.toString(),
                 ContractStatus.CONFIRMED, null, customerResponse, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null);
 
@@ -209,7 +200,7 @@ class ContractControllerTest {
         CustomerResponse customerResponse = new CustomerResponse(customerId, "Mario", "Rossi", "0123456789", null,
                 false, null, null, null, null, false);
 
-        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, now.toString(),
+        ContractCustomerResponse contractCustomerResponse = new ContractCustomerResponse(contractId, TODAY.toString(),
                 ContractStatus.DRAFT, null, customerResponse, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null);
 
@@ -245,7 +236,7 @@ class ContractControllerTest {
 
     @Test
     void updateContract_Returns200() {
-        ContractUpdateRequest request = new ContractUpdateRequest(now, now, vehicleId, customerId, BigDecimal.ZERO,
+        ContractUpdateRequest request = new ContractUpdateRequest(TODAY, TODAY, vehicleId, customerId, BigDecimal.ZERO,
                 "Pub", "Int", BigDecimal.TEN, null, null);
         when(contractService.updateContract(contractId, request)).thenReturn(contractResponse);
 
@@ -257,13 +248,13 @@ class ContractControllerTest {
 
     @Test
     void confirmContract_Returns200() {
-        ContractConfirmRequest request = new ContractConfirmRequest(BigDecimal.TEN, now);
-        when(contractService.confirmContract(contractId, BigDecimal.TEN, now)).thenReturn(contractResponse);
+        ContractConfirmRequest request = new ContractConfirmRequest(BigDecimal.TEN, TODAY);
+        when(contractService.confirmContract(contractId, BigDecimal.TEN, TODAY)).thenReturn(contractResponse);
 
         Response response = contractController.confirmContract(contractId, request);
 
         assertEquals(200, response.getStatus());
-        verify(contractService).confirmContract(contractId, BigDecimal.TEN, now);
+        verify(contractService).confirmContract(contractId, BigDecimal.TEN, TODAY);
     }
 
     @Test
@@ -299,8 +290,8 @@ class ContractControllerTest {
 
     @Test
     void addPaymentToContract_Returns201AndLocationHeader() {
-        PaymentRecordRequest request = new PaymentRecordRequest("Acconto", BigDecimal.TEN, now);
-        when(contractService.addPaymentToContract(contractId, "Acconto", BigDecimal.TEN, now))
+        PaymentRecordRequest request = new PaymentRecordRequest("Acconto", BigDecimal.TEN, TODAY);
+        when(contractService.addPaymentToContract(contractId, "Acconto", BigDecimal.TEN, TODAY))
                 .thenReturn(transactionResponse);
 
         Response response = contractController.addPaymentToContract(contractId, request);
@@ -311,8 +302,8 @@ class ContractControllerTest {
 
     @Test
     void addRefundToContract_Returns201AndLocationHeader() {
-        PaymentRecordRequest request = new PaymentRecordRequest("Rimborso", BigDecimal.TEN, now);
-        when(contractService.addRefundToContract(contractId, "Rimborso", BigDecimal.TEN, now))
+        PaymentRecordRequest request = new PaymentRecordRequest("Rimborso", BigDecimal.TEN, TODAY);
+        when(contractService.addRefundToContract(contractId, "Rimborso", BigDecimal.TEN, TODAY))
                 .thenReturn(transactionResponse);
 
         Response response = contractController.addRefundToContract(contractId, request);
@@ -369,7 +360,7 @@ class ContractControllerTest {
     }
 
     private TransactionResponse buildTransactionResponse(UUID id) {
-        return new TransactionResponse(id, "Pagamento", BigDecimal.TEN, now.toString(),
+        return new TransactionResponse(id, "Pagamento", BigDecimal.TEN, TODAY.toString(),
                 TransactionType.IN, null, contractId);
     }
 }

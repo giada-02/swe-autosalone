@@ -14,7 +14,7 @@ import com.autosalone.models.Vehicle.VehicleBuilder;
 
 public class VehicleTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     private VehicleBuilder baseBuilder;
 
@@ -81,14 +81,14 @@ public class VehicleTest {
     @Test
     public void generateStandardInspectionDeadline_SetsInspectionTo4YearsEndOfMonth() {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
-                .setRegistrationDate(today)
+                .setRegistrationDate(TODAY)
                 .build();
 
-        Deadline inspectionDeadline = car.generateStandardInspectionDeadline(today);
+        Deadline inspectionDeadline = car.generateStandardInspectionDeadline(TODAY);
 
         assertEquals(1, car.getDeadlines().size());
 
-        LocalDate expectedDate = today.plusYears(4)
+        LocalDate expectedDate = TODAY.plusYears(4)
                 .with(TemporalAdjusters.lastDayOfMonth());
 
         assertEquals("Revisione Veicolo", inspectionDeadline.getReason());
@@ -103,7 +103,7 @@ public class VehicleTest {
     public void generateStandardInspectionDeadline_WithoutRegistrationDate_ThrowsException() {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build(); // Vehicle without a registration date
 
-        assertThrows(IllegalStateException.class, () -> car.generateStandardInspectionDeadline(today),
+        assertThrows(IllegalStateException.class, () -> car.generateStandardInspectionDeadline(TODAY),
                 "Cannot generate standard inspection deadlines without registration date");
     }
 
@@ -112,11 +112,11 @@ public class VehicleTest {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
                 .build();
 
-        Deadline inspectionDeadline = car.generateInspectionFromLastDate(today);
+        Deadline inspectionDeadline = car.generateInspectionFromLastDate(TODAY);
 
         assertEquals(1, car.getDeadlines().size());
 
-        LocalDate expectedDate = today.plusYears(2)
+        LocalDate expectedDate = TODAY.plusYears(2)
                 .with(TemporalAdjusters.lastDayOfMonth());
 
         assertEquals("Revisione Veicolo", inspectionDeadline.getReason());
@@ -161,7 +161,7 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"),
                 "Cannot edit license plate of a second-hand vehicle with status QUOTED");
-        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(today),
+        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(TODAY),
                 "Cannot edit registration date of a second-hand vehicle with status QUOTED");
     }
 
@@ -172,7 +172,7 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"),
                 "Cannot edit license plate of a second-hand vehicle with status RESERVED");
-        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(today),
+        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(TODAY),
                 "Cannot edit registration date of a second-hand vehicle with status RESERVED");
     }
 
@@ -183,11 +183,11 @@ public class VehicleTest {
 
         assertDoesNotThrow(() -> {
             car.setLicensePlate("XX999YY");
-            car.setRegistrationDate(today);
+            car.setRegistrationDate(TODAY);
         });
 
         assertEquals("XX999YY", car.getLicensePlate());
-        assertTrue(today.isEqual(car.getRegistrationDate()));
+        assertTrue(TODAY.isEqual(car.getRegistrationDate()));
     }
 
     @Test
@@ -197,7 +197,7 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
-        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(today));
+        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(TODAY));
     }
 
     @Test
@@ -207,9 +207,9 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
-        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(today));
+        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(TODAY));
         assertThrows(IllegalStateException.class, () -> car.setPurchaseTransaction(TransactionFactory
-                .createVehiclePurchase(car, new BigDecimal("8000.00"), today.minusDays(12))));
+                .createVehiclePurchase(car, new BigDecimal("8000.00"), TODAY.minusDays(12))));
     }
 
     @Test

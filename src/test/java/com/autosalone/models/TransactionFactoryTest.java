@@ -12,7 +12,7 @@ import com.autosalone.enums.VehicleCondition;
 
 public class TransactionFactoryTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Test
     public void createVehiclePurchase_ForVehicleWithPurchaseTransactionAlready_ThrowsException() {
@@ -24,11 +24,11 @@ public class TransactionFactoryTest {
                 .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.SECONDHAND)
                 .build();
-        Transaction purchaseTransaction = TransactionFactory.createVehiclePurchase(car, new BigDecimal("9000"), today);
+        Transaction purchaseTransaction = TransactionFactory.createVehiclePurchase(car, new BigDecimal("9000"), TODAY);
         car.setPurchaseTransaction(purchaseTransaction);
 
         assertNotNull(car.getPurchaseTransaction());
         assertThrows(IllegalStateException.class,
-                () -> TransactionFactory.createVehiclePurchase(car, new BigDecimal("8000"), today));
+                () -> TransactionFactory.createVehiclePurchase(car, new BigDecimal("8000"), TODAY));
     }
 }

@@ -8,9 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.GeneralTransactionRequest;
@@ -34,11 +31,7 @@ import jakarta.ws.rs.core.Response;
 @ExtendWith(MockitoExtension.class)
 class TransactionControllerTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
-
-    @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Mock
     private TransactionService transactionService;
@@ -46,7 +39,6 @@ class TransactionControllerTest {
     @InjectMocks
     private TransactionController transactionController;
 
-    private LocalDate now;
     private UUID transactionId;
     private TransactionResponse transactionResponse;
     private GeneralTransactionRequest expenseRequest;
@@ -54,20 +46,19 @@ class TransactionControllerTest {
 
     @BeforeEach
     void setUp() {
-        now = today;
         transactionId = UUID.randomUUID();
 
         transactionResponse = new TransactionResponse(transactionId, "Descrizione", new BigDecimal("150.00"),
-                now.toString(), TransactionType.OUT, null, null);
+                TODAY.toString(), TransactionType.OUT, null, null);
 
-        expenseRequest = new GeneralTransactionRequest("Spesa ufficio", new BigDecimal("150.00"), now);
-        incomeRequest = new GeneralTransactionRequest("Consulenza", new BigDecimal("500.00"), now);
+        expenseRequest = new GeneralTransactionRequest("Spesa ufficio", new BigDecimal("150.00"), TODAY);
+        incomeRequest = new GeneralTransactionRequest("Consulenza", new BigDecimal("500.00"), TODAY);
     }
 
     @Test
     void getTransactions_Returns200AndList() {
-        LocalDate dateFrom = now.minusDays(10);
-        LocalDate dateTo = now;
+        LocalDate dateFrom = TODAY.minusDays(10);
+        LocalDate dateTo = TODAY;
         when(transactionService.getTransactions(dateFrom, dateTo, TransactionType.OUT, SortOrder.DESC))
                 .thenReturn(List.of(transactionResponse));
 
@@ -92,8 +83,8 @@ class TransactionControllerTest {
 
     @Test
     void getSummary_Returns200AndMapWithTotals() {
-        LocalDate dateFrom = now.minusDays(10);
-        LocalDate dateTo = now;
+        LocalDate dateFrom = TODAY.minusDays(10);
+        LocalDate dateTo = TODAY;
 
         when(transactionService.getSumOfIncomes(dateFrom, dateTo)).thenReturn(new BigDecimal("1000.00"));
         when(transactionService.getSumOfExpenses(dateFrom, dateTo)).thenReturn(new BigDecimal("200.00"));

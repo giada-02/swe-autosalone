@@ -13,9 +13,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.security.Principal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
@@ -50,11 +47,7 @@ import jakarta.ws.rs.core.SecurityContext;
 @ExtendWith(MockitoExtension.class)
 class VehicleControllerTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
-
-    @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Mock
     private VehicleService vehicleService;
@@ -73,8 +66,6 @@ class VehicleControllerTest {
     @InjectMocks
     private VehicleController vehicleController;
 
-    private LocalDate now;
-
     private UUID vehicleId;
     private VehicleCreateRequest vehicleCreateRequest;
     private VehicleUpdateRequest vehicleUpdateRequest;
@@ -88,7 +79,6 @@ class VehicleControllerTest {
 
     @BeforeEach
     void setUp() {
-        now = today;
         vehicleId = UUID.randomUUID();
 
         vehicleCreateRequest = buildCreateRequest();
@@ -97,11 +87,11 @@ class VehicleControllerTest {
         vehicleCustomerResponse = buildVehicleCustomerResponse(vehicleId);
 
         deadlineId = UUID.randomUUID();
-        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", now.plusDays(10).toString(), vehicleId, null,
+        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", TODAY.plusDays(10).toString(), vehicleId, null,
                 false, false, null, null, false);
 
         expenseId = UUID.randomUUID();
-        expenseResponse = new ExpenseResponse(expenseId, "Carrozziere", new BigDecimal("500"), now.toString(),
+        expenseResponse = new ExpenseResponse(expenseId, "Carrozziere", new BigDecimal("500"), TODAY.toString(),
                 vehicleId);
     }
 
@@ -206,7 +196,7 @@ class VehicleControllerTest {
 
     @Test
     void addPurchaseTransaction_Returns200AndVehicle() {
-        PurchaseTransactionRequest purchaseRequest = new PurchaseTransactionRequest(new BigDecimal("10000"), now);
+        PurchaseTransactionRequest purchaseRequest = new PurchaseTransactionRequest(new BigDecimal("10000"), TODAY);
         when(vehicleService.addPurchaseTransaction(vehicleId, purchaseRequest)).thenReturn(vehicleResponse);
 
         Response response = vehicleController.addPurchaseTransaction(vehicleId, purchaseRequest);
@@ -254,8 +244,8 @@ class VehicleControllerTest {
 
     @Test
     void addExpense_Returns201AndLocationHeaderWithBody() {
-        ExpenseRequest expenseRequest = new ExpenseRequest("Carrozziere", new BigDecimal("500"), now);
-        when(vehicleService.addExpense(vehicleId, "Carrozziere", new BigDecimal("500"), now))
+        ExpenseRequest expenseRequest = new ExpenseRequest("Carrozziere", new BigDecimal("500"), TODAY);
+        when(vehicleService.addExpense(vehicleId, "Carrozziere", new BigDecimal("500"), TODAY))
                 .thenReturn(expenseResponse);
 
         Response response = vehicleController.addExpense(vehicleId, expenseRequest);
@@ -272,7 +262,7 @@ class VehicleControllerTest {
 
     @Test
     void generateStandardInspection_Returns201AndLocationHeaderWithBody() {
-        LocalDate lastInspection = now.minusYears(1);
+        LocalDate lastInspection = TODAY.minusYears(1);
         String lastInspectionDateString = lastInspection.toString();
         when(vehicleService.generateStandardInspection(vehicleId, lastInspection)).thenReturn(deadlineResponse);
 
@@ -337,7 +327,7 @@ class VehicleControllerTest {
 
     @Test
     void addDeadline_Returns201AndLocationHeaderWithBody() {
-        DeadlineRequest deadlineRequest = new DeadlineRequest("Tagliando", now, null, false);
+        DeadlineRequest deadlineRequest = new DeadlineRequest("Tagliando", TODAY, null, false);
         when(vehicleService.addDeadline(vehicleId, deadlineRequest)).thenReturn(deadlineResponse);
 
         Response response = vehicleController.addDeadline(vehicleId, deadlineRequest);

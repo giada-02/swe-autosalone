@@ -13,7 +13,7 @@ import java.time.Period;
 
 public class DeadlineTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
     private LocalDate yesterday;
 
     private Vehicle defaultCar;
@@ -28,27 +28,27 @@ public class DeadlineTest {
                 .setCondition(VehicleCondition.SECONDHAND)
                 .setSellingPrice(new BigDecimal("10000.00"))
                 .build();
-        this.yesterday = today.minusDays(1);
+        this.yesterday = TODAY.minusDays(1);
     }
 
     @Test
     public void constructor_RecalculateFromCompletionWithoutRecurrence_ThrowsException() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Deadline(defaultCar, "Tagliando", today, null, true),
+                () -> new Deadline(defaultCar, "Tagliando", TODAY, null, true),
                 "Cannot recalculate from completion if there is no recurrence");
     }
 
     @Test
     public void isExpired_IncompleteEventWithDueDateInThePast_ReturnsTrue() {
         Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
-        assertTrue(deadline.isExpired(today));
+        assertTrue(deadline.isExpired(TODAY));
     }
 
     @Test
     public void isExpired_CompletedEventWithDueDateInThePast_ReturnsFalse() {
         Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
-        deadline.complete(today, "Sostituite pastiglie");
-        assertFalse(deadline.isExpired(today));
+        deadline.complete(TODAY, "Sostituite pastiglie");
+        assertFalse(deadline.isExpired(TODAY));
     }
 
     @Test
@@ -58,8 +58,8 @@ public class DeadlineTest {
         assertAll(
                 () -> assertDoesNotThrow(() -> deadline.setReason("Tagliando")),
                 () -> assertEquals("Tagliando", deadline.getReason()),
-                () -> assertDoesNotThrow(() -> deadline.setDueDate(today)),
-                () -> assertTrue(today.equals(deadline.getDueDate())),
+                () -> assertDoesNotThrow(() -> deadline.setDueDate(TODAY)),
+                () -> assertTrue(TODAY.equals(deadline.getDueDate())),
                 () -> assertDoesNotThrow(() -> deadline.setRecurrence(Period.ofYears(1))),
                 () -> assertTrue(Period.ofYears(1).equals(deadline.getRecurrence())),
                 () -> assertDoesNotThrow(() -> deadline.setRecalculateFromCompletion(true)),
@@ -69,11 +69,11 @@ public class DeadlineTest {
     @Test
     public void setters_CompletedEvent_ThrowsException() {
         Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
-        deadline.complete(today, "Sostituite pastiglie");
+        deadline.complete(TODAY, "Sostituite pastiglie");
 
         assertAll(
                 () -> assertThrows(IllegalStateException.class, () -> deadline.setReason("Tagliando")),
-                () -> assertThrows(IllegalStateException.class, () -> deadline.setDueDate(today)),
+                () -> assertThrows(IllegalStateException.class, () -> deadline.setDueDate(TODAY)),
                 () -> assertThrows(IllegalStateException.class, () -> deadline.setRecurrence(Period.ofYears(1))),
                 () -> assertThrows(IllegalStateException.class, () -> deadline.setRecalculateFromCompletion(true)));
     }
@@ -108,10 +108,10 @@ public class DeadlineTest {
         // scadenza singola, non si ripete
         Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
 
-        Deadline nextEvent = deadline.complete(today, "Sostituite pastiglie");
+        Deadline nextEvent = deadline.complete(TODAY, "Sostituite pastiglie");
 
         assertTrue(deadline.isCompleted(), "The deadline should have been completed");
-        assertTrue(today.equals(deadline.getCompletionDate()));
+        assertTrue(TODAY.equals(deadline.getCompletionDate()));
         assertEquals("Sostituite pastiglie", deadline.getNotes());
         assertNull(nextEvent, "Without a recurrence it must not generate a next deadline event");
     }
@@ -119,7 +119,7 @@ public class DeadlineTest {
     @Test
     public void complete_RecalculateFromCompletion_GeneratesCorrectNextEvent() {
         // tagliando: ogni anno, ricalcola dall'effettiva data di completamento
-        Deadline deadline = new Deadline(defaultCar, "Tagliando", today, Period.ofYears(1), true);
+        Deadline deadline = new Deadline(defaultCar, "Tagliando", TODAY, Period.ofYears(1), true);
 
         // completato in anticipo
         Deadline nextEvent = deadline.complete(yesterday, "Cambio olio e filtri, speso 300€");
@@ -134,23 +134,23 @@ public class DeadlineTest {
     @Test
     public void complete_DoNotRecalculate_GeneratesCorrectNextEvent() {
         // bollo: ogni anno, NON ricalcola dalla data effettiva di completamento
-        Deadline deadline = new Deadline(defaultCar, "Bollo Auto", today, Period.ofYears(1), false);
+        Deadline deadline = new Deadline(defaultCar, "Bollo Auto", TODAY, Period.ofYears(1), false);
 
         // completato in anticipo
         Deadline nextEvent = deadline.complete(yesterday, "Pagato tramite PagoPA");
 
         assertNotNull(nextEvent, "With a recurrence it must generate the next deadline event");
-        assertTrue(today.plusYears(1).isEqual(nextEvent.getDueDate()),
+        assertTrue(TODAY.plusYears(1).isEqual(nextEvent.getDueDate()),
                 "The next deadline should be in a year from the due date of the last one");
     }
 
     @Test
     public void complete_AlreadyCompleted_ThrowsException() {
-        Deadline deadline = new Deadline(defaultCar, "Riparazione", today, null, false);
-        deadline.complete(today, "Fatto");
+        Deadline deadline = new Deadline(defaultCar, "Riparazione", TODAY, null, false);
+        deadline.complete(TODAY, "Fatto");
 
         assertThrows(IllegalStateException.class, () -> {
-            deadline.complete(today, null);
+            deadline.complete(TODAY, null);
         }, "Cannot complete a completed deadline event");
     }
 

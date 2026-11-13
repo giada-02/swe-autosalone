@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DeadlineRepositoryTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     private EntityManagerFactory emf;
     private EntityManager em;
@@ -48,7 +48,7 @@ public class DeadlineRepositoryTest {
     public void saveDeadline_Success() {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
-        LocalDate dueDate = today.plusMonths(1);
+        LocalDate dueDate = TODAY.plusMonths(1);
         Period recurrence = Period.ofYears(1);
 
         Deadline deadline = vehicle.addDeadline("Bollo Auto", dueDate, recurrence, false);
@@ -78,13 +78,13 @@ public class DeadlineRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
 
-        Deadline pendingDeadline = vehicle.addDeadline("Tagliando", today.plusDays(10), null, false);
-        Deadline completedDeadline = vehicle.addDeadline("Cambio Gomme", today.minusDays(5), null, false);
+        Deadline pendingDeadline = vehicle.addDeadline("Tagliando", TODAY.plusDays(10), null, false);
+        Deadline completedDeadline = vehicle.addDeadline("Cambio Gomme", TODAY.minusDays(5), null, false);
 
         repository.save(pendingDeadline);
         repository.save(completedDeadline);
 
-        completedDeadline.complete(today, "Sostituite");
+        completedDeadline.complete(TODAY, "Sostituite");
         repository.save(completedDeadline);
 
         em.getTransaction().commit();
@@ -110,16 +110,16 @@ public class DeadlineRepositoryTest {
         Vehicle outOfShowroom = persistMockVehicle(false);
 
         // scaduta (scaduta ieri) e in salone
-        inShowroom.addDeadline("Scaduta", today.minusDays(1), null, false);
+        inShowroom.addDeadline("Scaduta", TODAY.minusDays(1), null, false);
 
         // imminente (scade oggi) e in salone
-        inShowroom.addDeadline("Oggi", today, null, false);
+        inShowroom.addDeadline("Oggi", TODAY, null, false);
 
         // futura (scade tra 1 mese) e in salone
-        inShowroom.addDeadline("Futura", today.plusMonths(1), null, false);
+        inShowroom.addDeadline("Futura", TODAY.plusMonths(1), null, false);
 
         // urgente (scaduta ieri) ma NON in salone
-        outOfShowroom.addDeadline("Scaduta Fuori", today.minusDays(1), null, false);
+        outOfShowroom.addDeadline("Scaduta Fuori", TODAY.minusDays(1), null, false);
 
         for (Deadline d : inShowroom.getDeadlines())
             repository.save(d);
@@ -129,7 +129,7 @@ public class DeadlineRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        List<Deadline> urgent = repository.findUrgentDeadlines(today); // upToDate = today
+        List<Deadline> urgent = repository.findUrgentDeadlines(TODAY); // upToDate = today
 
         assertEquals(2, urgent.size());
         assertEquals("Scaduta", urgent.get(0).getReason());
@@ -140,7 +140,7 @@ public class DeadlineRepositoryTest {
     public void saveDeadline_UpdateMerge_Success() {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
-        LocalDate dueDate = today.plusMonths(1);
+        LocalDate dueDate = TODAY.plusMonths(1);
         Period recurrence = Period.ofYears(1);
 
         Deadline deadline = vehicle.addDeadline("Bollo Auto", dueDate, recurrence, true);
@@ -168,7 +168,7 @@ public class DeadlineRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
 
-        Deadline deadline = vehicle.addDeadline("Da Eliminare", today, null, false);
+        Deadline deadline = vehicle.addDeadline("Da Eliminare", TODAY, null, false);
         repository.save(deadline);
 
         repository.delete(deadline);
@@ -185,7 +185,7 @@ public class DeadlineRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle(true);
 
-        Deadline deadline = vehicle.addDeadline("Da Eliminare", today, null, false);
+        Deadline deadline = vehicle.addDeadline("Da Eliminare", TODAY, null, false);
         repository.save(deadline);
         em.getTransaction().commit();
 

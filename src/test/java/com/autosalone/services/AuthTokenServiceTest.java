@@ -2,15 +2,17 @@ package com.autosalone.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
@@ -22,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.config.ClockProducer;
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;
@@ -31,11 +34,10 @@ import com.autosalone.repositories.AuthTokenRepository;
 @ExtendWith(MockitoExtension.class)
 class AuthTokenServiceTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final Instant now = Instant.parse("2026-09-15T10:00:00Z");
+    private static final Instant NOW = Instant.parse("2026-09-15T10:00:00Z");
 
     @Spy
-    private Clock clock = Clock.fixed(now, romeTZ);
+    private Clock clock = Clock.fixed(NOW, ClockProducer.TIME_ZONE_ID);
 
     @Mock
     private AuthTokenRepository tokenRepository;
@@ -58,6 +60,8 @@ class AuthTokenServiceTest {
         assertNotNull(token.getToken());
         assertEquals(TokenType.REGISTRATION, token.getType());
         assertEquals(mockUser, token.getUser());
+        assertTrue(NOW.plus(AuthTokenService.REGISTRATION_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS)
+                .equals(token.getExpiryDate()));
         verify(tokenRepository).save(any(AuthToken.class));
     }
 
@@ -70,14 +74,51 @@ class AuthTokenServiceTest {
         assertNotNull(token.getToken());
         assertEquals(TokenType.PASSWORD_RESET, token.getType());
         assertEquals(mockUser, token.getUser());
+        assertTrue(NOW.plus(AuthTokenService.RESET_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS)
+                .equals(token.getExpiryDate()));
         verify(tokenRepository).save(any(AuthToken.class));
+    }
+
+    @Test
+    void createPasswordResetToken_WithinCooldown_ReturnsNull() {
+        when(mockUser.getEmail()).thenReturn("test@email.com");
+        when(mockUser.isActive()).thenReturn(true);
+
+        AuthToken existingToken = mock(AuthToken.class);
+        when(existingToken.getCreatedAt()).thenReturn(NOW.minus(3, ChronoUnit.MINUTES));
+        when(tokenRepository.findByUserAndType(mockUser, TokenType.PASSWORD_RESET))
+                .thenReturn(Optional.of(existingToken));
+
+        AuthToken token = authTokenService.createPasswordResetToken(mockUser);
+
+        assertNull(token);
+        verify(tokenRepository, never()).delete(any());
+        verify(tokenRepository, never()).save(any());
+    }
+
+    @Test
+    void createPasswordResetToken_AfterCooldown_ReplacesExistingToken() {
+        when(mockUser.getEmail()).thenReturn("test@email.com");
+        when(mockUser.isActive()).thenReturn(true);
+
+        AuthToken existingToken = mock(AuthToken.class);
+        when(existingToken.getCreatedAt()).thenReturn(NOW.minus(6, ChronoUnit.MINUTES));
+        when(tokenRepository.findByUserAndType(mockUser, TokenType.PASSWORD_RESET))
+                .thenReturn(Optional.of(existingToken));
+
+        AuthToken token = authTokenService.createPasswordResetToken(mockUser);
+
+        assertNotNull(token);
+        assertEquals(TokenType.PASSWORD_RESET, token.getType());
+        verify(tokenRepository).delete(existingToken);
+        verify(tokenRepository).save(token);
     }
 
     @Test
     void validateToken_WhenValid_Success() {
         String tokenString = "secure_token_123";
         AuthToken validToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET,
-                now.plus(2, ChronoUnit.HOURS));
+                NOW.plus(2, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(validToken));
 
@@ -99,7 +140,7 @@ class AuthTokenServiceTest {
     void validateToken_FailsWithInvalidTokenType() {
         String tokenString = "secure_token_123";
         AuthToken resetToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET,
-                now.plus(2, ChronoUnit.HOURS));
+                NOW.plus(2, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(resetToken));
 
@@ -111,7 +152,7 @@ class AuthTokenServiceTest {
     void validateToken_FailsWhenExpired() {
         String tokenString = "secure_token_123";
         AuthToken expiredToken = new AuthToken(tokenString, mockUser, TokenType.REGISTRATION,
-                now.minus(1, ChronoUnit.HOURS));
+                NOW.minus(1, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(expiredToken));
 
@@ -131,11 +172,11 @@ class AuthTokenServiceTest {
     @Test
     void deleteExpiredAuthTokens_ReturnsDeletedCount() {
         int expectedDeletedCount = 5;
-        when(tokenRepository.deleteAllExpiredTokens(any(Instant.class))).thenReturn(expectedDeletedCount);
+        when(tokenRepository.deleteAllExpiredTokens(NOW)).thenReturn(expectedDeletedCount);
 
         int actualDeletedCount = authTokenService.deleteExpiredAuthTokens();
 
         assertEquals(expectedDeletedCount, actualDeletedCount);
-        verify(tokenRepository).deleteAllExpiredTokens(any(Instant.class));
+        verify(tokenRepository).deleteAllExpiredTokens(NOW);
     }
 }

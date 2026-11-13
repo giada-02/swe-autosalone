@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class QuotationRepositoryTest {
 
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     private EntityManagerFactory emf;
     private EntityManager em;
@@ -54,7 +54,7 @@ public class QuotationRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Quotation quotation = new Quotation(vehicle, customer, today);
+        Quotation quotation = new Quotation(vehicle, customer, TODAY);
 
         repository.save(quotation);
         em.getTransaction().commit();
@@ -82,54 +82,54 @@ public class QuotationRepositoryTest {
         Vehicle vehicle3 = persistMockVehicle();
         Customer customer = persistMockCustomer();
 
-        Quotation q1 = new Quotation(vehicle1, customer, today);
+        Quotation q1 = new Quotation(vehicle1, customer, TODAY);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.updateExpiration(today);
-        q1.issue(today);
-        q1.accept(today); // ACCEPTED
+        q1.updateExpiration(TODAY);
+        q1.issue(TODAY);
+        q1.accept(TODAY); // ACCEPTED
         repository.save(q1);
 
-        Quotation q2 = new Quotation(vehicle2, customer, today); // DRAFT
+        Quotation q2 = new Quotation(vehicle2, customer, TODAY); // DRAFT
         q2.setDate(LocalDate.of(2025, 11, 7));
-        q2.archive(today); // archived
+        q2.archive(TODAY); // archived
         repository.save(q2);
 
-        Quotation q3 = new Quotation(vehicle3, customer, today);
+        Quotation q3 = new Quotation(vehicle3, customer, TODAY);
         q3.setDate(LocalDate.of(2026, 3, 12));
-        q3.updateExpiration(today);
-        q3.issue(today); // ISSUED
+        q3.updateExpiration(TODAY);
+        q3.issue(TODAY); // ISSUED
         repository.save(q3);
 
         em.getTransaction().commit();
         em.clear();
 
         List<Quotation> byDateFrom = repository.findQuotations(LocalDate.of(2026, 1, 1), null, null, null, null, null,
-                today);
+                TODAY);
         assertEquals(2, byDateFrom.size(), "Should find 2 quotations dated 2026");
         assertEquals(LocalDate.of(2026, 4, 2), byDateFrom.get(0).getDate());
         assertEquals(LocalDate.of(2026, 3, 12), byDateFrom.get(1).getDate());
 
         List<Quotation> byDateRange = repository.findQuotations(LocalDate.of(2026, 3, 12), LocalDate.of(2026, 3, 20),
-                null, null, null, null, today);
+                null, null, null, null, TODAY);
         assertEquals(1, byDateRange.size(), "Should find 1 quotation");
         assertEquals(LocalDate.of(2026, 3, 12), byDateRange.get(0).getDate());
 
-        List<Quotation> archived = repository.findQuotations(null, null, true, null, null, null, today);
+        List<Quotation> archived = repository.findQuotations(null, null, true, null, null, null, TODAY);
         assertEquals(1, archived.size(), "Should find 1 ARCHIVED quotation");
         assertTrue(archived.get(0).isArchived());
         assertEquals(LocalDate.of(2025, 11, 7), archived.get(0).getDate());
 
-        List<Quotation> byVehicleId = repository.findQuotations(null, null, null, vehicle1.getId(), null, null, today);
+        List<Quotation> byVehicleId = repository.findQuotations(null, null, null, vehicle1.getId(), null, null, TODAY);
         assertEquals(1, byVehicleId.size(), "Should find 1 quotation");
         assertEquals(LocalDate.of(2026, 4, 2), byVehicleId.get(0).getDate());
 
-        List<Quotation> byCustomerId = repository.findQuotations(null, null, null, null, customer.getId(), null, today);
+        List<Quotation> byCustomerId = repository.findQuotations(null, null, null, null, customer.getId(), null, TODAY);
         assertEquals(3, byCustomerId.size(), "Should find 3 quotations");
 
         List<QuotationStatus> statusList = Arrays.asList(QuotationStatus.ISSUED, QuotationStatus.ACCEPTED);
 
         List<Quotation> byStatus = repository.findQuotations(null, null, null,
-                null, null, statusList, today);
+                null, null, statusList, TODAY);
         assertEquals(2, byStatus.size(), "Should find 2 quotations matching the status");
         assertEquals(LocalDate.of(2026, 4, 2), byStatus.get(0).getDate());
         assertEquals(LocalDate.of(2026, 3, 12), byStatus.get(1).getDate());
@@ -141,26 +141,26 @@ public class QuotationRepositoryTest {
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
 
-        Quotation q1 = new Quotation(vehicle, customer, today);
+        Quotation q1 = new Quotation(vehicle, customer, TODAY);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.updateExpiration(today);
-        q1.issue(today); // ISSUED
+        q1.updateExpiration(TODAY);
+        q1.issue(TODAY); // ISSUED
         repository.save(q1);
 
-        Quotation q2 = new Quotation(vehicle, customer, today);
+        Quotation q2 = new Quotation(vehicle, customer, TODAY);
         q2.setDate(LocalDate.of(2026, 3, 12));
-        q2.updateExpiration(today.minusDays(1));
-        q2.issue(today.minusDays(1)); // ISSUED expired
+        q2.updateExpiration(TODAY.minusDays(1));
+        q2.issue(TODAY.minusDays(1)); // ISSUED expired
         repository.save(q2);
 
-        Quotation q3 = new Quotation(vehicle, customer, today);
+        Quotation q3 = new Quotation(vehicle, customer, TODAY);
         q3.setDate(LocalDate.of(2026, 2, 20));
-        q3.updateExpiration(today);
-        q3.issue(today);
+        q3.updateExpiration(TODAY);
+        q3.issue(TODAY);
         q3.expire(); // EXPIRED
         repository.save(q3);
 
-        Quotation q4 = new Quotation(vehicle, customer, today); // DRAFT
+        Quotation q4 = new Quotation(vehicle, customer, TODAY); // DRAFT
         q4.setDate(LocalDate.of(2026, 1, 15));
         repository.save(q4);
 
@@ -168,31 +168,31 @@ public class QuotationRepositoryTest {
         em.clear();
 
         List<Quotation> issued = repository.findQuotations(null, null, null, null, null,
-                List.of(QuotationStatus.ISSUED), today);
+                List.of(QuotationStatus.ISSUED), TODAY);
         assertEquals(1, issued.size(), "Should find only the ISSUED quotation that is still valid");
         assertEquals(LocalDate.of(2026, 4, 2), issued.get(0).getDate());
 
         List<Quotation> expired = repository.findQuotations(null, null, null, null, null,
-                List.of(QuotationStatus.EXPIRED), today);
+                List.of(QuotationStatus.EXPIRED), TODAY);
         assertEquals(2, expired.size(),
                 "Should find the EXPIRED quotation and the ISSUED one past its expiration date");
         assertEquals(LocalDate.of(2026, 3, 12), expired.get(0).getDate());
         assertEquals(LocalDate.of(2026, 2, 20), expired.get(1).getDate());
 
         List<Quotation> issuedOrDraft = repository.findQuotations(null, null, null, null, null,
-                List.of(QuotationStatus.ISSUED, QuotationStatus.DRAFT), today);
+                List.of(QuotationStatus.ISSUED, QuotationStatus.DRAFT), TODAY);
         assertEquals(2, issuedOrDraft.size(), "Should find the valid ISSUED quotation and the DRAFT one");
         assertEquals(LocalDate.of(2026, 4, 2), issuedOrDraft.get(0).getDate());
         assertEquals(LocalDate.of(2026, 1, 15), issuedOrDraft.get(1).getDate());
 
         List<Quotation> issuedOrExpired = repository.findQuotations(null, null, null, null, null,
-                List.of(QuotationStatus.ISSUED, QuotationStatus.EXPIRED), today);
+                List.of(QuotationStatus.ISSUED, QuotationStatus.EXPIRED), TODAY);
         assertEquals(3, issuedOrExpired.size(), "Should find each quotation only once");
         assertEquals(LocalDate.of(2026, 4, 2), issuedOrExpired.get(0).getDate());
         assertEquals(LocalDate.of(2026, 3, 12), issuedOrExpired.get(1).getDate());
         assertEquals(LocalDate.of(2026, 2, 20), issuedOrExpired.get(2).getDate());
 
-        List<Quotation> all = repository.findQuotations(null, null, null, null, null, null, today);
+        List<Quotation> all = repository.findQuotations(null, null, null, null, null, null, TODAY);
         assertEquals(4, all.size(), "Without a status filter should find all quotations");
     }
 
@@ -203,21 +203,21 @@ public class QuotationRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Quotation q1 = new Quotation(vehicle, customer1, today);
+        Quotation q1 = new Quotation(vehicle, customer1, TODAY);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.updateExpiration(today);
-        q1.issue(today);
-        q1.accept(today); // ACCEPTED
+        q1.updateExpiration(TODAY);
+        q1.issue(TODAY);
+        q1.accept(TODAY); // ACCEPTED
         repository.save(q1);
 
-        Quotation q2 = new Quotation(vehicle, customer2, today); // DRAFT
+        Quotation q2 = new Quotation(vehicle, customer2, TODAY); // DRAFT
         q2.setDate(LocalDate.of(2025, 11, 7));
         repository.save(q2);
 
-        Quotation q3 = new Quotation(vehicle, customer2, today);
+        Quotation q3 = new Quotation(vehicle, customer2, TODAY);
         q3.setDate(LocalDate.of(2026, 3, 12));
-        q3.updateExpiration(today);
-        q3.issue(today); // ISSUED
+        q3.updateExpiration(TODAY);
+        q3.issue(TODAY); // ISSUED
         repository.save(q3);
 
         em.getTransaction().commit();
@@ -238,22 +238,22 @@ public class QuotationRepositoryTest {
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
 
-        Quotation q1 = new Quotation(vehicle, customer, today);
+        Quotation q1 = new Quotation(vehicle, customer, TODAY);
         q1.setDate(LocalDate.of(2026, 1, 5));
-        q1.updateExpiration(today.minusDays(1));
-        q1.issue(today.minusDays(1)); // ISSUED expired
+        q1.updateExpiration(TODAY.minusDays(1));
+        q1.issue(TODAY.minusDays(1)); // ISSUED expired
         repository.save(q1);
 
-        Quotation q2 = new Quotation(vehicle, customer, today);
+        Quotation q2 = new Quotation(vehicle, customer, TODAY);
         q2.setDate(LocalDate.of(2026, 1, 7));
-        q2.updateExpiration(today);
-        q2.issue(today); // ISSUED
+        q2.updateExpiration(TODAY);
+        q2.issue(TODAY); // ISSUED
         repository.save(q2);
 
         em.getTransaction().commit();
         em.clear();
 
-        List<Quotation> expiredQuotation = repository.findExpiredQuotations(today);
+        List<Quotation> expiredQuotation = repository.findExpiredQuotations(TODAY);
         assertEquals(1, expiredQuotation.size(), "Should find 1 ISSUED quotation with expiration date in the past");
         assertEquals(LocalDate.of(2026, 1, 5), expiredQuotation.get(0).getDate());
     }
@@ -265,21 +265,21 @@ public class QuotationRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Quotation q1 = new Quotation(vehicle, customer1, today);
+        Quotation q1 = new Quotation(vehicle, customer1, TODAY);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.updateExpiration(today);
-        q1.issue(today); // ISSUED
+        q1.updateExpiration(TODAY);
+        q1.issue(TODAY); // ISSUED
         repository.save(q1);
 
-        Quotation q2 = new Quotation(vehicle, customer1, today); // DRAFT
+        Quotation q2 = new Quotation(vehicle, customer1, TODAY); // DRAFT
         q2.setDate(LocalDate.of(2025, 11, 7));
-        q2.archive(today); // archived
+        q2.archive(TODAY); // archived
         repository.save(q2);
 
-        Quotation q3 = new Quotation(vehicle, customer2, today);
+        Quotation q3 = new Quotation(vehicle, customer2, TODAY);
         q3.setDate(LocalDate.of(2026, 3, 12));
-        q3.updateExpiration(today);
-        q3.issue(today); // ISSUED
+        q3.updateExpiration(TODAY);
+        q3.issue(TODAY); // ISSUED
         repository.save(q3);
 
         em.getTransaction().commit();
@@ -296,21 +296,21 @@ public class QuotationRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Quotation q1 = new Quotation(vehicle, customer1, today);
+        Quotation q1 = new Quotation(vehicle, customer1, TODAY);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.updateExpiration(today);
-        q1.issue(today); // ISSUED
+        q1.updateExpiration(TODAY);
+        q1.issue(TODAY); // ISSUED
         repository.save(q1);
 
-        Quotation q2 = new Quotation(vehicle, customer1, today); // DRAFT
-        q2.setDate(today);
-        q2.archive(today); // archived
+        Quotation q2 = new Quotation(vehicle, customer1, TODAY); // DRAFT
+        q2.setDate(TODAY);
+        q2.archive(TODAY); // archived
         repository.save(q2);
 
-        Quotation q3 = new Quotation(vehicle, customer2, today);
+        Quotation q3 = new Quotation(vehicle, customer2, TODAY);
         q3.setDate(LocalDate.of(2026, 3, 12));
-        q3.updateExpiration(today);
-        q3.issue(today); // ISSUED
+        q3.updateExpiration(TODAY);
+        q3.issue(TODAY); // ISSUED
         repository.save(q3);
 
         em.getTransaction().commit();
@@ -327,25 +327,25 @@ public class QuotationRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Quotation q1 = new Quotation(vehicle, customer1, today);
+        Quotation q1 = new Quotation(vehicle, customer1, TODAY);
         q1.setDate(LocalDate.of(2026, 4, 2));
-        q1.updateExpiration(today);
-        q1.issue(today);
-        q1.accept(today); // ACCEPTED
+        q1.updateExpiration(TODAY);
+        q1.issue(TODAY);
+        q1.accept(TODAY); // ACCEPTED
         repository.save(q1);
 
-        Quotation q2 = new Quotation(vehicle, customer2, today); // DRAFT
+        Quotation q2 = new Quotation(vehicle, customer2, TODAY); // DRAFT
         repository.save(q2);
 
-        Quotation q3 = new Quotation(vehicle, customer1, today); // DRAFT
+        Quotation q3 = new Quotation(vehicle, customer1, TODAY); // DRAFT
         q3.setDate(LocalDate.of(2025, 11, 7));
-        q3.archive(today); // archived
+        q3.archive(TODAY); // archived
         repository.save(q3);
 
-        Quotation q4 = new Quotation(vehicle, customer2, today);
+        Quotation q4 = new Quotation(vehicle, customer2, TODAY);
         q4.setDate(LocalDate.of(2026, 4, 2));
-        q4.updateExpiration(today);
-        q4.issue(today); // ISSUED
+        q4.updateExpiration(TODAY);
+        q4.issue(TODAY); // ISSUED
         q4.expire(); // EXPIRED
         repository.save(q4);
         em.getTransaction().commit();
@@ -360,7 +360,7 @@ public class QuotationRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Quotation quotation = new Quotation(vehicle, customer, today);
+        Quotation quotation = new Quotation(vehicle, customer, TODAY);
         repository.save(quotation);
         em.getTransaction().commit();
 
@@ -385,11 +385,11 @@ public class QuotationRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Quotation original = new Quotation(vehicle, customer, today);
+        Quotation original = new Quotation(vehicle, customer, TODAY);
         DiscountStrategy percentageDiscountStrategy = new PercentageDiscountStrategy(new BigDecimal("10"));
         original.setDiscountStrategy(percentageDiscountStrategy);
 
-        Quotation quotation = new Quotation(original, today);
+        Quotation quotation = new Quotation(original, TODAY);
         repository.save(quotation);
         em.getTransaction().commit();
 
@@ -408,7 +408,7 @@ public class QuotationRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Quotation quotation = new Quotation(vehicle, customer, today);
+        Quotation quotation = new Quotation(vehicle, customer, TODAY);
         repository.save(quotation);
 
         repository.delete(quotation); // em.remove(quotation)
@@ -424,7 +424,7 @@ public class QuotationRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Quotation quotation = new Quotation(vehicle, customer, today);
+        Quotation quotation = new Quotation(vehicle, customer, TODAY);
 
         repository.save(quotation);
         em.getTransaction().commit();

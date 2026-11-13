@@ -5,9 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.responses.ExpenseResponse;
@@ -32,11 +29,7 @@ import com.autosalone.repositories.TransactionRepository;
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceTest {
 
-    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
-    private static final LocalDate today = LocalDate.of(2026, 9, 15);
-
-    @Spy
-    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
+    private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Mock
     private TransactionRepository transactionRepository;
@@ -93,8 +86,8 @@ class TransactionServiceTest {
 
     @Test
     void getTransactions_Success() {
-        LocalDate from = today.minusDays(30);
-        LocalDate to = today;
+        LocalDate from = TODAY.minusDays(30);
+        LocalDate to = TODAY;
 
         when(transactionRepository.findTransactions(from, to, TransactionType.IN, SortOrder.DESC))
                 .thenReturn(List.of(mockTransaction));
@@ -130,8 +123,8 @@ class TransactionServiceTest {
 
     @Test
     void getSumOfIncomes_Success() {
-        LocalDate from = today.minusDays(10);
-        LocalDate to = today;
+        LocalDate from = TODAY.minusDays(10);
+        LocalDate to = TODAY;
         BigDecimal expectedSum = BigDecimal.valueOf(5000);
 
         when(transactionRepository.sumInTransactions(from, to)).thenReturn(expectedSum);
@@ -144,8 +137,8 @@ class TransactionServiceTest {
 
     @Test
     void getSumOfExpenses_Success() {
-        LocalDate from = today.minusDays(10);
-        LocalDate to = today;
+        LocalDate from = TODAY.minusDays(10);
+        LocalDate to = TODAY;
         BigDecimal expectedSum = BigDecimal.valueOf(1500);
 
         when(transactionRepository.sumOutTransactions(from, to)).thenReturn(expectedSum);
@@ -163,11 +156,11 @@ class TransactionServiceTest {
         String reason = "Bolletta Luce";
         BigDecimal amount = BigDecimal.valueOf(250.50);
 
-        TransactionResponse response = transactionService.createGeneralExpense(reason, amount, today);
+        TransactionResponse response = transactionService.createGeneralExpense(reason, amount, TODAY);
 
         assertEquals(reason, response.reason());
         assertEquals(amount, response.amount());
-        assertEquals(today.toString(), response.date());
+        assertEquals(TODAY.toString(), response.date());
         assertEquals(TransactionType.OUT, response.type());
 
         verify(transactionRepository).save(any(Transaction.class));
@@ -178,11 +171,11 @@ class TransactionServiceTest {
         String reason = "Rimborso Fiscale";
         BigDecimal amount = BigDecimal.valueOf(1000.00);
 
-        TransactionResponse response = transactionService.createGeneralIncome(reason, amount, today);
+        TransactionResponse response = transactionService.createGeneralIncome(reason, amount, TODAY);
 
         assertEquals(reason, response.reason());
         assertEquals(amount, response.amount());
-        assertEquals(today.toString(), response.date());
+        assertEquals(TODAY.toString(), response.date());
         assertEquals(TransactionType.IN, response.type());
 
         verify(transactionRepository).save(any(Transaction.class));
