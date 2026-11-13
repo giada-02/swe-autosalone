@@ -46,20 +46,21 @@ public class Contract extends SalesDocument {
         super();
     }
 
-    public Contract(Vehicle vehicle, Customer customer) {
-        super(vehicle, customer);
+    public Contract(Vehicle vehicle, Customer customer, LocalDate today) {
+        super(vehicle, customer, today);
         this.status = ContractStatus.DRAFT;
     }
 
     /// Conversion copy constructor: turns a quotation into a contract
-    public Contract(Quotation source) {
-        super(source);
+    public Contract(Quotation source, LocalDate today) {
+        super(source, today);
         if (source.isArchived()) {
             throw new IllegalStateException("Cannot create a contract from an ARCHIVED quotation.");
         }
-        if (source.getStatus() != QuotationStatus.ISSUED) {
-            throw new IllegalStateException("A contract can only be created from an ISSUED quotation (Current status: "
-                    + source.getStatus() + ")");
+        QuotationStatus sourceStatus = source.getStatus(today);
+        if (sourceStatus != QuotationStatus.ISSUED) {
+            throw new IllegalStateException(
+                    "A contract can only be created from an ISSUED quotation (Current status: " + sourceStatus + ")");
         }
 
         this.status = ContractStatus.DRAFT;
@@ -274,7 +275,7 @@ public class Contract extends SalesDocument {
     }
 
     @Override
-    protected void validateIsArchivable() {
+    protected void validateIsArchivable(LocalDate today) {
         if (this.status == ContractStatus.CONFIRMED)
             throw new IllegalStateException("Cannot archive a CONFIRMED contract");
     }

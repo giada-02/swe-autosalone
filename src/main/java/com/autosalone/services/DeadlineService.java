@@ -1,5 +1,6 @@
 package com.autosalone.services;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +28,9 @@ public class DeadlineService {
 
     @Inject
     private OwnerRepository ownerRepository;
+
+    @Inject
+    private Clock clock;
 
     // read
 
@@ -61,19 +65,24 @@ public class DeadlineService {
                 includeNotes = currentUserId.equals(updatedBy);
             }
 
-            return DeadlineResponse.fromEntity(deadline, includeNotes);
+            return DeadlineResponse.fromEntity(deadline, includeNotes, LocalDate.now(clock));
         }).toList();
     }
 
     public List<DeadlineResponse> getUrgentDeadlines(LocalDate upToDate) {
+        LocalDate today = LocalDate.now(clock);
+        if (upToDate == null) {
+            upToDate = today.plusDays(30); // default: scadenze dei prossimi 30 giorni
+        }
         return deadlineRepository.findUrgentDeadlines(upToDate).stream().map(deadline -> DeadlineResponse.fromEntity(
-                deadline, true)).toList();
+                deadline, true, today)).toList();
     }
 
     // write
 
     @Transactional
     public DeadlineCompletionResponse completeDeadline(UUID deadlineId, LocalDate completionDate, String notes) {
+        LocalDate today = LocalDate.now(clock);
         Deadline deadline = getDeadlineById(deadlineId);
 
         Deadline nextRecurrence = deadline.complete(completionDate, notes);
@@ -84,12 +93,13 @@ public class DeadlineService {
         }
 
         return new DeadlineCompletionResponse(
-                DeadlineResponse.fromEntity(deadline, true),
-                DeadlineResponse.fromEntity(nextRecurrence, true));
+                DeadlineResponse.fromEntity(deadline, true, today),
+                DeadlineResponse.fromEntity(nextRecurrence, true, today));
     }
 
     @Transactional
     public DeadlineResponse updateDeadline(UUID deadlineId, DeadlineRequest request) {
+        LocalDate today = LocalDate.now(clock);
         Deadline deadline = getDeadlineById(deadlineId);
 
         deadline.setReason(request.reason());
@@ -98,7 +108,7 @@ public class DeadlineService {
         deadline.setRecalculateFromCompletion(request.recalculateFromCompletion());
 
         deadlineRepository.save(deadline);
-        return DeadlineResponse.fromEntity(deadline, true);
+        return DeadlineResponse.fromEntity(deadline, true, today);
     }
 
     @Transactional

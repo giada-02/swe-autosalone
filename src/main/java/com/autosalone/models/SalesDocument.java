@@ -86,12 +86,12 @@ public abstract class SalesDocument extends AuditableEntity {
     protected SalesDocument() {
     };
 
-    protected SalesDocument(Vehicle vehicle, Customer customer) {
+    protected SalesDocument(Vehicle vehicle, Customer customer, LocalDate today) {
         Objects.requireNonNull(vehicle, "Vehicle is required");
         Objects.requireNonNull(customer, "Customer is required");
         vehicle.validateVehicleStatusForDocument("Cannot create sales document");
 
-        this.date = LocalDate.now(); // current date
+        this.date = today;
         this.vehicle = vehicle;
         this.customer = customer;
         this.additionalFees = BigDecimal.ZERO;
@@ -103,8 +103,8 @@ public abstract class SalesDocument extends AuditableEntity {
     /// Conversion Constructor (from quotation to contract)
     // Conserva i prezzi stabiliti e gli item presenti (anche archiviati) nel
     // documento originale
-    protected SalesDocument(SalesDocument original) {
-        copyCommonFieldsFrom(original);
+    protected SalesDocument(SalesDocument original, LocalDate today) {
+        copyCommonFieldsFrom(original, today);
         this.vehicleSellingPriceSnapshot = original.getVehicleSellingPriceSnapshot(); // snapshot selling price
 
         this.items = new ArrayList<>(); // items deep copy
@@ -116,8 +116,8 @@ public abstract class SalesDocument extends AuditableEntity {
     /// Cloning Constructor (from old quotation to new quotation)
     // Aggiorna ai prezzi di listino attuali e fa pulizia degli accessori
     // archiviati
-    protected SalesDocument(SalesDocument original, boolean skipArchived) {
-        copyCommonFieldsFrom(original);
+    protected SalesDocument(SalesDocument original, boolean skipArchived, LocalDate today) {
+        copyCommonFieldsFrom(original, today);
         this.vehicleSellingPriceSnapshot = original.getVehicle().getSellingPrice(); // updated vehicle selling price
 
         this.items = new ArrayList<>(); // items deep copy
@@ -137,10 +137,10 @@ public abstract class SalesDocument extends AuditableEntity {
         }
     }
 
-    private void copyCommonFieldsFrom(SalesDocument source) {
+    private void copyCommonFieldsFrom(SalesDocument source, LocalDate today) {
         source.getVehicle().validateVehicleStatusForDocument("Cannot create sales document");
 
-        this.date = LocalDate.now(); // current date
+        this.date = today;
         this.vehicle = source.getVehicle();
         this.customer = source.getCustomer();
         this.additionalFees = source.getAdditionalFees();
@@ -266,10 +266,10 @@ public abstract class SalesDocument extends AuditableEntity {
         this.additionalFees = fees;
     }
 
-    public void archive() {
+    public void archive(LocalDate today) {
         if (this.isArchived)
             return;
-        validateIsArchivable();
+        validateIsArchivable(today);
         this.isArchived = true;
     }
 
@@ -356,7 +356,7 @@ public abstract class SalesDocument extends AuditableEntity {
     // abstract methods
     protected abstract void validateIsEditable();
 
-    protected abstract void validateIsArchivable();
+    protected abstract void validateIsArchivable(LocalDate today);
 
     protected abstract boolean isDraft();
 

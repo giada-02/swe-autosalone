@@ -71,7 +71,7 @@ public class AuthToken extends AuditableEntity {
         return expiryDate;
     }
 
-    public boolean isExpired() {
-        return Instant.now().isAfter(this.expiryDate);
+    public boolean isExpired(Instant now) {
+        return now.isAfter(this.expiryDate);
     }
 }

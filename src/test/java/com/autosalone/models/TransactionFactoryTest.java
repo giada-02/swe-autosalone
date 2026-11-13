@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import com.autosalone.enums.VehicleCondition;
 
 public class TransactionFactoryTest {
+
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
     @Test
     public void createVehiclePurchase_ForVehicleWithPurchaseTransactionAlready_ThrowsException() {
         Vehicle car = new Vehicle.VehicleBuilder()
@@ -21,13 +24,11 @@ public class TransactionFactoryTest {
                 .setSellingPrice(new BigDecimal("20000"))
                 .setCondition(VehicleCondition.SECONDHAND)
                 .build();
-        Transaction purchaseTransaction = TransactionFactory.createVehiclePurchase(car, new BigDecimal("9000"),
-                LocalDate.now());
+        Transaction purchaseTransaction = TransactionFactory.createVehiclePurchase(car, new BigDecimal("9000"), today);
         car.setPurchaseTransaction(purchaseTransaction);
 
         assertNotNull(car.getPurchaseTransaction());
         assertThrows(IllegalStateException.class,
-                () -> TransactionFactory.createVehiclePurchase(car, new BigDecimal("8000"),
-                        LocalDate.now()));
+                () -> TransactionFactory.createVehiclePurchase(car, new BigDecimal("8000"), today));
     }
 }

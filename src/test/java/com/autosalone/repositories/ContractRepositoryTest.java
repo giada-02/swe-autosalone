@@ -29,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ContractRepositoryTest {
 
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
     private EntityManagerFactory emf;
     private EntityManager em;
     private ContractRepository repository;
@@ -57,7 +59,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer);
+        Contract contract = new Contract(vehicle, customer, today);
 
         repository.save(contract);
         em.getTransaction().commit();
@@ -85,20 +87,20 @@ public class ContractRepositoryTest {
         Vehicle vehicle3 = persistMockVehicle();
         Customer customer = persistMockCustomer();
 
-        Contract c1 = new Contract(vehicle1, customer);
+        Contract c1 = new Contract(vehicle1, customer, today);
         c1.setDate(LocalDate.of(2026, 4, 2));
-        c1.setEstimatedHandoverDate(LocalDate.now());
+        c1.setEstimatedHandoverDate(today);
         c1.confirm(null); // CONFIRMED
         repository.save(c1);
 
-        Contract c2 = new Contract(vehicle2, customer); // DRAFT
+        Contract c2 = new Contract(vehicle2, customer, today); // DRAFT
         c2.setDate(LocalDate.of(2025, 11, 7));
-        c2.archive(); // archived
+        c2.archive(today); // archived
         repository.save(c2);
 
-        Contract c3 = new Contract(vehicle3, customer);
+        Contract c3 = new Contract(vehicle3, customer, today);
         c3.setDate(LocalDate.of(2026, 3, 12));
-        c3.setEstimatedHandoverDate(LocalDate.now());
+        c3.setEstimatedHandoverDate(today);
         c3.confirm(null);
         c3.cancel("Ripensamento"); // CANCELED
         repository.save(c3);
@@ -144,19 +146,19 @@ public class ContractRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Contract c1 = new Contract(vehicle, customer1);
+        Contract c1 = new Contract(vehicle, customer1, today);
         c1.setDate(LocalDate.of(2026, 4, 2));
-        c1.setEstimatedHandoverDate(LocalDate.now());
+        c1.setEstimatedHandoverDate(today);
         c1.confirm(null); // CONFIRMED
         repository.save(c1);
 
-        Contract c2 = new Contract(vehicle, customer2); // DRAFT
+        Contract c2 = new Contract(vehicle, customer2, today); // DRAFT
         c2.setDate(LocalDate.of(2025, 11, 7));
         repository.save(c2);
 
-        Contract c3 = new Contract(vehicle, customer2);
+        Contract c3 = new Contract(vehicle, customer2, today);
         c3.setDate(LocalDate.of(2026, 3, 12));
-        c3.setEstimatedHandoverDate(LocalDate.now());
+        c3.setEstimatedHandoverDate(today);
         c3.confirm(null);
         c3.cancel("Ripensamento"); // CANCELED
         repository.save(c3);
@@ -180,18 +182,18 @@ public class ContractRepositoryTest {
         Customer customer1 = persistMockCustomer();
         Customer customer2 = persistMockOtherCustomer();
 
-        Contract c1 = new Contract(vehicle, customer1);
+        Contract c1 = new Contract(vehicle, customer1, today);
         c1.setDate(LocalDate.of(2026, 4, 2));
-        c1.setEstimatedHandoverDate(LocalDate.now());
+        c1.setEstimatedHandoverDate(today);
         c1.confirm(null); // CONFIRMED
         repository.save(c1);
 
-        Contract c2 = new Contract(vehicle, customer1); // DRAFT
+        Contract c2 = new Contract(vehicle, customer1, today); // DRAFT
         c2.setDate(LocalDate.of(2025, 11, 7));
-        c2.archive(); // archived
+        c2.archive(today); // archived
         repository.save(c2);
 
-        Contract c3 = new Contract(vehicle, customer2); // DRAFT
+        Contract c3 = new Contract(vehicle, customer2, today); // DRAFT
         c3.setDate(LocalDate.of(2026, 3, 12));
         repository.save(c3);
 
@@ -207,7 +209,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer);
+        Contract contract = new Contract(vehicle, customer, today);
         repository.save(contract);
         em.getTransaction().commit();
 
@@ -232,15 +234,15 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Quotation source = new Quotation(vehicle, customer);
+        Quotation source = new Quotation(vehicle, customer, today);
         DiscountStrategy percentageDiscountStrategy = new PercentageDiscountStrategy(new BigDecimal("10"));
         source.setDiscountStrategy(percentageDiscountStrategy);
-        source.setDate(LocalDate.now());
+        source.setDate(today);
         source.updateExpiration(ExpirationPolicy.TEN_DAYS);
-        source.issue();
+        source.issue(today);
         quotationRepository.save(source);
 
-        Contract contract = new Contract(source);
+        Contract contract = new Contract(source, today);
         repository.save(contract);
         em.getTransaction().commit();
 
@@ -259,7 +261,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer);
+        Contract contract = new Contract(vehicle, customer, today);
         repository.save(contract);
 
         repository.delete(contract); // em.remove(contract)
@@ -275,7 +277,7 @@ public class ContractRepositoryTest {
         em.getTransaction().begin();
         Vehicle vehicle = persistMockVehicle();
         Customer customer = persistMockCustomer();
-        Contract contract = new Contract(vehicle, customer);
+        Contract contract = new Contract(vehicle, customer, today);
 
         repository.save(contract);
         em.getTransaction().commit();

@@ -1,6 +1,7 @@
 package com.autosalone.dtos.responses;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,7 +30,7 @@ public record QuotationResponse(
         String expirationDate,
         ExpirationPolicy expirationPolicy) {
 
-    public static QuotationResponse fromEntity(Quotation quotation) {
+    public static QuotationResponse fromEntity(Quotation quotation, LocalDate today) {
         if (quotation == null)
             return null;
 
@@ -50,7 +51,7 @@ public record QuotationResponse(
         return new QuotationResponse(
                 quotation.getId(),
                 quotation.getDate() != null ? quotation.getDate().toString() : null,
-                quotation.getStatus(),
+                quotation.getStatus(today),
                 vehicleResponse,
                 customerResponse,
                 itemsResponse,

@@ -28,22 +28,22 @@ public class Quotation extends SalesDocument {
         super();
     }
 
-    public Quotation(Vehicle vehicle, Customer customer) {
-        super(vehicle, customer);
+    public Quotation(Vehicle vehicle, Customer customer, LocalDate today) {
+        super(vehicle, customer, today);
         this.status = QuotationStatus.DRAFT;
     }
 
     /// Cloning copy constructor
-    public Quotation(Quotation original) {
-        super(original, true);
+    public Quotation(Quotation original, LocalDate today) {
+        super(original, true, today);
         this.status = QuotationStatus.DRAFT;
         this.expirationDate = null;
         this.expirationPolicy = null;
     }
 
     // getters
-    public QuotationStatus getStatus() {
-        if (this.status == QuotationStatus.ISSUED && isPastExpiration()) // lazy expired status evaluation
+    public QuotationStatus getStatus(LocalDate today) {
+        if (this.status == QuotationStatus.ISSUED && isPastExpiration(today)) // lazy expired status evaluation
             return QuotationStatus.EXPIRED;
         return status;
     }
@@ -56,11 +56,11 @@ public class Quotation extends SalesDocument {
         return expirationPolicy;
     }
 
-    public boolean isPastExpiration() {
+    public boolean isPastExpiration(LocalDate today) {
         if (this.expirationDate == null) {
             return false;
         }
-        return LocalDate.now().isAfter(this.expirationDate);
+        return today.isAfter(this.expirationDate);
     }
 
     // setters
@@ -72,7 +72,7 @@ public class Quotation extends SalesDocument {
         }
     }
 
-    public void issue() {
+    public void issue(LocalDate today) {
         if (this.status != QuotationStatus.DRAFT) {
             throw new IllegalStateException(
                     "Only a DRAFT quotation can be issued (Current status: " + this.status + ")");
@@ -90,17 +90,17 @@ public class Quotation extends SalesDocument {
         if (this.expirationDate == null) {
             throw new IllegalStateException("Cannot issue a quotation without an expiration date");
         }
-        if (isPastExpiration())
+        if (isPastExpiration(today))
             throw new IllegalStateException("Cannot issue a quotation with an expiration date already in the past");
 
         this.status = QuotationStatus.ISSUED;
     }
 
-    public void accept() {
+    public void accept(LocalDate today) {
         if (this.status != QuotationStatus.ISSUED) {
             throw new IllegalStateException("Only an ISSUED quotation can be accepted");
         }
-        if (isPastExpiration())
+        if (isPastExpiration(today))
             throw new IllegalStateException("Cannot accept a quotation with an expiration date already in the past");
 
         this.status = QuotationStatus.ACCEPTED;
@@ -113,8 +113,8 @@ public class Quotation extends SalesDocument {
         this.status = QuotationStatus.EXPIRED;
     }
 
-    public void voidDocument() {
-        if (this.status == QuotationStatus.ISSUED && isPastExpiration()) {
+    public void voidDocument(LocalDate today) {
+        if (this.status == QuotationStatus.ISSUED && isPastExpiration(today)) {
             expire();
             return;
         }
@@ -151,8 +151,8 @@ public class Quotation extends SalesDocument {
     }
 
     @Override
-    protected void validateIsArchivable() {
-        if (isPastExpiration())
+    protected void validateIsArchivable(LocalDate today) {
+        if (isPastExpiration(today))
             return;
         if (this.status == QuotationStatus.ISSUED)
             throw new IllegalStateException("Cannot archive ISSUED quotation");

@@ -8,7 +8,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.enums.TokenType;
@@ -27,6 +30,12 @@ import com.autosalone.repositories.AuthTokenRepository;
 
 @ExtendWith(MockitoExtension.class)
 class AuthTokenServiceTest {
+
+    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
+    private static final Instant now = Instant.parse("2026-09-15T10:00:00Z");
+
+    @Spy
+    private Clock clock = Clock.fixed(now, romeTZ);
 
     @Mock
     private AuthTokenRepository tokenRepository;
@@ -68,7 +77,7 @@ class AuthTokenServiceTest {
     void validateToken_WhenValid_Success() {
         String tokenString = "secure_token_123";
         AuthToken validToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET,
-                Instant.now().plus(2, ChronoUnit.HOURS));
+                now.plus(2, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(validToken));
 
@@ -90,7 +99,7 @@ class AuthTokenServiceTest {
     void validateToken_FailsWithInvalidTokenType() {
         String tokenString = "secure_token_123";
         AuthToken resetToken = new AuthToken(tokenString, mockUser, TokenType.PASSWORD_RESET,
-                Instant.now().plus(2, ChronoUnit.HOURS));
+                now.plus(2, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(resetToken));
 
@@ -102,7 +111,7 @@ class AuthTokenServiceTest {
     void validateToken_FailsWhenExpired() {
         String tokenString = "secure_token_123";
         AuthToken expiredToken = new AuthToken(tokenString, mockUser, TokenType.REGISTRATION,
-                Instant.now().minus(1, ChronoUnit.HOURS));
+                now.minus(1, ChronoUnit.HOURS));
 
         when(tokenRepository.findByToken(tokenString)).thenReturn(Optional.of(expiredToken));
 

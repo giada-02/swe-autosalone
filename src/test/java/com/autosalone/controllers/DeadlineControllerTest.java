@@ -2,23 +2,24 @@ package com.autosalone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.security.Principal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineCompletionRequest;
@@ -36,6 +37,12 @@ import jakarta.ws.rs.core.SecurityContext;
 
 @ExtendWith(MockitoExtension.class)
 class DeadlineControllerTest {
+
+    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
+    @Spy
+    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
 
     @Mock
     private DeadlineService deadlineService;
@@ -60,17 +67,17 @@ class DeadlineControllerTest {
     void setUp() {
         deadlineId = UUID.randomUUID();
 
-        deadlineRequest = new DeadlineRequest("Revisione", LocalDate.now().plusDays(10), null, false);
-        completionRequest = new DeadlineCompletionRequest(LocalDate.now(), null);
+        deadlineRequest = new DeadlineRequest("Revisione", today.plusDays(10), null, false);
+        completionRequest = new DeadlineCompletionRequest(today, null);
 
         UUID vehicleId = UUID.randomUUID();
-        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", LocalDate.now().plusDays(10).toString(),
+        deadlineResponse = new DeadlineResponse(deadlineId, "Revisione", today.plusDays(10).toString(),
                 vehicleId, null, false, false, null, null, false);
     }
 
     @Test
     void getUrgentDeadlines_WithDate_Returns200AndList() {
-        LocalDate upToDate = LocalDate.now().plusDays(15);
+        LocalDate upToDate = today.plusDays(15);
         String upToDateString = upToDate.toString();
         when(deadlineService.getUrgentDeadlines(upToDate)).thenReturn(List.of(deadlineResponse));
 
@@ -82,17 +89,14 @@ class DeadlineControllerTest {
     }
 
     @Test
-    void getUrgentDeadlines_WithNullDate_UsesDefaultAndReturns200() {
-        when(deadlineService.getUrgentDeadlines(any(LocalDate.class))).thenReturn(List.of(deadlineResponse));
+    void getUrgentDeadlines_WithNullDate_Returns200AndList() {
+        when(deadlineService.getUrgentDeadlines(null)).thenReturn(List.of(deadlineResponse));
 
         Response response = deadlineController.getUrgentDeadlines(null);
 
         assertEquals(200, response.getStatus());
-
-        // verifica che abbia calcolato il default di 30 giorni
-        ArgumentCaptor<LocalDate> dateCaptor = ArgumentCaptor.forClass(LocalDate.class);
-        verify(deadlineService).getUrgentDeadlines(dateCaptor.capture());
-        assertEquals(LocalDate.now().plusDays(30), dateCaptor.getValue());
+        assertEquals(1, ((List<?>) response.getEntity()).size());
+        verify(deadlineService).getUrgentDeadlines(null);
     }
 
     @Test

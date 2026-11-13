@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AuthTokenRepositoryTest {
 
+    private static final Instant now = Instant.parse("2026-09-15T10:00:00Z");
+
     private EntityManagerFactory emf;
     private EntityManager em;
     private AuthTokenRepository repository;
@@ -46,7 +48,7 @@ public class AuthTokenRepositoryTest {
         User user = persistMockUser();
 
         AuthToken token = new AuthToken("secure_token_123", user, TokenType.REGISTRATION,
-                Instant.now().plus(48, ChronoUnit.HOURS));
+                now.plus(48, ChronoUnit.HOURS));
 
         repository.save(token);
         em.getTransaction().commit();
@@ -67,7 +69,7 @@ public class AuthTokenRepositoryTest {
         em.getTransaction().begin();
         User user = persistMockUser();
         AuthToken token = new AuthToken("token_to_delete", user, TokenType.PASSWORD_RESET,
-                Instant.now().plus(2, ChronoUnit.HOURS));
+                now.plus(2, ChronoUnit.HOURS));
 
         repository.save(token);
 
@@ -85,7 +87,7 @@ public class AuthTokenRepositoryTest {
         em.getTransaction().begin();
         User user = persistMockUser();
         AuthToken token = new AuthToken("detached_token", user, TokenType.PASSWORD_RESET,
-                Instant.now().plus(2, ChronoUnit.HOURS));
+                now.plus(2, ChronoUnit.HOURS));
         repository.save(token);
         em.getTransaction().commit();
 

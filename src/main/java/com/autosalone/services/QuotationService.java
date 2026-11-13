@@ -1,6 +1,7 @@
 package com.autosalone.services;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -51,6 +52,9 @@ public class QuotationService {
     @Inject
     private CatalogService catalogService;
 
+    @Inject
+    private Clock clock;
+
     // read
 
     public Quotation getQuotationById(UUID id) {
@@ -59,58 +63,68 @@ public class QuotationService {
     }
 
     public QuotationResponse getQuotationResponseById(UUID id) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(id);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     public QuotationCustomerResponse getQuotationCustomerResponseById(UUID id) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(id);
-        return QuotationCustomerResponse.fromEntity(quotation);
+        return QuotationCustomerResponse.fromEntity(quotation, today);
     }
 
     public List<QuotationResponse> getQuotationsForOwner(LocalDate dateFrom, LocalDate dateTo, Boolean isArchived,
             UUID vehicleId, UUID customerId, List<QuotationStatus> statusList) {
-        return quotationRepository.findQuotations(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList)
-                .stream().map(QuotationResponse::fromEntity).toList();
+        LocalDate today = LocalDate.now(clock);
+        return quotationRepository
+                .findQuotations(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList, today)
+                .stream().map((quotation) -> QuotationResponse.fromEntity(quotation, today)).toList();
     }
 
     public List<QuotationCustomerResponse> getQuotationsForCustomer(LocalDate dateFrom, LocalDate dateTo,
             Boolean isArchived, UUID vehicleId, UUID customerId, List<QuotationStatus> statusList) {
-        return quotationRepository.findQuotations(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList)
-                .stream().map(QuotationCustomerResponse::fromEntity).toList();
+        LocalDate today = LocalDate.now(clock);
+        return quotationRepository
+                .findQuotations(dateFrom, dateTo, isArchived, vehicleId, customerId, statusList, today)
+                .stream().map((quotation) -> QuotationCustomerResponse.fromEntity(quotation, today))
+                .toList();
     }
 
     public List<QuotationResponse> getVisibleQuotationsForCustomer(UUID customerId) {
+        LocalDate today = LocalDate.now(clock);
         return quotationRepository.findVisibleQuotationsByCustomerId(customerId)
-                .stream().map(QuotationResponse::fromEntity).toList();
+                .stream().map((quotation) -> QuotationResponse.fromEntity(quotation, today)).toList();
     }
 
     // write
 
     @Transactional
     public QuotationResponse addQuotation(SalesDocumentCreateRequest request) {
+        LocalDate today = LocalDate.now(clock);
         Vehicle vehicle = vehicleService.getVehicleById(request.vehicleId());
         Customer customer = customerService.getCustomerById(request.customerId());
 
-        Quotation quotation = new Quotation(vehicle, customer);
+        Quotation quotation = new Quotation(vehicle, customer, today);
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     @Transactional
     public QuotationResponse cloneQuotation(UUID quotationId) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
-        Quotation clonedQuotation = new Quotation(quotation);
+        Quotation clonedQuotation = new Quotation(quotation, today);
 
         quotationRepository.save(clonedQuotation);
-        return QuotationResponse.fromEntity(clonedQuotation);
+        return QuotationResponse.fromEntity(clonedQuotation, today);
     }
 
     @Transactional
     public QuotationCleanupResponse expireOutdatedQuotations() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         List<Quotation> expiredQuotations = quotationRepository.findExpiredQuotations(today);
 
         Set<Vehicle> affectedVehicles = new HashSet<>();
@@ -148,9 +162,10 @@ public class QuotationService {
 
     @Transactional
     public QuotationResponse issueQuotation(UUID quotationId) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
-        quotation.issue();
+        quotation.issue(today);
 
         Vehicle vehicle = quotation.getVehicle();
         if (vehicle.getStatus() == VehicleStatus.AVAILABLE) {
@@ -159,35 +174,38 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     @Transactional
     public QuotationResponse archiveQuotation(UUID quotationId) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
-        quotation.archive();
+        quotation.archive(today);
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     @Transactional
     public QuotationResponse unarchiveQuotation(UUID quotationId) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
         quotation.unarchive();
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     @Transactional
     public QuotationResponse addItemsToQuotation(UUID quotationId, Set<UUID> catalogItemIds) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
         if (catalogItemIds == null || catalogItemIds.isEmpty())
-            return QuotationResponse.fromEntity(quotation);
+            return QuotationResponse.fromEntity(quotation, today);
 
         for (UUID itemId : catalogItemIds) {
             PurchasableItem item = catalogService.getItemById(itemId);
@@ -196,11 +214,12 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     @Transactional
     public QuotationResponse updateAppliedItemPrice(UUID quotationId, UUID catalogItemId, BigDecimal newPrice) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
         AppliedItem targetItem = quotation.getItems().stream()
@@ -214,15 +233,16 @@ public class QuotationService {
         quotation.setAppliedItemPrice(targetItem, newPrice);
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     @Transactional
     public QuotationResponse removeItemsFromQuotation(UUID quotationId, Set<UUID> catalogItemIds) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
         if (catalogItemIds == null || catalogItemIds.isEmpty())
-            return QuotationResponse.fromEntity(quotation);
+            return QuotationResponse.fromEntity(quotation, today);
 
         List<AppliedItem> itemsToRemove = quotation.getItems().stream()
                 .filter(applied -> catalogItemIds.contains(applied.getItem().getId()))
@@ -233,11 +253,12 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 
     @Transactional
     public QuotationResponse updateQuotation(UUID quotationId, QuotationUpdateRequest request) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = getQuotationById(quotationId);
 
         quotation.updateExpiration(request.expirationPolicy(), request.expirationDate());
@@ -265,6 +286,6 @@ public class QuotationService {
         }
 
         quotationRepository.save(quotation);
-        return QuotationResponse.fromEntity(quotation);
+        return QuotationResponse.fromEntity(quotation, today);
     }
 }

@@ -8,7 +8,9 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.GeneralTransactionRequest;
@@ -30,6 +33,12 @@ import jakarta.ws.rs.core.Response;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionControllerTest {
+
+    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
+    @Spy
+    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
 
     @Mock
     private TransactionService transactionService;
@@ -45,7 +54,7 @@ class TransactionControllerTest {
 
     @BeforeEach
     void setUp() {
-        now = LocalDate.now();
+        now = today;
         transactionId = UUID.randomUUID();
 
         transactionResponse = new TransactionResponse(transactionId, "Descrizione", new BigDecimal("150.00"),

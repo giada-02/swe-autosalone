@@ -8,8 +8,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
@@ -46,6 +49,12 @@ import com.autosalone.repositories.VehicleRepository;
 
 @ExtendWith(MockitoExtension.class)
 class VehicleServiceTest {
+
+    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
+    @Spy
+    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
 
     @Mock
     private VehicleRepository vehicleRepository;
@@ -224,10 +233,8 @@ class VehicleServiceTest {
     @Test
     void addVehicle_Success_WithPurchaseTransaction() {
         VehicleCreateRequest request = new VehicleCreateRequest("Fiat", "Panda", "Rosso", VehicleCondition.NEW,
-                BigDecimal.valueOf(12000), null, "AB123CD", LocalDate.now(), 0.0, true,
-                new PurchaseTransactionRequest(
-                        BigDecimal.valueOf(10000),
-                        LocalDate.now()));
+                BigDecimal.valueOf(12000), null, "AB123CD", today, 0.0, true,
+                new PurchaseTransactionRequest(BigDecimal.valueOf(10000), today));
 
         VehicleResponse response = vehicleService.addVehicle(request);
 
@@ -240,7 +247,7 @@ class VehicleServiceTest {
     void addVehicle_Success_WithoutPurchaseTransaction() {
         VehicleCreateRequest requestNoPurchase = new VehicleCreateRequest(
                 "BMW", "X5", "Nero", VehicleCondition.SECONDHAND, BigDecimal.valueOf(30000), null,
-                "ZA999ZZ", LocalDate.now(), 50000.0, true, null);
+                "ZA999ZZ", today, 50000.0, true, null);
 
         VehicleResponse response = vehicleService.addVehicle(requestNoPurchase);
 
@@ -276,7 +283,7 @@ class VehicleServiceTest {
         verify(vehicleRepository).save(mockVehicle);
 
         // verifica Preventivi
-        verify(mockQuotation).voidDocument();
+        verify(mockQuotation).voidDocument(today);
         verify(quotationRepository).save(mockQuotation);
 
         // verifica Contratti
@@ -296,8 +303,7 @@ class VehicleServiceTest {
         when(mockVehicle.getBrand()).thenReturn("Audi");
         when(mockVehicle.getModel()).thenReturn("A3");
 
-        ExpenseResponse response = vehicleService.addExpense(vehicleId, "Cambio gomme", BigDecimal.valueOf(400),
-                LocalDate.now());
+        ExpenseResponse response = vehicleService.addExpense(vehicleId, "Cambio gomme", BigDecimal.valueOf(400), today);
 
         assertNotNull(response);
         verify(mockVehicle).addExpense(any(Transaction.class));
@@ -309,13 +315,13 @@ class VehicleServiceTest {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 
         Deadline mockDeadline = mock(Deadline.class);
-        when(mockVehicle.generateStandardInspectionDeadline()).thenReturn(mockDeadline);
+        when(mockVehicle.generateStandardInspectionDeadline(today)).thenReturn(mockDeadline);
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
         DeadlineResponse response = vehicleService.generateStandardInspection(vehicleId, null);
 
         assertNotNull(response);
-        verify(mockVehicle).generateStandardInspectionDeadline();
+        verify(mockVehicle).generateStandardInspectionDeadline(today);
         verify(deadlineRepository).save(mockDeadline);
     }
 
@@ -324,7 +330,7 @@ class VehicleServiceTest {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 
         Deadline mockDeadline = mock(Deadline.class);
-        LocalDate lastDate = LocalDate.now().minusYears(2);
+        LocalDate lastDate = today.minusYears(2);
         when(mockVehicle.generateInspectionFromLastDate(lastDate)).thenReturn(mockDeadline);
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
@@ -341,7 +347,7 @@ class VehicleServiceTest {
 
         Deadline mockDeadline = mock(Deadline.class);
 
-        DeadlineRequest request = new DeadlineRequest("Bollo", LocalDate.now(), Period.ofYears(1), false);
+        DeadlineRequest request = new DeadlineRequest("Bollo", today, Period.ofYears(1), false);
 
         when(mockVehicle.addDeadline(anyString(), any(LocalDate.class), any(Period.class), anyBoolean()))
                 .thenReturn(mockDeadline);
@@ -360,7 +366,7 @@ class VehicleServiceTest {
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
         when(mockVehicle.getPurchaseTransaction()).thenReturn(null);
 
-        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), LocalDate.now());
+        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), today);
 
         assertDoesNotThrow(() -> vehicleService.addPurchaseTransaction(vehicleId, request));
 
@@ -375,7 +381,7 @@ class VehicleServiceTest {
         Transaction existingTransaction = mock(Transaction.class);
         when(mockVehicle.getPurchaseTransaction()).thenReturn(existingTransaction);
 
-        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), LocalDate.now());
+        PurchaseTransactionRequest request = new PurchaseTransactionRequest(BigDecimal.valueOf(10000), today);
 
         assertThrows(IllegalStateException.class, () -> vehicleService.addPurchaseTransaction(vehicleId, request));
 
@@ -385,7 +391,7 @@ class VehicleServiceTest {
     @Test
     void updateVehicle_Success_OnlyUpdatesBaseFields() {
         VehicleUpdateRequest request = new VehicleUpdateRequest("Fiat", "Panda", "Rosso", VehicleCondition.NEW,
-                BigDecimal.valueOf(12000), null, "AB123CD", LocalDate.now(), 0.0, true);
+                BigDecimal.valueOf(12000), null, "AB123CD", today, 0.0, true);
 
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(mockVehicle));
 

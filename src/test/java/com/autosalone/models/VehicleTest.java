@@ -10,10 +10,13 @@ import java.time.temporal.TemporalAdjusters;
 
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
+import com.autosalone.models.Vehicle.VehicleBuilder;
 
 public class VehicleTest {
 
-    private Vehicle.VehicleBuilder baseBuilder;
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
+    private VehicleBuilder baseBuilder;
 
     @BeforeEach
     public void setUp() {
@@ -77,12 +80,11 @@ public class VehicleTest {
 
     @Test
     public void generateStandardInspectionDeadline_SetsInspectionTo4YearsEndOfMonth() {
-        LocalDate today = LocalDate.now();
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
                 .setRegistrationDate(today)
                 .build();
 
-        Deadline inspectionDeadline = car.generateStandardInspectionDeadline();
+        Deadline inspectionDeadline = car.generateStandardInspectionDeadline(today);
 
         assertEquals(1, car.getDeadlines().size());
 
@@ -101,13 +103,12 @@ public class VehicleTest {
     public void generateStandardInspectionDeadline_WithoutRegistrationDate_ThrowsException() {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build(); // Vehicle without a registration date
 
-        assertThrows(IllegalStateException.class, () -> car.generateStandardInspectionDeadline(),
+        assertThrows(IllegalStateException.class, () -> car.generateStandardInspectionDeadline(today),
                 "Cannot generate standard inspection deadlines without registration date");
     }
 
     @Test
     public void generateInspectionFromLastDate_SetsInspectionTo2YearsEndOfMonth() {
-        LocalDate today = LocalDate.now();
         Vehicle car = baseBuilder.setCondition(VehicleCondition.SECONDHAND)
                 .build();
 
@@ -160,7 +161,7 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"),
                 "Cannot edit license plate of a second-hand vehicle with status QUOTED");
-        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(LocalDate.now()),
+        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(today),
                 "Cannot edit registration date of a second-hand vehicle with status QUOTED");
     }
 
@@ -171,13 +172,12 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"),
                 "Cannot edit license plate of a second-hand vehicle with status RESERVED");
-        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(LocalDate.now()),
+        assertThrows(IllegalStateException.class, () -> car.setRegistrationDate(today),
                 "Cannot edit registration date of a second-hand vehicle with status RESERVED");
     }
 
     @Test
     public void editAnagraphicData_New_WhenReserved_Success() {
-        LocalDate today = LocalDate.now();
         Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
         car.setStatus(VehicleStatus.RESERVED); // Auto nuova prenotata in attesa di immatricolazione
 
@@ -197,7 +197,7 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
-        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(LocalDate.now()));
+        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(today));
     }
 
     @Test
@@ -207,9 +207,9 @@ public class VehicleTest {
 
         assertThrows(IllegalStateException.class, () -> car.setColor("Grigio"));
         assertThrows(IllegalStateException.class, () -> car.setLicensePlate("AB123CD"));
-        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(LocalDate.now()));
+        assertThrows(IllegalStateException.class, () -> car.setHandoverDate(today));
         assertThrows(IllegalStateException.class, () -> car.setPurchaseTransaction(TransactionFactory
-                .createVehiclePurchase(car, new BigDecimal("8000.00"), LocalDate.now().minusDays(12))));
+                .createVehiclePurchase(car, new BigDecimal("8000.00"), today.minusDays(12))));
     }
 
     @Test

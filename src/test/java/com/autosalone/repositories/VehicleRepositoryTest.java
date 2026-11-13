@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class VehicleRepositoryTest {
 
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
     private EntityManagerFactory emf;
     private EntityManager em;
     private VehicleRepository repository;
@@ -304,7 +306,7 @@ public class VehicleRepositoryTest {
                 .setIsInShowroom(true)
                 .build();
 
-        Deadline deadline = vehicle.addDeadline("Assicurazione", LocalDate.now().plusMonths(6), null, false);
+        Deadline deadline = vehicle.addDeadline("Assicurazione", today.plusMonths(6), null, false);
 
         repository.save(vehicle);
         em.getTransaction().commit();

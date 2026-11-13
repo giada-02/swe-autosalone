@@ -1,5 +1,7 @@
 package com.autosalone.services;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -30,6 +32,9 @@ public class OwnerService {
     @Inject
     private AuthTokenRepository authTokenRepository;
 
+    @Inject
+    private Clock clock;
+
     // read
 
     public Owner getOwnerById(UUID id) {
@@ -40,7 +45,7 @@ public class OwnerService {
     private boolean hasActiveInvitation(Owner owner) {
         return authTokenRepository
                 .findByUserAndType(owner, TokenType.REGISTRATION)
-                .map(token -> !token.isExpired())
+                .map(token -> !token.isExpired(Instant.now(clock)))
                 .orElse(false);
     }
 

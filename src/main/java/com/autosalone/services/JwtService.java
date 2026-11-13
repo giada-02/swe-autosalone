@@ -10,6 +10,9 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -21,6 +24,9 @@ public class JwtService {
     private String issuer;
     private Algorithm algorithm;
     private JWTVerifier verifier;
+
+    @Inject
+    private Clock clock;
 
     public JwtService() {
     }
@@ -46,7 +52,7 @@ public class JwtService {
 
     public String generateToken(User user) {
         String role = user instanceof Owner ? "OWNER" : "CUSTOMER";
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         return JWT.create()
                 .withIssuer(this.issuer)
                 .withSubject(user.getId().toString())

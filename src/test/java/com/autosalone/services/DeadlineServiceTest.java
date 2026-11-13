@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autosalone.dtos.requests.DeadlineRequest;
@@ -29,6 +32,12 @@ import com.autosalone.repositories.OwnerRepository;
 
 @ExtendWith(MockitoExtension.class)
 class DeadlineServiceTest {
+
+    private static final ZoneId romeTZ = ZoneId.of("Europe/Rome");
+    private static final LocalDate today = LocalDate.of(2026, 9, 15);
+
+    @Spy
+    private Clock clock = Clock.fixed(today.atTime(12, 0).atZone(romeTZ).toInstant(), romeTZ);
 
     @Mock
     private DeadlineRepository deadlineRepository;
@@ -118,7 +127,7 @@ class DeadlineServiceTest {
 
     @Test
     void getUrgentDeadlines_Success() {
-        LocalDate upToDate = LocalDate.now().plusDays(7);
+        LocalDate upToDate = today.plusDays(7);
         when(deadlineRepository.findUrgentDeadlines(upToDate)).thenReturn(List.of(mockDeadline));
 
         when(mockVehicle.getId()).thenReturn(vehicleId);
@@ -131,18 +140,31 @@ class DeadlineServiceTest {
         verify(deadlineRepository).findUrgentDeadlines(upToDate);
     }
 
+    @Test
+    void getUrgentDeadlines_WithNullDate_UsesDefaultTo30Days_Success() {
+        when(deadlineRepository.findUrgentDeadlines(today.plusDays(30))).thenReturn(List.of(mockDeadline));
+
+        when(mockVehicle.getId()).thenReturn(vehicleId);
+        when(mockDeadline.getId()).thenReturn(deadlineId);
+        when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
+
+        List<DeadlineResponse> responses = deadlineService.getUrgentDeadlines(null);
+
+        assertEquals(1, responses.size());
+        verify(deadlineRepository).findUrgentDeadlines(today.plusDays(30));
+    }
+
     // write
 
     @Test
     void completeDeadline_NoRecurrence_SavesOnlyCurrent() {
         when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
-        LocalDate completionDate = LocalDate.now();
 
-        when(mockDeadline.complete(completionDate, "Tagliando completato")).thenReturn(null);
+        when(mockDeadline.complete(today, "Tagliando completato")).thenReturn(null);
 
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
 
-        DeadlineCompletionResponse response = deadlineService.completeDeadline(deadlineId, completionDate,
+        DeadlineCompletionResponse response = deadlineService.completeDeadline(deadlineId, today,
                 "Tagliando completato");
 
         verify(deadlineRepository).save(mockDeadline);
@@ -154,17 +176,16 @@ class DeadlineServiceTest {
     @Test
     void completeDeadline_WithRecurrence_SavesBoth() {
         when(deadlineRepository.findById(deadlineId)).thenReturn(Optional.of(mockDeadline));
-        LocalDate completionDate = LocalDate.now();
 
         Deadline mockNextRecurrence = mock(Deadline.class);
 
-        when(mockDeadline.complete(completionDate, "Revisione fatta")).thenReturn(mockNextRecurrence);
+        when(mockDeadline.complete(today, "Revisione fatta")).thenReturn(mockNextRecurrence);
 
         when(mockDeadline.getVehicle()).thenReturn(mockVehicle);
         when(mockNextRecurrence.getVehicle()).thenReturn(mockVehicle);
         when(mockVehicle.getId()).thenReturn(vehicleId);
 
-        DeadlineCompletionResponse response = deadlineService.completeDeadline(deadlineId, completionDate,
+        DeadlineCompletionResponse response = deadlineService.completeDeadline(deadlineId, today,
                 "Revisione fatta");
 
         verify(deadlineRepository).save(mockDeadline);
@@ -183,7 +204,7 @@ class DeadlineServiceTest {
 
         DeadlineRequest request = new DeadlineRequest(
                 "Bollo",
-                LocalDate.now().plusMonths(1),
+                today.plusMonths(1),
                 Period.ofYears(1),
                 false);
 

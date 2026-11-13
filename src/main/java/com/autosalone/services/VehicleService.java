@@ -1,6 +1,7 @@
 package com.autosalone.services;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -51,6 +52,9 @@ public class VehicleService {
 
     @Inject
     private ContractRepository contractRepository;
+
+    @Inject
+    private Clock clock;
 
     // read
 
@@ -146,6 +150,7 @@ public class VehicleService {
 
     @Transactional
     public VehicleResponse withdrawVehicle(UUID vehicleId, String reason) {
+        LocalDate today = LocalDate.now(clock);
         Vehicle vehicle = getVehicleById(vehicleId);
 
         vehicle.withdraw(reason);
@@ -155,7 +160,7 @@ public class VehicleService {
         List<Quotation> openQuotations = quotationRepository.findOpenQuotationsByVehicle(vehicleId, null);
 
         for (Quotation quotation : openQuotations) {
-            quotation.voidDocument();
+            quotation.voidDocument(today);
             quotationRepository.save(quotation);
         }
 
@@ -194,28 +199,30 @@ public class VehicleService {
 
     @Transactional
     public DeadlineResponse generateStandardInspection(UUID vehicleId, LocalDate lastInspection) {
+        LocalDate today = LocalDate.now(clock);
         Vehicle vehicle = getVehicleById(vehicleId);
         Deadline inspectionDeadline;
 
         if (lastInspection != null) {
             inspectionDeadline = vehicle.generateInspectionFromLastDate(lastInspection);
         } else {
-            inspectionDeadline = vehicle.generateStandardInspectionDeadline();
+            inspectionDeadline = vehicle.generateStandardInspectionDeadline(today);
         }
 
         deadlineRepository.save(inspectionDeadline);
-        return DeadlineResponse.fromEntity(inspectionDeadline, true);
+        return DeadlineResponse.fromEntity(inspectionDeadline, true, today);
     }
 
     @Transactional
     public DeadlineResponse addDeadline(UUID vehicleId, DeadlineRequest request) {
+        LocalDate today = LocalDate.now(clock);
         Vehicle vehicle = getVehicleById(vehicleId);
 
         Deadline deadline = vehicle.addDeadline(request.reason(), request.dueDate(), request.recurrence(),
                 request.recalculateFromCompletion());
 
         deadlineRepository.save(deadline);
-        return DeadlineResponse.fromEntity(deadline, true);
+        return DeadlineResponse.fromEntity(deadline, true, today);
     }
 
     @Transactional

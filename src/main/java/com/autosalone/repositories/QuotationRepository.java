@@ -28,9 +28,7 @@ public class QuotationRepository {
     }
 
     public List<Quotation> findQuotations(LocalDate dateFrom, LocalDate dateTo, Boolean isArchived, UUID vehicleId,
-            UUID customerId, List<QuotationStatus> statusList) {
-        LocalDate today = LocalDate.now();
-
+            UUID customerId, List<QuotationStatus> statusList, LocalDate today) {
         StringBuilder jpql = new StringBuilder("SELECT q FROM Quotation q WHERE 1=1");
         Map<String, Object> parameters = new HashMap<>();
 

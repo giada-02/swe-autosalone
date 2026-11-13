@@ -1,6 +1,7 @@
 package com.autosalone.services;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -58,6 +59,9 @@ public class ContractService {
     @Inject
     private CatalogService catalogService;
 
+    @Inject
+    private Clock clock;
+
     // read
 
     public Contract getContractById(UUID id) {
@@ -96,10 +100,11 @@ public class ContractService {
 
     @Transactional
     public ContractResponse addContract(SalesDocumentCreateRequest request) {
+        LocalDate today = LocalDate.now(clock);
         Vehicle vehicle = vehicleService.getVehicleById(request.vehicleId());
         Customer customer = customerService.getCustomerById(request.customerId());
 
-        Contract contract = new Contract(vehicle, customer);
+        Contract contract = new Contract(vehicle, customer, today);
 
         contractRepository.save(contract);
         return ContractResponse.fromEntity(contract);
@@ -107,6 +112,7 @@ public class ContractService {
 
     @Transactional
     public ContractResponse createContractFromQuotation(UUID quotationId) {
+        LocalDate today = LocalDate.now(clock);
         Quotation quotation = quotationService.getQuotationById(quotationId);
 
         List<Contract> existingDrafts = contractRepository.findDraftContractsBySourceQuotation(quotationId);
@@ -114,7 +120,7 @@ public class ContractService {
             throw new IllegalStateException("A draft contract already exists for this quotation");
         }
 
-        Contract contract = new Contract(quotation);
+        Contract contract = new Contract(quotation, today);
 
         contractRepository.save(contract);
         return ContractResponse.fromEntity(contract);
@@ -122,6 +128,7 @@ public class ContractService {
 
     @Transactional
     public ContractResponse confirmContract(UUID contractId, BigDecimal depositAmount, LocalDate depositDate) {
+        LocalDate today = LocalDate.now(clock);
         Contract contract = getContractById(contractId);
 
         Transaction deposit = null;
@@ -132,7 +139,7 @@ public class ContractService {
 
         Quotation quotation = contract.getQuotationReference();
         if (quotation != null) {
-            quotation.accept();
+            quotation.accept(today);
             quotationRepository.save(quotation);
         }
 
@@ -147,7 +154,7 @@ public class ContractService {
                 contractId);
 
         for (Quotation q : quotations) {
-            q.voidDocument();
+            q.voidDocument(today);
             quotationRepository.save(q);
         }
 
@@ -162,13 +169,14 @@ public class ContractService {
 
     @Transactional
     public ContractResponse completeContract(UUID contractId) {
+        LocalDate today = LocalDate.now(clock);
         Contract contract = getContractById(contractId);
 
         contract.complete();
 
         Vehicle vehicle = contract.getVehicle();
         if (vehicle.getCondition() == VehicleCondition.NEW)
-            vehicle.generateStandardInspectionDeadline();
+            vehicle.generateStandardInspectionDeadline(today);
         vehicle.setStatus(VehicleStatus.SOLD);
         vehicleRepository.save(vehicle);
 
@@ -192,9 +200,10 @@ public class ContractService {
 
     @Transactional
     public ContractResponse archiveContract(UUID contractId) {
+        LocalDate today = LocalDate.now(clock);
         Contract contract = getContractById(contractId);
 
-        contract.archive();
+        contract.archive(today);
 
         contractRepository.save(contract);
         return ContractResponse.fromEntity(contract);

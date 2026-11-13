@@ -339,7 +339,7 @@ public class Vehicle extends AuditableEntity {
      * Genera la prima scadenza per revisione standard: prima revisione dopo 4
      * anni e ogni 2 anni le revisioni successive (entro l'ultimo giorno del mese)
      */
-    public Deadline generateStandardInspectionDeadline() {
+    public Deadline generateStandardInspectionDeadline(LocalDate today) {
         if (this.registrationDate == null) {
             throw new IllegalStateException(
                     "Cannot generate the standard inspection deadline without a registration date");
@@ -349,7 +349,7 @@ public class Vehicle extends AuditableEntity {
                 .plusYears(4)
                 .with(TemporalAdjusters.lastDayOfMonth());
 
-        if (firstInspectionDate.isBefore(LocalDate.now())) {
+        if (firstInspectionDate.isBefore(today)) {
             throw new IllegalStateException(
                     "Cannot generate standard inspection deadline: the vehicle registration date is more than 4 years old");
         }

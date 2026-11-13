@@ -14,7 +14,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,6 +44,7 @@ public class JwtServiceTest {
         injectPrivateField(jwtService, "issuer", "test-issuer");
         injectPrivateField(jwtService, "algorithm", testAlgorithm);
         injectPrivateField(jwtService, "verifier", testVerifier);
+        injectPrivateField(jwtService, "clock", Clock.system(ZoneId.of("Europe/Rome")));
     }
 
     @Test

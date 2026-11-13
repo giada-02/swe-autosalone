@@ -1,5 +1,6 @@
 package com.autosalone.dtos.responses;
 
+import java.time.LocalDate;
 import java.util.UUID;
 import org.hibernate.proxy.HibernateProxy;
 import com.autosalone.models.Deadline;
@@ -16,7 +17,7 @@ public record DeadlineResponse(
         String notes,
         boolean isExpired) {
 
-    public static DeadlineResponse fromEntity(Deadline deadline, boolean includeNotes) {
+    public static DeadlineResponse fromEntity(Deadline deadline, boolean includeNotes, LocalDate today) {
         if (deadline == null)
             return null;
 
@@ -40,6 +41,6 @@ public record DeadlineResponse(
                 deadline.isCompleted(),
                 deadline.getCompletionDate() != null ? deadline.getCompletionDate().toString() : null,
                 includeNotes ? deadline.getNotes() : null,
-                deadline.isExpired());
+                deadline.isExpired(today));
     }
 }

@@ -45,9 +45,6 @@ public class DeadlineController {
     @RolesAllowed("OWNER")
     public Response getUrgentDeadlines(@QueryParam("upToDate") String upToDateString) {
         LocalDate upToDate = Utils.parseDate(upToDateString);
-        if (upToDate == null) {
-            upToDate = LocalDate.now().plusDays(30); // default: scadenze dei prossimi 30 giorni
-        }
         List<DeadlineResponse> deadlines = deadlineService.getUrgentDeadlines(upToDate);
         return Response.ok(deadlines).build(); // 200 OK
     }

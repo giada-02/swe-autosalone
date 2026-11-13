@@ -91,8 +91,8 @@ public class Deadline extends AuditableEntity {
         return dueDate;
     }
 
-    public boolean isExpired() {
-        return !isCompleted && dueDate.isBefore(LocalDate.now());
+    public boolean isExpired(LocalDate today) {
+        return !isCompleted && dueDate.isBefore(today);
     }
 
     public Vehicle getVehicle() {
