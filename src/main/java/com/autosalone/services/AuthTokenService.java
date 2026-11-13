@@ -32,6 +32,7 @@ public class AuthTokenService {
 
     @Transactional
     public AuthToken createRegistrationToken(User user) {
+        Instant now = Instant.now(clock);
 
         if (user.getEmail() == null || user.getEmail().isBlank()) {
             throw new IllegalStateException(
@@ -45,7 +46,7 @@ public class AuthTokenService {
         Optional<AuthToken> maybeExistingToken = authTokenRepository.findByUserAndType(user, TokenType.REGISTRATION);
         if (maybeExistingToken.isPresent()) {
             AuthToken existingToken = maybeExistingToken.get();
-            if (!existingToken.isExpired(Instant.now(clock))) {
+            if (!existingToken.isExpired(now)) {
                 throw new IllegalStateException(
                         "There's an active registration token already for this user, wait for its expiration");
             } else {
@@ -54,7 +55,7 @@ public class AuthTokenService {
         }
 
         String tokenString = generateSecureToken();
-        Instant expiryDate = Instant.now(clock).plus(REGISTRATION_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS);
+        Instant expiryDate = now.plus(REGISTRATION_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS);
 
         AuthToken token = new AuthToken(tokenString, user, TokenType.REGISTRATION, expiryDate);
         authTokenRepository.save(token);
@@ -64,6 +65,8 @@ public class AuthTokenService {
 
     @Transactional
     public AuthToken createPasswordResetToken(User user) {
+        Instant now = Instant.now(clock);
+
         if (user.getEmail() == null || !user.isActive()) {
             return null;
         }
@@ -74,7 +77,7 @@ public class AuthTokenService {
 
             Instant cooldownEnd = existingToken.getCreatedAt().plus(COOLDOWN_MINUTES, ChronoUnit.MINUTES);
 
-            if (Instant.now(clock).isBefore(cooldownEnd)) {
+            if (now.isBefore(cooldownEnd)) {
                 return null;
             }
 
@@ -82,7 +85,7 @@ public class AuthTokenService {
         }
 
         String tokenString = generateSecureToken();
-        Instant expiryDate = Instant.now(clock).plus(RESET_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS);
+        Instant expiryDate = now.plus(RESET_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS);
 
         AuthToken token = new AuthToken(tokenString, user, TokenType.PASSWORD_RESET, expiryDate);
         authTokenRepository.save(token);
@@ -90,6 +93,8 @@ public class AuthTokenService {
     }
 
     public AuthToken validateToken(String tokenString, TokenType expectedType) {
+        Instant now = Instant.now(clock);
+
         AuthToken token = authTokenRepository.findByToken(tokenString)
                 .orElseThrow(() -> new ResourceNotFoundException("Invalid or non-existent token"));
 
@@ -97,7 +102,7 @@ public class AuthTokenService {
             throw new IllegalArgumentException("Invalid token type");
         }
 
-        if (token.isExpired(Instant.now(clock))) {
+        if (token.isExpired(now)) {
             throw new IllegalArgumentException("Expired token");
         }
 
@@ -111,7 +116,8 @@ public class AuthTokenService {
 
     @Transactional
     public int deleteExpiredAuthTokens() {
-        return authTokenRepository.deleteAllExpiredTokens(Instant.now(clock));
+        Instant now = Instant.now(clock);
+        return authTokenRepository.deleteAllExpiredTokens(now);
     }
 
     /**

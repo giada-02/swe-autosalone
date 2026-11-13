@@ -51,8 +51,8 @@ public class JwtService {
     }
 
     public String generateToken(User user) {
-        String role = user instanceof Owner ? "OWNER" : "CUSTOMER";
         Instant now = Instant.now(clock);
+        String role = user instanceof Owner ? "OWNER" : "CUSTOMER";
         return JWT.create()
                 .withIssuer(this.issuer)
                 .withSubject(user.getId().toString())

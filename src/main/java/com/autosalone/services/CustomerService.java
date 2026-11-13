@@ -44,9 +44,10 @@ public class CustomerService {
     }
 
     private boolean hasActiveInvitation(Customer customer) {
+        Instant now = Instant.now(clock);
         return authTokenRepository
                 .findByUserAndType(customer, TokenType.REGISTRATION)
-                .map(token -> !token.isExpired(Instant.now(clock)))
+                .map(token -> !token.isExpired(now))
                 .orElse(false);
     }
 

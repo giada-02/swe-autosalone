@@ -43,9 +43,10 @@ public class OwnerService {
     }
 
     private boolean hasActiveInvitation(Owner owner) {
+        Instant now = Instant.now(clock);
         return authTokenRepository
                 .findByUserAndType(owner, TokenType.REGISTRATION)
-                .map(token -> !token.isExpired(Instant.now(clock)))
+                .map(token -> !token.isExpired(now))
                 .orElse(false);
     }
 

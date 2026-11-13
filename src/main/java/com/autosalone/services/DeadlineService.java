@@ -41,6 +41,7 @@ public class DeadlineService {
 
     public List<DeadlineResponse> getDeadlinesByVehicleId(UUID vehicleId, boolean completed, UUID currentUserId,
             boolean isOwner) {
+        LocalDate today = LocalDate.now(clock);
 
         List<Deadline> deadlines = completed
                 ? deadlineRepository.findHistoryByVehicleId(vehicleId)
@@ -65,7 +66,7 @@ public class DeadlineService {
                 includeNotes = currentUserId.equals(updatedBy);
             }
 
-            return DeadlineResponse.fromEntity(deadline, includeNotes, LocalDate.now(clock));
+            return DeadlineResponse.fromEntity(deadline, includeNotes, today);
         }).toList();
     }
 
