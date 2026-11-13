@@ -1,6 +1,7 @@
 package com.autosalone.models.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -92,6 +93,6 @@ public class AccessoryTest {
 
         accessory.setBasePrice(newPrice);
 
-        assertTrue(newPrice.equals(accessory.getPrice()));
+        assertEquals(0, accessory.getPrice().compareTo(newPrice));
     }
 }

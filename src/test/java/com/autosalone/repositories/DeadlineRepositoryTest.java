@@ -62,8 +62,8 @@ public class DeadlineRepositoryTest {
         Optional<Deadline> found = repository.findById(deadline.getId());
         assertTrue(found.isPresent());
         assertEquals("Bollo Auto", found.get().getReason());
-        assertTrue(dueDate.equals(found.get().getDueDate()));
-        assertTrue(recurrence.equals(found.get().getRecurrence()));
+        assertEquals(dueDate, found.get().getDueDate());
+        assertEquals(recurrence, found.get().getRecurrence());
         assertFalse(found.get().isRecalculatedFromCompletion());
     }
 

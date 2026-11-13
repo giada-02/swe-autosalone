@@ -2,7 +2,6 @@ package com.autosalone.models;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -63,7 +62,7 @@ public class TransactionTest {
 
         assertEquals("Spesa", transaction.getReason());
         assertEquals(0, transaction.getAmount().compareTo(new BigDecimal("500.00")));
-        assertTrue(TODAY.equals(transaction.getDate()));
+        assertEquals(TODAY, transaction.getDate());
         assertEquals(TransactionType.OUT, transaction.getType());
     }
 }

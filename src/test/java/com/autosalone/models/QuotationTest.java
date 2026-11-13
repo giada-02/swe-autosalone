@@ -59,15 +59,15 @@ public class QuotationTest {
                 () -> assertNotNull(quote),
                 () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY)),
                 () -> assertFalse(quote.isArchived()),
-                () -> assertTrue(TODAY.equals(quote.getDate())),
+                () -> assertEquals(TODAY, quote.getDate()),
                 () -> assertNull(quote.getExpirationDate()),
                 () -> assertNull(quote.getExpirationPolicy()),
                 () -> assertEquals(defaultCustomer, quote.getCustomer()),
                 () -> assertEquals(defaultCar, quote.getVehicle()),
                 () -> assertEquals(0, quote.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))),
                 () -> assertTrue(quote.getItems().size() == 0),
-                () -> assertTrue(BigDecimal.ZERO.equals(quote.getAdditionalFees())),
-                () -> assertTrue(BigDecimal.ZERO.equals(quote.getDiscountAmount())),
+                () -> assertEquals(0, quote.getAdditionalFees().compareTo(BigDecimal.ZERO)),
+                () -> assertEquals(0, quote.getDiscountAmount().compareTo(BigDecimal.ZERO)),
                 () -> assertNull(quote.getPublicNotes()),
                 () -> assertNull(quote.getInternalNotes()));
     }
@@ -122,7 +122,7 @@ public class QuotationTest {
         assertAll(
                 () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY)),
                 () -> assertFalse(quote.isArchived()),
-                () -> assertTrue(TODAY.equals(quote.getDate())),
+                () -> assertEquals(TODAY, quote.getDate()),
                 () -> assertNull(quote.getExpirationDate()),
                 () -> assertNull(quote.getExpirationPolicy()),
                 () -> assertEquals(defaultCar, quote.getVehicle()),
@@ -267,7 +267,7 @@ public class QuotationTest {
         quote.updateExpiration(LocalDate.of(2028, 03, 01));
 
         assertEquals(ExpirationPolicy.CUSTOM, quote.getExpirationPolicy());
-        assertTrue(LocalDate.of(2028, 03, 01).equals(quote.getExpirationDate()));
+        assertEquals(LocalDate.of(2028, 03, 01), quote.getExpirationDate());
     }
 
     @Test
@@ -277,13 +277,13 @@ public class QuotationTest {
         quote.updateExpiration(ExpirationPolicy.END_OF_MONTH); // End of month => Expiration date: 29 February 2028
 
         assertEquals(ExpirationPolicy.END_OF_MONTH, quote.getExpirationPolicy());
-        assertTrue(LocalDate.of(2028, 02, 29).equals(quote.getExpirationDate()));
+        assertEquals(LocalDate.of(2028, 02, 29), quote.getExpirationDate());
 
         quote.setDate(LocalDate.of(2028, 03, 05)); // Date: 5 March 2028
         // End of month => Expiration date: 31 March 2028
 
         assertEquals(ExpirationPolicy.END_OF_MONTH, quote.getExpirationPolicy());
-        assertTrue(LocalDate.of(2028, 03, 31).equals(quote.getExpirationDate()));
+        assertEquals(LocalDate.of(2028, 03, 31), quote.getExpirationDate());
     }
 
     @Test
@@ -293,13 +293,13 @@ public class QuotationTest {
         quote.updateExpiration(ExpirationPolicy.TEN_DAYS); // Ten days => Expiration date: 1 March 2028
 
         assertEquals(ExpirationPolicy.TEN_DAYS, quote.getExpirationPolicy());
-        assertTrue(LocalDate.of(2028, 03, 01).equals(quote.getExpirationDate()));
+        assertEquals(LocalDate.of(2028, 03, 01), quote.getExpirationDate());
 
         quote.setDate(LocalDate.of(2028, 03, 05)); // Date: 5 March 2028
         // Ten days => Expiration date: 15 March 2028
 
         assertEquals(ExpirationPolicy.TEN_DAYS, quote.getExpirationPolicy());
-        assertTrue(LocalDate.of(2028, 03, 15).equals(quote.getExpirationDate()));
+        assertEquals(LocalDate.of(2028, 03, 15), quote.getExpirationDate());
     }
 
     @Test

@@ -26,9 +26,9 @@ public class AuthTokenService {
     @Inject
     private Clock clock;
 
-    public static final int REGISTRATION_TOKEN_EXPIRATION_HOURS = 48;
-    public static final int RESET_TOKEN_EXPIRATION_HOURS = 2;
-    public static final int COOLDOWN_MINUTES = 5;
+    private static final int REGISTRATION_TOKEN_EXPIRATION_HOURS = 48;
+    private static final int RESET_TOKEN_EXPIRATION_HOURS = 2;
+    private static final int COOLDOWN_MINUTES = 5;
 
     @Transactional
     public AuthToken createRegistrationToken(User user) {

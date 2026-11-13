@@ -94,7 +94,7 @@ public class ContractTest {
                 () -> assertNotNull(contract),
                 () -> assertEquals(ContractStatus.DRAFT, contract.getStatus()),
                 () -> assertFalse(contract.isArchived()),
-                () -> assertTrue(TODAY.equals(contract.getDate())),
+                () -> assertEquals(TODAY, contract.getDate()),
                 () -> assertNull(contract.getDeposit()),
                 () -> assertTrue(contract.getPayments().isEmpty()),
                 () -> assertNull(contract.getQuotationReference()),
@@ -104,8 +104,8 @@ public class ContractTest {
                 () -> assertEquals(defaultCar, contract.getVehicle()),
                 () -> assertEquals(0, contract.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))),
                 () -> assertTrue(contract.getItems().size() == 0),
-                () -> assertTrue(BigDecimal.ZERO.equals(contract.getAdditionalFees())),
-                () -> assertTrue(BigDecimal.ZERO.equals(contract.getDiscountAmount())),
+                () -> assertEquals(0, contract.getAdditionalFees().compareTo(BigDecimal.ZERO)),
+                () -> assertEquals(0, contract.getDiscountAmount().compareTo(BigDecimal.ZERO)),
                 () -> assertNull(contract.getPublicNotes()),
                 () -> assertNull(contract.getInternalNotes()));
     }
@@ -183,7 +183,7 @@ public class ContractTest {
                 () -> assertNotNull(contract),
                 () -> assertEquals(ContractStatus.DRAFT, contract.getStatus()),
                 () -> assertFalse(contract.isArchived()),
-                () -> assertTrue(TODAY.equals(contract.getDate())),
+                () -> assertEquals(TODAY, contract.getDate()),
                 () -> assertNull(contract.getDeposit()),
                 () -> assertTrue(contract.getPayments().isEmpty()),
                 () -> assertEquals(quote, contract.getQuotationReference()),
@@ -192,16 +192,16 @@ public class ContractTest {
                 () -> assertEquals(defaultCustomer, contract.getCustomer()),
                 () -> assertEquals(defaultCar, contract.getVehicle()),
                 () -> assertEquals(0, contract.getVehicleSellingPriceSnapshot().compareTo(new BigDecimal("10000.00"))),
-                () -> assertTrue(
-                        quote.getVehicleSellingPriceSnapshot().equals(contract.getVehicleSellingPriceSnapshot())),
+                () -> assertEquals(0,
+                        quote.getVehicleSellingPriceSnapshot().compareTo(contract.getVehicleSellingPriceSnapshot())),
                 () -> assertTrue(contract.getItems().size() == 0),
                 () -> assertEquals(0, contract.getAdditionalFees().compareTo(new BigDecimal("350.00"))),
-                () -> assertTrue(quote.getAdditionalFees().equals(contract.getAdditionalFees())),
-                () -> assertTrue(quote.getDiscountStrategy().equals(contract.getDiscountStrategy())),
+                () -> assertEquals(0, quote.getAdditionalFees().compareTo(contract.getAdditionalFees())),
+                () -> assertEquals(quote.getDiscountStrategy(), contract.getDiscountStrategy()),
                 () -> assertEquals(0, contract.getDiscountAmount().compareTo(new BigDecimal("1000.00"))),
-                () -> assertTrue(quote.getDiscountAmount().equals(contract.getDiscountAmount())),
-                () -> assertTrue(quote.getPublicNotes().equals(contract.getPublicNotes())),
-                () -> assertTrue(quote.getInternalNotes().equals(contract.getInternalNotes())));
+                () -> assertEquals(0, quote.getDiscountAmount().compareTo(contract.getDiscountAmount())),
+                () -> assertEquals(quote.getPublicNotes(), contract.getPublicNotes()),
+                () -> assertEquals(quote.getInternalNotes(), contract.getInternalNotes()));
     }
 
     @Test
@@ -525,19 +525,17 @@ public class ContractTest {
         assertAll(
                 () -> assertEquals(ContractStatus.CONFIRMED, contract.getStatus()),
                 () -> assertNull(contract.getDeposit()),
-                () -> assertTrue(defaultCustomer.getFirstName().equals(contract.getCustomerSnapshot().getFirstName())),
-                () -> assertTrue(defaultCustomer.getLastName().equals(contract.getCustomerSnapshot().getLastName())),
-                () -> assertTrue(
-                        defaultCustomer.getFiscalCode().equals(contract.getCustomerSnapshot().getFiscalCode())),
+                () -> assertEquals(defaultCustomer.getFirstName(), contract.getCustomerSnapshot().getFirstName()),
+                () -> assertEquals(defaultCustomer.getLastName(), contract.getCustomerSnapshot().getLastName()),
+                () -> assertEquals(defaultCustomer.getFiscalCode(), contract.getCustomerSnapshot().getFiscalCode()),
                 () -> assertNull(defaultCustomer.getVatNumber()),
                 () -> assertNull(contract.getCustomerSnapshot().getVatNumber()),
-                () -> assertTrue(
-                        defaultCustomer.getResidenceCity().equals(contract.getCustomerSnapshot().getResidenceCity())),
-                () -> assertTrue(defaultCustomer.getZipCode().equals(contract.getCustomerSnapshot().getZipCode())),
+                () -> assertEquals(
+                        defaultCustomer.getResidenceCity(), contract.getCustomerSnapshot().getResidenceCity()),
+                () -> assertEquals(defaultCustomer.getZipCode(), contract.getCustomerSnapshot().getZipCode()),
                 () -> assertNull(defaultCustomer.getEmail()),
                 () -> assertNull(contract.getCustomerSnapshot().getEmail()),
-                () -> assertTrue(
-                        defaultCustomer.getPhoneNumber().equals(contract.getCustomerSnapshot().getPhoneNumber())));
+                () -> assertEquals(defaultCustomer.getPhoneNumber(), contract.getCustomerSnapshot().getPhoneNumber()));
     }
 
     @Test

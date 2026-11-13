@@ -59,9 +59,9 @@ public class DeadlineTest {
                 () -> assertDoesNotThrow(() -> deadline.setReason("Tagliando")),
                 () -> assertEquals("Tagliando", deadline.getReason()),
                 () -> assertDoesNotThrow(() -> deadline.setDueDate(TODAY)),
-                () -> assertTrue(TODAY.equals(deadline.getDueDate())),
+                () -> assertEquals(TODAY, deadline.getDueDate()),
                 () -> assertDoesNotThrow(() -> deadline.setRecurrence(Period.ofYears(1))),
-                () -> assertTrue(Period.ofYears(1).equals(deadline.getRecurrence())),
+                () -> assertEquals(Period.ofYears(1), deadline.getRecurrence()),
                 () -> assertDoesNotThrow(() -> deadline.setRecalculateFromCompletion(true)),
                 () -> assertTrue(deadline.isRecalculatedFromCompletion()));
     }
@@ -111,7 +111,7 @@ public class DeadlineTest {
         Deadline nextEvent = deadline.complete(TODAY, "Sostituite pastiglie");
 
         assertTrue(deadline.isCompleted(), "The deadline should have been completed");
-        assertTrue(TODAY.equals(deadline.getCompletionDate()));
+        assertEquals(TODAY, deadline.getCompletionDate());
         assertEquals("Sostituite pastiglie", deadline.getNotes());
         assertNull(nextEvent, "Without a recurrence it must not generate a next deadline event");
     }

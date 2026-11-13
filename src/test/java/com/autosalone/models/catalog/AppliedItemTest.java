@@ -25,7 +25,7 @@ public class AppliedItemTest {
         Accessory accessory = new Accessory("Name", null, new BigDecimal("50.00"));
 
         AppliedItem appliedItem = assertDoesNotThrow(() -> new AppliedItem(accessory));
-        assertTrue(accessory.getPrice().equals(appliedItem.getAppliedPrice()));
+        assertEquals(0, appliedItem.getAppliedPrice().compareTo(accessory.getPrice()));
         assertTrue(accessory == appliedItem.getItem());
     }
 
@@ -36,7 +36,7 @@ public class AppliedItemTest {
         pack.addItem(accessory);
 
         AppliedItem appliedItem = assertDoesNotThrow(() -> new AppliedItem(pack));
-        assertTrue(pack.getPrice().equals(appliedItem.getAppliedPrice()));
+        assertEquals(0, appliedItem.getAppliedPrice().compareTo(pack.getPrice()));
     }
 
     // copy constructors

@@ -102,7 +102,7 @@ public class AccessoryPackageTest {
 
         BigDecimal total = emptyPack.getPrice();
 
-        assertTrue(BigDecimal.ZERO.equals(total),
+        assertEquals(0, total.compareTo(BigDecimal.ZERO),
                 "An empty package should safely return a total of zero");
     }
 }

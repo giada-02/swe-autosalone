@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -60,8 +59,7 @@ class AuthTokenServiceTest {
         assertNotNull(token.getToken());
         assertEquals(TokenType.REGISTRATION, token.getType());
         assertEquals(mockUser, token.getUser());
-        assertTrue(NOW.plus(AuthTokenService.REGISTRATION_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS)
-                .equals(token.getExpiryDate()));
+        assertEquals(NOW.plus(48, ChronoUnit.HOURS), token.getExpiryDate());
         verify(tokenRepository).save(any(AuthToken.class));
     }
 
@@ -74,8 +72,7 @@ class AuthTokenServiceTest {
         assertNotNull(token.getToken());
         assertEquals(TokenType.PASSWORD_RESET, token.getType());
         assertEquals(mockUser, token.getUser());
-        assertTrue(NOW.plus(AuthTokenService.RESET_TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS)
-                .equals(token.getExpiryDate()));
+        assertEquals(NOW.plus(2, ChronoUnit.HOURS), token.getExpiryDate());
         verify(tokenRepository).save(any(AuthToken.class));
     }
 
