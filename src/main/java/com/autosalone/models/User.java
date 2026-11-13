@@ -2,6 +2,8 @@ package com.autosalone.models;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -32,6 +34,9 @@ public abstract class User extends AuditableEntity {
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
+    @Column(name = "tokens_valid_after")
+    private Instant tokensValidAfter;
+
     protected User() {
     }
 
@@ -46,6 +51,7 @@ public abstract class User extends AuditableEntity {
         this.email = builder.email;
         this.password = builder.password;
         this.isActive = builder.isActive;
+        this.tokensValidAfter = null;
     }
 
     @PrePersist
@@ -88,6 +94,10 @@ public abstract class User extends AuditableEntity {
         return isActive;
     }
 
+    public boolean acceptsTokenIssuedAt(Instant issuedAt) {
+        return this.tokensValidAfter == null || !issuedAt.isBefore(this.tokensValidAfter);
+    }
+
     // setters
     public void setFirstName(String firstName) {
         this.firstName = firstName;
@@ -115,6 +125,10 @@ public abstract class User extends AuditableEntity {
 
     public void deactivate() {
         this.isActive = false;
+    }
+
+    public void invalidateTokens(Instant now) {
+        this.tokensValidAfter = now.truncatedTo(ChronoUnit.SECONDS);
     }
 
     protected abstract static class UserBuilder<T extends User, B extends UserBuilder<T, B>> {

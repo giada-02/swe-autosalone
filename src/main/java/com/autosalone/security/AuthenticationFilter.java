@@ -1,8 +1,12 @@
 package com.autosalone.security;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.autosalone.dtos.errors.ApiErrorResponse;
+import com.autosalone.exceptions.ResourceNotFoundException;
+import com.autosalone.models.User;
 import com.autosalone.services.JwtService;
+import com.autosalone.services.UserService;
 import com.autosalone.utils.AuditContext;
 
 import jakarta.annotation.Priority;
@@ -28,6 +32,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     @Inject
     private JwtService jwtService;
 
+    @Inject
+    private UserService userService;
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
         String authorizationHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
@@ -42,9 +49,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             DecodedJWT decodedJWT = jwtService.validateToken(token);
 
             String userId = decodedJWT.getSubject();
+            UUID userUuid = UUID.fromString(userId);
             String role = decodedJWT.getClaim("role").asString();
 
-            AuditContext.setCurrentUserId(UUID.fromString(userId));
+            User user = userService.getUserById(userUuid);
+            if (!user.isActive() || !user.acceptsTokenIssuedAt(decodedJWT.getIssuedAtAsInstant())) {
+                abortUnauthorized(requestContext, "Session is no longer valid, please log in again");
+                return;
+            }
+
+            AuditContext.setCurrentUserId(userUuid);
 
             SecurityContext originalContext = requestContext.getSecurityContext();
 
@@ -70,12 +84,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 }
             });
 
-        } catch (Exception e) {
-            requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                            .entity(new ApiErrorResponse(401, "Invalid or expired token"))
-                            .type(MediaType.APPLICATION_JSON)
-                            .build());
+        } catch (JWTVerificationException | ResourceNotFoundException | IllegalArgumentException e) {
+            abortUnauthorized(requestContext, null);
         }
+    }
+
+    private void abortUnauthorized(ContainerRequestContext requestContext, String message) {
+        requestContext.abortWith(
+                Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(new ApiErrorResponse(401, message == null ? "Invalid or expired token" : message))
+                        .type(MediaType.APPLICATION_JSON)
+                        .build());
     }
 }

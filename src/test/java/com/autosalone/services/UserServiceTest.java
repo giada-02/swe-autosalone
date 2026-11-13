@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,8 +16,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autosalone.config.ClockProducer;
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.exceptions.ResourceNotFoundException;
@@ -27,6 +31,11 @@ import jakarta.security.enterprise.identitystore.PasswordHash;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
+
+    private static final Instant NOW = Instant.parse("2026-09-15T10:00:00Z");
+
+    @Spy
+    private Clock clock = Clock.fixed(NOW, ClockProducer.TIME_ZONE_ID);
 
     @Mock
     private UserRepository userRepository;
@@ -98,6 +107,7 @@ class UserServiceTest {
         userService.updatePassword(userId, "current_password", "new_password");
 
         verify(mockUser).setPassword("hashed_new_password");
+        verify(mockUser).invalidateTokens(NOW);
         verify(userRepository).save(mockUser);
     }
 
@@ -113,6 +123,7 @@ class UserServiceTest {
                 () -> userService.updatePassword(userId, "wrong_password", "new_password"));
 
         verify(mockUser, never()).setPassword(anyString());
+        verify(mockUser, never()).invalidateTokens(any());
         verify(userRepository, never()).save(any());
     }
 
@@ -134,7 +145,7 @@ class UserServiceTest {
     @Test
     void activateUser_FailsIfAlreadyActive() {
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(mockUser.getPassword()).thenReturn(anyString());
+        when(mockUser.getPassword()).thenReturn("existing_hashed_password");
 
         assertThrows(IllegalStateException.class, () -> {
             userService.activateUser(userId, "password");
@@ -151,6 +162,7 @@ class UserServiceTest {
 
         verify(mockUser).deactivate();
         verify(mockUser).setPassword(null);
+        verify(mockUser).invalidateTokens(NOW);
         verify(userRepository).save(mockUser);
     }
 
@@ -259,6 +271,7 @@ class UserServiceTest {
 
         verify(authTokenService).validateToken(tokenString, TokenType.PASSWORD_RESET);
         verify(mockUser).setPassword(anyString());
+        verify(mockUser).invalidateTokens(NOW);
         verify(userRepository).save(mockUser);
         verify(authTokenService).deleteToken(mockToken);
     }

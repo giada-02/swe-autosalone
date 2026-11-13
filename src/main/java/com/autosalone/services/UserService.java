@@ -1,5 +1,7 @@
 package com.autosalone.services;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.UUID;
 
 import com.autosalone.enums.TokenType;
@@ -27,6 +29,9 @@ public class UserService {
     @Inject
     private PasswordHash passwordHash;
 
+    @Inject
+    private Clock clock;
+
     // read
 
     public User getUserById(UUID id) {
@@ -43,6 +48,7 @@ public class UserService {
 
     @Transactional
     public void updatePassword(UUID userId, String rawCurrentPassword, String rawNewPassword) {
+        Instant now = Instant.now(clock);
         User user = getUserById(userId);
 
         boolean isCurrentPasswordCorrect = verifyPassword(rawCurrentPassword, user.getPassword());
@@ -53,6 +59,7 @@ public class UserService {
 
         String hashedPassword = passwordHash.generate(rawNewPassword.toCharArray());
         user.setPassword(hashedPassword);
+        user.invalidateTokens(now);
         userRepository.save(user);
     }
 
@@ -73,9 +80,12 @@ public class UserService {
 
     @Transactional
     public void deactivateUser(UUID userId) {
+        Instant now = Instant.now(clock);
         User user = getUserById(userId);
         user.deactivate();
         user.setPassword(null);
+        user.invalidateTokens(now);
+
         userRepository.save(user);
     }
 
@@ -118,12 +128,13 @@ public class UserService {
 
     @Transactional
     public void completePasswordReset(String tokenString, String newPassword) {
-
+        Instant now = Instant.now(clock);
         AuthToken token = authTokenService.validateToken(tokenString, TokenType.PASSWORD_RESET);
 
         User user = token.getUser();
         String hashedPassword = passwordHash.generate(newPassword.toCharArray());
         user.setPassword(hashedPassword);
+        user.invalidateTokens(now);
         userRepository.save(user);
 
         authTokenService.deleteToken(token);
