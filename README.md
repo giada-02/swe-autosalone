@@ -42,7 +42,11 @@ Il progetto utilizza **Docker Compose** per orchestrare i database necessari all
    ```bash
    docker compose up -d
    ```
-3. Avviare l'Application Server WildFly ed eseguire il deploy (tramite Maven):
+3. Caricare nel terminale le variabili definite in `.env`:
+   ```bash
+   set -a; source .env; set +a
+   ```
+4. Avviare l'Application Server WildFly ed eseguire il deploy (tramite Maven):
    ```bash
    mvn clean wildfly:run
    ```
