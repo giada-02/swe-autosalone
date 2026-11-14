@@ -198,7 +198,7 @@ public class Vehicle extends AuditableEntity {
 
     public void setSellingPrice(BigDecimal sellingPrice) {
         validateSellingPrice(sellingPrice);
-        if (this.sellingPrice.compareTo(sellingPrice) == 0)
+        if (this.sellingPrice != null && this.sellingPrice.compareTo(sellingPrice) == 0)
             return;
         assertNotTerminal();
         this.sellingPrice = sellingPrice;

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 public class AccessoryTest {
     @Test
     public void constructor_WithNullName_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> new Accessory(null, "Descrizione", new BigDecimal("50.00")));
+        assertThrows(IllegalArgumentException.class, () -> new Accessory(null, "Descrizione", new BigDecimal("50.00")));
     }
 
     @Test
@@ -30,7 +30,7 @@ public class AccessoryTest {
     public void setName_ToNull_ThrowsException() {
         Accessory accessory = new Accessory("Nome", null, new BigDecimal("50.00"));
 
-        assertThrows(NullPointerException.class, () -> accessory.setName(null));
+        assertThrows(IllegalArgumentException.class, () -> accessory.setName(null));
     }
 
     @Test

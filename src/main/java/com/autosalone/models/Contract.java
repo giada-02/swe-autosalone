@@ -11,7 +11,6 @@ import com.autosalone.enums.ContractStatus;
 import com.autosalone.enums.QuotationStatus;
 import com.autosalone.enums.TransactionType;
 import com.autosalone.enums.VehicleCondition;
-import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "contracts")
@@ -65,14 +64,6 @@ public class Contract extends SalesDocument {
 
         this.status = ContractStatus.DRAFT;
         this.quotationReference = source;
-    }
-
-    @PrePersist
-    @PreUpdate
-    @Override
-    protected void normalizeData() {
-        super.normalizeData();
-        this.cancelationReason = Utils.sanitizeText(this.cancelationReason);
     }
 
     // getters
@@ -141,12 +132,9 @@ public class Contract extends SalesDocument {
     }
 
     public void setEstimatedHandoverDate(LocalDate estimatedHandoverDate) {
-        Objects.requireNonNull(estimatedHandoverDate, "Estimated handover date is required");
+        validateEstimatedHandoverDate(estimatedHandoverDate);
         if (Objects.equals(this.estimatedHandoverDate, estimatedHandoverDate))
             return;
-        if (estimatedHandoverDate.isBefore(this.getDate())) {
-            throw new IllegalArgumentException("The estimated handover date cannot be before the contract date");
-        }
         if (!isDraft())
             throw new IllegalStateException(
                     "Cannot edit the estimated handover date for a contract in status " + this.status);
@@ -222,11 +210,8 @@ public class Contract extends SalesDocument {
         if (this.status != ContractStatus.CONFIRMED) {
             throw new IllegalStateException("Only a CONFIRMED contract can be canceled");
         }
-        if (reason == null || reason.trim().isEmpty()) {
-            throw new IllegalArgumentException("A cancelation reason must be provided");
-        }
 
-        this.cancelationReason = reason;
+        this.cancelationReason = requireCancelationReason(reason);
         this.status = ContractStatus.CANCELED;
     }
 
@@ -283,5 +268,22 @@ public class Contract extends SalesDocument {
     @Override
     protected boolean isDraft() {
         return this.status == ContractStatus.DRAFT;
+    }
+
+    // validation and normalization
+    private static String requireCancelationReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("A cancelation reason must be provided");
+        }
+        return reason.trim();
+    }
+
+    private void validateEstimatedHandoverDate(LocalDate estimatedHandoverDate) {
+        if (estimatedHandoverDate == null) {
+            throw new IllegalArgumentException("Estimated handover date is required");
+        }
+        if (estimatedHandoverDate.isBefore(this.getDate())) {
+            throw new IllegalArgumentException("The estimated handover date cannot be before the contract date");
+        }
     }
 }

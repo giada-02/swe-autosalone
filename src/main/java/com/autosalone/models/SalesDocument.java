@@ -15,7 +15,6 @@ import com.autosalone.models.catalog.visitors.ActiveItemValidatorVisitor;
 import com.autosalone.models.catalog.visitors.HierarchyValidationVisitor;
 import com.autosalone.models.discounts.DiscountStrategy;
 import com.autosalone.models.discounts.NoDiscountStrategy;
-import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "sales_documents")
@@ -66,13 +65,6 @@ public abstract class SalesDocument extends AuditableEntity {
     @Column(name = "discount_value")
     private BigDecimal dbDiscountValue;
 
-    @PrePersist
-    @PreUpdate
-    protected void normalizeData() {
-        this.publicNotes = Utils.sanitizeText(this.publicNotes);
-        this.internalNotes = Utils.sanitizeText(this.internalNotes);
-    }
-
     @PostLoad
     private void deserializeDiscountStrategy() {
         if (this.dbDiscountType != null) {
@@ -87,13 +79,11 @@ public abstract class SalesDocument extends AuditableEntity {
     };
 
     protected SalesDocument(Vehicle vehicle, Customer customer, LocalDate today) {
-        Objects.requireNonNull(vehicle, "Vehicle is required");
-        Objects.requireNonNull(customer, "Customer is required");
         vehicle.validateVehicleStatusForDocument("Cannot create sales document");
 
         this.date = today;
-        this.vehicle = vehicle;
-        this.customer = customer;
+        this.vehicle = requireVehicle(vehicle);
+        this.customer = requireCustomer(customer);
         this.additionalFees = BigDecimal.ZERO;
         assignDiscount(new NoDiscountStrategy());
         this.isArchived = false;
@@ -230,7 +220,7 @@ public abstract class SalesDocument extends AuditableEntity {
 
     // setters
     public void setDate(LocalDate date) {
-        Objects.requireNonNull(date, "Date is required");
+        requireDate(date);
         if (Objects.equals(this.date, date))
             return;
         validateIsEditable();
@@ -238,7 +228,7 @@ public abstract class SalesDocument extends AuditableEntity {
     }
 
     public void setVehicle(Vehicle vehicle) {
-        Objects.requireNonNull(vehicle, "Vehicle is required");
+        requireVehicle(vehicle);
         if (Objects.equals(this.vehicle, vehicle))
             return;
         validateIsEditable();
@@ -247,7 +237,7 @@ public abstract class SalesDocument extends AuditableEntity {
     }
 
     public void setCustomer(Customer customer) {
-        Objects.requireNonNull(customer, "Customer is required");
+        requireCustomer(customer);
         if (Objects.equals(this.customer, customer))
             return;
         validateIsEditable();
@@ -280,27 +270,27 @@ public abstract class SalesDocument extends AuditableEntity {
     }
 
     public void setPublicNotes(String publicNotes) {
-        if (Objects.equals(this.publicNotes, publicNotes))
+        String normalizedPublicNotes = normalizeNotes(publicNotes);
+        if (Objects.equals(this.publicNotes, normalizedPublicNotes))
             return;
         validateIsEditable();
-        this.publicNotes = publicNotes;
+        this.publicNotes = normalizedPublicNotes;
     }
 
     public void setInternalNotes(String internalNotes) {
-        if (Objects.equals(this.internalNotes, internalNotes))
+        String normalizedInternalNotes = normalizeNotes(internalNotes);
+        if (Objects.equals(this.internalNotes, normalizedInternalNotes))
             return;
-        this.internalNotes = internalNotes;
+        this.internalNotes = normalizedInternalNotes;
     }
 
     public void setVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
-        Objects.requireNonNull(vehicleSellingPriceSnapshot, "The vehicle selling price is required");
+        validateVehicleSellingPriceSnapshot(vehicleSellingPriceSnapshot);
         if (this.vehicleSellingPriceSnapshot != null
                 && this.vehicleSellingPriceSnapshot.compareTo(vehicleSellingPriceSnapshot) == 0)
             return;
 
         validateIsEditable();
-        if (vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException("The vehicle selling price cannot negative");
         this.vehicleSellingPriceSnapshot = vehicleSellingPriceSnapshot;
     }
 
@@ -323,7 +313,7 @@ public abstract class SalesDocument extends AuditableEntity {
     // items
     public void addItem(AppliedItem appliedItem) {
         validateIsEditable();
-        Objects.requireNonNull(appliedItem, "Applied item is required");
+        requireItem(appliedItem, "Applied item is required");
 
         HierarchyValidationVisitor inspector = new HierarchyValidationVisitor(null);
 
@@ -343,13 +333,13 @@ public abstract class SalesDocument extends AuditableEntity {
 
     public void removeItem(AppliedItem appliedItem) {
         validateIsEditable();
-        Objects.requireNonNull(appliedItem, "Applied item is required");
+        requireItem(appliedItem, "Applied item is required");
         this.items.remove(appliedItem);
     }
 
     public void setAppliedItemPrice(AppliedItem targetItem, BigDecimal newPrice) {
         validateIsEditable();
-        Objects.requireNonNull(targetItem, "Target item is required");
+        requireItem(targetItem, "Target item is required");
         targetItem.setAppliedPrice(newPrice); // validates the price
     }
 
@@ -366,6 +356,49 @@ public abstract class SalesDocument extends AuditableEntity {
                 || this.vehicle.getKilometers() == null) {
             throw new IllegalStateException(
                     errorTitle + ": the SECONDHAND vehicle is missing registration data or kilometers");
+        }
+    }
+
+    // validation and normalization
+    private static void requireDate(LocalDate date) {
+        if (date == null) {
+            throw new IllegalArgumentException("Date is required");
+        }
+    }
+
+    private static Vehicle requireVehicle(Vehicle vehicle) {
+        if (vehicle == null) {
+            throw new IllegalArgumentException("Vehicle is required");
+        }
+        return vehicle;
+    }
+
+    private static Customer requireCustomer(Customer customer) {
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer is required");
+        }
+        return customer;
+    }
+
+    private static void requireItem(AppliedItem item, String message) {
+        if (item == null) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    private static String normalizeNotes(String notes) {
+        if (notes == null || notes.isBlank()) {
+            return null;
+        }
+        return notes.trim();
+    }
+
+    private static void validateVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
+        if (vehicleSellingPriceSnapshot == null) {
+            throw new IllegalArgumentException("The vehicle selling price is required");
+        }
+        if (vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("The vehicle selling price cannot negative");
         }
     }
 }

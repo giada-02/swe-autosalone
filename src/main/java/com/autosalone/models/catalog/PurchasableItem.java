@@ -31,16 +31,8 @@ public abstract class PurchasableItem extends AuditableEntity {
     }
 
     public PurchasableItem(String name, String description) {
-        Objects.requireNonNull(name, "Name is required");
-        this.name = name;
-        this.description = description;
-    }
-
-    @PrePersist
-    @PreUpdate
-    protected void normalizeData() {
-        this.name = this.name.trim();
-        this.description = Utils.sanitizeText(this.description);
+        this.name = requireName(name);
+        this.description = Utils.sanitizeText(description);
     }
 
     // getters
@@ -66,21 +58,21 @@ public abstract class PurchasableItem extends AuditableEntity {
 
     // setters
     public void setName(String name) {
-        Objects.requireNonNull(name, "Name is required");
-        if (Objects.equals(this.name, name))
+        String normalizedName = requireName(name);
+        if (Objects.equals(this.name, normalizedName))
             return;
 
         validateIsNotArchived();
-
-        this.name = name;
+        this.name = normalizedName;
     }
 
     public void setDescription(String description) {
-        if (Objects.equals(this.description, description))
+        String normalizedDescription = Utils.sanitizeText(description);
+        if (Objects.equals(this.description, normalizedDescription))
             return;
 
         validateIsNotArchived();
-        this.description = description;
+        this.description = normalizedDescription;
     }
 
     public void archive() {
@@ -92,5 +84,13 @@ public abstract class PurchasableItem extends AuditableEntity {
     public void validateIsNotArchived() {
         if (this.isArchived)
             throw new IllegalStateException("No changes can be made to an archived purchasable item");
+    }
+
+    // validation and normalization
+    private static String requireName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name is required");
+        }
+        return name.trim();
     }
 }

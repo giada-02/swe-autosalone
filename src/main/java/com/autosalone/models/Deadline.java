@@ -8,7 +8,6 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.utils.PeriodStringConverter;
-import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "deadlines")
@@ -56,26 +55,12 @@ public class Deadline extends AuditableEntity {
     }
 
     Deadline(Vehicle vehicle, String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion) {
-        Objects.requireNonNull(vehicle, "A deadline must be linked to a vehicle");
-        Objects.requireNonNull(reason, "Reason is required");
-        Objects.requireNonNull(dueDate, "Due date is required");
-
-        if (recurrence == null && recalculateFromCompletion) {
-            throw new IllegalArgumentException("Cannot recalculate from completion if there is no recurrence");
-        }
-
-        this.reason = reason;
-        this.dueDate = dueDate;
+        validateRecalculateCompletionWithoutRecurrence(recalculateFromCompletion, recurrence);
+        this.reason = requireReason(reason);
+        this.dueDate = requireDueDate(dueDate);
         this.recurrence = recurrence;
         this.recalculateFromCompletion = recalculateFromCompletion;
-        this.vehicle = vehicle;
-    }
-
-    @PrePersist
-    @PreUpdate
-    protected void normalizeData() {
-        this.reason = this.reason.trim();
-        this.notes = Utils.sanitizeText(this.notes);
+        this.vehicle = requireVehicle(vehicle);
     }
 
     // getters
@@ -121,7 +106,7 @@ public class Deadline extends AuditableEntity {
 
     // setters
     public void setReason(String reason) {
-        Objects.requireNonNull(reason, "Reason is required");
+        requireReason(reason);
         if (Objects.equals(this.reason, reason))
             return;
         validateNotCompleted();
@@ -129,7 +114,7 @@ public class Deadline extends AuditableEntity {
     }
 
     public void setDueDate(LocalDate dueDate) {
-        Objects.requireNonNull(dueDate, "Due date is required");
+        requireDueDate(dueDate);
         if (Objects.equals(this.dueDate, dueDate))
             return;
         validateNotCompleted();
@@ -150,8 +135,7 @@ public class Deadline extends AuditableEntity {
             return;
         }
         validateNotCompleted();
-        if (recalculateFromCompletion && this.recurrence == null)
-            throw new IllegalArgumentException("Cannot recalculate from completion if there is no recurrence");
+        validateRecalculateCompletionWithoutRecurrence(recalculateFromCompletion, recurrence);
         this.recalculateFromCompletion = recalculateFromCompletion;
     }
 
@@ -165,7 +149,7 @@ public class Deadline extends AuditableEntity {
 
         this.isCompleted = true;
         this.completionDate = actualCompletionDate;
-        this.notes = notes;
+        this.notes = normalizeNotes(notes);
 
         if (this.recurrence == null) {
             return null; // scadenza singola, non si ripete
@@ -191,4 +175,41 @@ public class Deadline extends AuditableEntity {
         if (this.isCompleted)
             throw new IllegalStateException("Cannot edit a completed deadline");
     }
+
+    // validation and normalization
+    private static String requireReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("Reason is required");
+        }
+        return reason.trim();
+    }
+
+    private static LocalDate requireDueDate(LocalDate dueDate) {
+        if (dueDate == null) {
+            throw new IllegalArgumentException("Due date is required");
+        }
+        return dueDate;
+    }
+
+    private static Vehicle requireVehicle(Vehicle vehicle) {
+        if (vehicle == null) {
+            throw new IllegalArgumentException("A deadline must be linked to a vehicle");
+        }
+        return vehicle;
+    }
+
+    private static String normalizeNotes(String notes) {
+        if (notes == null || notes.isBlank()) {
+            return null;
+        }
+        return notes.trim();
+    }
+
+    private static void validateRecalculateCompletionWithoutRecurrence(boolean recalculateFromCompletion,
+            Period recurrence) {
+        if (recalculateFromCompletion && recurrence == null) {
+            throw new IllegalArgumentException("Cannot recalculate from completion if there is no recurrence");
+        }
+    }
+
 }
