@@ -38,7 +38,7 @@ public class VehicleTest {
 
     @Test
     public void vehicleBuilder_WithNullSellingPrice_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> new Vehicle.VehicleBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new Vehicle.VehicleBuilder()
                 .setBrand("Fiat")
                 .setModel("Panda")
                 .setColor("Rosso")
@@ -62,7 +62,7 @@ public class VehicleTest {
     @Test
     public void setSellingPrice_ToNull_ThrowsException() {
         Vehicle car = baseBuilder.setCondition(VehicleCondition.NEW).build();
-        assertThrows(NullPointerException.class, () -> car.setSellingPrice(null));
+        assertThrows(IllegalArgumentException.class, () -> car.setSellingPrice(null));
     }
 
     @Test

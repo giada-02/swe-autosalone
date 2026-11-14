@@ -179,6 +179,23 @@ class CustomerServiceTest {
     }
 
     @Test
+    void updateCustomer_Success_SameEmailDifferentCase() {
+        CustomerRequest request = new CustomerRequest(
+                "Mario", "Rossi", "3331234567",
+                "Mario.Rossi@Example.COM",
+                "Roma", "00100", "RSSMRA80A01H501Z", null);
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
+        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
+        when(mockCustomer.getEmail()).thenReturn("mario.rossi@example.com");
+
+        assertDoesNotThrow(() -> customerService.updateCustomer(customerId, request));
+
+        verify(userRepository, never()).findByEmail(anyString());
+        verify(customerRepository).save(mockCustomer);
+    }
+
+    @Test
     void updateCustomer_Success_DifferentEmail() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
         when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());

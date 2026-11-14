@@ -22,7 +22,7 @@ public class UserRepository {
 
     public Optional<User> findByEmail(String email) {
         return em.createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
-                .setParameter("email", email)
+                .setParameter("email", User.normalizeEmail(email))
                 .getResultStream()
                 .findFirst();
     }

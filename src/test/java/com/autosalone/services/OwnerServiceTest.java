@@ -175,6 +175,22 @@ class OwnerServiceTest {
     }
 
     @Test
+    void updateOwner_Success_SameEmailDifferentCase() {
+        OwnerRequest request = new OwnerRequest(
+                "Mario", "Rossi", "3331234567",
+                "Mario.Rossi@Example.COM");
+
+        when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
+        when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());
+        when(mockOwner.getEmail()).thenReturn("mario.rossi@example.com");
+
+        assertDoesNotThrow(() -> ownerService.updateOwner(ownerId, request));
+
+        verify(userRepository, never()).findByEmail(anyString());
+        verify(ownerRepository).save(mockOwner);
+    }
+
+    @Test
     void updateOwner_Success_DifferentEmail() {
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
         when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());

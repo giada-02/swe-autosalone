@@ -1,5 +1,7 @@
 package com.autosalone.models;
 
+import java.util.Locale;
+
 import com.autosalone.utils.Utils;
 
 import jakarta.persistence.*;
@@ -31,20 +33,10 @@ public class Customer extends User {
 
     private Customer(CustomerBuilder builder) {
         super(builder);
-        this.residenceCity = builder.residenceCity;
-        this.zipCode = builder.zipCode;
-        this.fiscalCode = builder.fiscalCode;
-        this.vatNumber = builder.vatNumber;
-    }
-
-    @PrePersist
-    @PreUpdate
-    protected void normalizeData() {
-        super.normalizeData();
-        this.residenceCity = Utils.sanitizeText(this.residenceCity);
-        if (this.fiscalCode != null) {
-            this.fiscalCode = this.fiscalCode.trim().toUpperCase();
-        }
+        this.residenceCity = Utils.sanitizeText(builder.residenceCity);
+        this.zipCode = Utils.sanitizeText(builder.zipCode);
+        this.fiscalCode = normalizeFiscalCode(builder.fiscalCode);
+        this.vatNumber = Utils.sanitizeText(builder.vatNumber);
     }
 
     // getters
@@ -66,19 +58,19 @@ public class Customer extends User {
 
     // setters
     public void setResidenceCity(String residenceCity) {
-        this.residenceCity = residenceCity;
+        this.residenceCity = Utils.sanitizeText(residenceCity);
     }
 
     public void setZipCode(String zipCode) {
-        this.zipCode = zipCode;
+        this.zipCode = Utils.sanitizeText(zipCode);
     }
 
     public void setFiscalCode(String fiscalCode) {
-        this.fiscalCode = fiscalCode;
+        this.fiscalCode = normalizeFiscalCode(fiscalCode);
     }
 
     public void setVatNumber(String vatNumber) {
-        this.vatNumber = vatNumber;
+        this.vatNumber = Utils.sanitizeText(vatNumber);
     }
 
     // builder
@@ -117,5 +109,13 @@ public class Customer extends User {
         public Customer build() {
             return new Customer(this);
         }
+    }
+
+    // normalization
+    private static String normalizeFiscalCode(String fiscalCode) {
+        if (fiscalCode == null || fiscalCode.isBlank()) {
+            return null;
+        }
+        return fiscalCode.trim().toUpperCase(Locale.ROOT);
     }
 }

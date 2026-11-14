@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
+import java.util.Locale;
 import java.util.UUID;
 
 @Entity
@@ -41,28 +41,13 @@ public abstract class User extends AuditableEntity {
     }
 
     protected User(UserBuilder<?, ?> builder) {
-        Objects.requireNonNull(builder.firstName);
-        Objects.requireNonNull(builder.lastName);
-        Objects.requireNonNull(builder.phoneNumber);
-
-        this.firstName = builder.firstName;
-        this.lastName = builder.lastName;
-        this.phoneNumber = builder.phoneNumber;
-        this.email = builder.email;
+        this.firstName = requireName(builder.firstName, "First name is required");
+        this.lastName = requireName(builder.lastName, "Last name is required");
+        this.phoneNumber = requirePhoneNumber(builder.phoneNumber);
+        this.email = normalizeEmail(builder.email);
         this.password = builder.password;
         this.isActive = builder.isActive;
         this.tokensValidAfter = null;
-    }
-
-    @PrePersist
-    @PreUpdate
-    protected void normalizeData() {
-        this.firstName = this.firstName.trim().replaceAll("\\s+", " ");
-        this.lastName = this.lastName.trim().replaceAll("\\s+", " ");
-        this.phoneNumber = this.phoneNumber.replaceAll("[\\s\\-]", "");
-        if (this.email != null) {
-            this.email = this.email.trim().toLowerCase();
-        }
     }
 
     // getters
@@ -100,19 +85,19 @@ public abstract class User extends AuditableEntity {
 
     // setters
     public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        this.firstName = requireName(firstName, "First name is required");
     }
 
     public void setLastName(String lastName) {
-        this.lastName = lastName;
+        this.lastName = requireName(lastName, "Last name is required");
     }
 
     public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+        this.phoneNumber = requirePhoneNumber(phoneNumber);
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = normalizeEmail(email);
     }
 
     public void setPassword(String newPassword) {
@@ -172,5 +157,35 @@ public abstract class User extends AuditableEntity {
         protected abstract B self();
 
         protected abstract T build();
+    }
+
+    // validation and normalization
+    private static String requireName(String name, String message) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        return normalizeName(name);
+    }
+
+    private static String requirePhoneNumber(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new IllegalArgumentException("Phone number is required");
+        }
+        return normalizePhoneNumber(phoneNumber);
+    }
+
+    public static String normalizeEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeName(String name) {
+        return name.trim().replaceAll("\\s+", " ");
+    }
+
+    private static String normalizePhoneNumber(String phoneNumber) {
+        return phoneNumber.replaceAll("[\\s\\-]", "");
     }
 }

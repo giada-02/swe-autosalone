@@ -7,12 +7,12 @@ import java.time.Period;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.enums.VehicleCondition;
 import com.autosalone.enums.VehicleStatus;
-import com.autosalone.utils.Utils;
 
 @Entity
 @Table(name = "vehicles")
@@ -74,28 +74,17 @@ public class Vehicle extends AuditableEntity {
     }
 
     private Vehicle(VehicleBuilder builder) {
-        this.brand = builder.brand;
-        this.model = builder.model;
-        this.color = builder.color;
-        this.condition = builder.condition;
-        this.sellingPrice = builder.sellingPrice;
+        this.brand = requireText(builder.brand, "Brand is required");
+        this.model = requireText(builder.model, "Model is required");
+        this.color = requireText(builder.color, "Color is required");
+        this.condition = validateCondition(builder.condition);
+        this.sellingPrice = validateSellingPrice(builder.sellingPrice);
         this.handoverDate = builder.handoverDate;
-        this.licensePlate = builder.licensePlate;
+        this.licensePlate = normalizeLicensePlate(builder.licensePlate);
         this.registrationDate = builder.registrationDate;
-        this.kilometers = builder.kilometers;
+        this.kilometers = validateKilometers(builder.kilometers);
         this.isInShowroom = builder.isInShowroom;
         this.status = VehicleStatus.AVAILABLE;
-    }
-
-    @PrePersist
-    @PreUpdate
-    protected void normalizeData() {
-        this.brand = this.brand.trim();
-        this.model = this.model.trim();
-        this.color = this.color.trim();
-        if (Utils.sanitizeText(this.licensePlate) != null) {
-            this.licensePlate = this.licensePlate.replaceAll("[\\s\\-]", "").toUpperCase();
-        }
     }
 
     // getters
@@ -165,27 +154,31 @@ public class Vehicle extends AuditableEntity {
 
     // setters
     public void setBrand(String brand) {
-        if (Objects.equals(this.brand, brand))
+        String normalizedBrand = requireText(brand, "Brand is required");
+        if (Objects.equals(this.brand, normalizedBrand))
             return;
         assertCoreEditable();
-        this.brand = brand;
+        this.brand = normalizedBrand;
     }
 
     public void setModel(String model) {
-        if (Objects.equals(this.model, model))
+        String normalizedModel = requireText(model, "Model is required");
+        if (Objects.equals(this.model, normalizedModel))
             return;
         assertCoreEditable();
-        this.model = model;
+        this.model = normalizedModel;
     }
 
     public void setColor(String color) {
-        if (Objects.equals(this.color, color))
+        String normalizedColor = requireText(color, "Color is required");
+        if (Objects.equals(this.color, normalizedColor))
             return;
         assertCoreEditable();
-        this.color = color;
+        this.color = normalizedColor;
     }
 
     public void setCondition(VehicleCondition condition) {
+        validateCondition(condition);
         if (Objects.equals(this.condition, condition))
             return;
         assertCoreEditable();
@@ -204,13 +197,10 @@ public class Vehicle extends AuditableEntity {
     }
 
     public void setSellingPrice(BigDecimal sellingPrice) {
-        Objects.requireNonNull(sellingPrice, "Selling price is required");
-        if (this.sellingPrice != null && this.sellingPrice.compareTo(sellingPrice) == 0)
+        validateSellingPrice(sellingPrice);
+        if (this.sellingPrice.compareTo(sellingPrice) == 0)
             return;
         assertNotTerminal();
-        if (sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Selling price cannot be negative");
-        }
         this.sellingPrice = sellingPrice;
     }
 
@@ -222,10 +212,11 @@ public class Vehicle extends AuditableEntity {
     }
 
     public void setLicensePlate(String licensePlate) {
-        if (Objects.equals(this.licensePlate, licensePlate))
+        String normalizedLicensePlate = normalizeLicensePlate(licensePlate);
+        if (Objects.equals(this.licensePlate, normalizedLicensePlate))
             return;
         assertAnagraphicEditable();
-        this.licensePlate = licensePlate;
+        this.licensePlate = normalizedLicensePlate;
     }
 
     public void setRegistrationDate(LocalDate registrationDate) {
@@ -236,12 +227,10 @@ public class Vehicle extends AuditableEntity {
     }
 
     public void setKilometers(Double kilometers) {
+        validateKilometers(kilometers);
         if (Objects.equals(this.kilometers, kilometers))
             return;
         assertCoreEditable();
-        if (kilometers != null && kilometers < 0) {
-            throw new IllegalArgumentException("Kilometers cannot be negative");
-        }
         this.kilometers = kilometers;
     }
 
@@ -287,16 +276,13 @@ public class Vehicle extends AuditableEntity {
     }
 
     public void withdraw(String reason) {
-        if (reason == null || reason.trim().isEmpty()) {
-            throw new IllegalArgumentException("A withdrawal reason must be provided");
-        }
-
+        String normalizedWithdrawalReason = requireText(reason, "A withdrawal reason must be provided");
         if (this.status == VehicleStatus.SOLD || this.status == VehicleStatus.WITHDRAWN) {
             throw new IllegalStateException("Cannot transition out of a terminal state (" + this.status + ")");
         }
 
         this.status = VehicleStatus.WITHDRAWN;
-        this.withdrawalReason = reason;
+        this.withdrawalReason = normalizedWithdrawalReason;
         this.isInShowroom = false;
     }
 
@@ -332,6 +318,14 @@ public class Vehicle extends AuditableEntity {
             throw new IllegalStateException(
                     "Registration data for second-hand vehicles is locked during commercial negotiations (Status "
                             + this.status + ")");
+        }
+    }
+
+    public void validateVehicleStatusForDocument(String errorTitle) {
+        if (this.status == VehicleStatus.RESERVED || this.status == VehicleStatus.SOLD
+                || this.status == VehicleStatus.WITHDRAWN) {
+            throw new IllegalStateException(
+                    errorTitle + ": the vehicle is unavailable (Status: " + this.status + ")");
         }
     }
 
@@ -431,9 +425,6 @@ public class Vehicle extends AuditableEntity {
         }
 
         public VehicleBuilder setKilometers(Double kilometers) {
-            if (kilometers != null && kilometers < 0) {
-                throw new IllegalArgumentException("Kilometers cannot be negative");
-            }
             this.kilometers = kilometers;
             return this;
         }
@@ -444,24 +435,46 @@ public class Vehicle extends AuditableEntity {
         }
 
         public Vehicle build() {
-            Objects.requireNonNull(this.brand, "Brand is required");
-            Objects.requireNonNull(this.model, "Model is required");
-            Objects.requireNonNull(this.color, "Color is required");
-            Objects.requireNonNull(this.condition, "Condition is required");
-            Objects.requireNonNull(this.isInShowroom, "Is in showroom is required");
-            Objects.requireNonNull(this.sellingPrice, "Selling price is required");
-            if (this.sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException("Selling price cannot be negative");
-            }
             return new Vehicle(this);
         }
     }
 
-    public void validateVehicleStatusForDocument(String errorTitle) {
-        if (this.status == VehicleStatus.RESERVED || this.status == VehicleStatus.SOLD
-                || this.status == VehicleStatus.WITHDRAWN) {
-            throw new IllegalStateException(
-                    errorTitle + ": the vehicle is unavailable (Status: " + this.status + ")");
+    // validation and normalization
+    private static String requireText(String field, String message) {
+        if (field == null || field.isBlank()) {
+            throw new IllegalArgumentException(message);
         }
+        return field.trim();
+    }
+
+    private static VehicleCondition validateCondition(VehicleCondition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition is required");
+        }
+        return condition;
+    }
+
+    private static BigDecimal validateSellingPrice(BigDecimal sellingPrice) {
+        if (sellingPrice == null) {
+            throw new IllegalArgumentException("Selling price is required");
+        }
+        if (sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Selling price cannot be negative");
+        }
+        return sellingPrice;
+    }
+
+    private static Double validateKilometers(Double kilometers) {
+        if (kilometers != null && kilometers < 0) {
+            throw new IllegalArgumentException("Kilometers cannot be negative");
+        }
+        return kilometers;
+    }
+
+    private static String normalizeLicensePlate(String licensePlate) {
+        if (licensePlate == null || licensePlate.isBlank()) {
+            return null;
+        }
+        return licensePlate.replaceAll("[\\s\\-]", "").toUpperCase(Locale.ROOT);
     }
 }

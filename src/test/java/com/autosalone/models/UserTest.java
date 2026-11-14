@@ -1,6 +1,9 @@
 package com.autosalone.models;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,36 +30,33 @@ public class UserTest {
 
     @Test
     public void builder_WithoutFirstName_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> new CustomerBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new CustomerBuilder()
                 .setLastName("Verdi").setPhoneNumber("1234567890").build());
     }
 
     @Test
     public void builder_WithoutLastName_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> new CustomerBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new CustomerBuilder()
                 .setFirstName("Luigi").setPhoneNumber("1234567890").build());
     }
 
     @Test
     public void builder_WithoutPhoneNumber_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> new CustomerBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new CustomerBuilder()
                 .setFirstName("Luigi").setLastName("Verdi").build());
     }
 
     @Test
-    public void activate_SetsIsActiveToTrue() {
-        user.activate();
+    public void builder_NormalizesData_Success() {
+        User messyUser = new CustomerBuilder()
+                .setFirstName("  Mario ").setLastName("  Di  Rosso  ")
+                .setPhoneNumber("  +39 123- 45 67 -  -890  ").setEmail("  Mario.DiRosso@Example.COM ").build();
 
-        assertTrue(user.isActive());
-    }
-
-    @Test
-    public void deactivate_SetsIsActiveToFalse() {
-        user.activate();
-
-        user.deactivate();
-
-        assertFalse(user.isActive());
+        assertAll(
+                () -> assertEquals("Mario", messyUser.getFirstName()),
+                () -> assertEquals("Di Rosso", messyUser.getLastName()),
+                () -> assertEquals("+391234567890", messyUser.getPhoneNumber()),
+                () -> assertEquals("mario.dirosso@example.com", messyUser.getEmail()));
     }
 
     @Test
@@ -86,6 +86,110 @@ public class UserTest {
     }
 
     @Test
+    public void setFirstName_Blank_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> user.setFirstName(" "));
+        assertEquals("First name is required", exception.getMessage());
+        assertEquals("Luigi", user.getFirstName());
+    }
+
+    @Test
+    public void setFirstName_Null_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> user.setFirstName(null));
+        assertEquals("First name is required", exception.getMessage());
+        assertEquals("Luigi", user.getFirstName());
+    }
+
+    @Test
+    public void setFirstName_NormalizesValue() {
+        user.setFirstName("  Mario ");
+        assertEquals("Mario", user.getFirstName());
+    }
+
+    @Test
+    public void setLastName_Blank_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> user.setLastName(" "));
+        assertEquals("Last name is required", exception.getMessage());
+        assertEquals("Verdi", user.getLastName());
+    }
+
+    @Test
+    public void setLastName_Null_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> user.setLastName(null));
+        assertEquals("Last name is required", exception.getMessage());
+        assertEquals("Verdi", user.getLastName());
+    }
+
+    @Test
+    public void setLastName_NormalizesValue() {
+        user.setLastName("  Di  Rosso  ");
+        assertEquals("Di Rosso", user.getLastName());
+    }
+
+    @Test
+    public void setPhoneNumber_Blank_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> user.setPhoneNumber(" "));
+        assertEquals("Phone number is required", exception.getMessage());
+        assertEquals("1234567890", user.getPhoneNumber());
+    }
+
+    @Test
+    public void setPhoneNumber_Null_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> user.setPhoneNumber(null));
+        assertEquals("Phone number is required", exception.getMessage());
+        assertEquals("1234567890", user.getPhoneNumber());
+    }
+
+    @Test
+    public void setPhoneNumber_NormalizesValue() {
+        user.setPhoneNumber("  +39 123- 45 67 -  -890  ");
+        assertEquals("+391234567890", user.getPhoneNumber());
+    }
+
+    @Test
+    public void setEmail_NormalizesValue() {
+        user.setEmail("  Mario.Rossi@Example.COM ");
+
+        assertEquals("mario.rossi@example.com", user.getEmail());
+    }
+
+    @Test
+    public void setEmail_Null_SetsNull() {
+        user.setEmail("mario.rossi@example.com");
+
+        user.setEmail(null);
+
+        assertNull(user.getEmail());
+    }
+
+    @Test
+    public void setEmail_Blank_SetsNull() {
+        user.setEmail("mario.rossi@example.com");
+
+        user.setEmail("  ");
+
+        assertNull(user.getEmail());
+    }
+
+    @Test
+    public void activate_SetsIsActiveToTrue() {
+        user.activate();
+
+        assertTrue(user.isActive());
+    }
+
+    @Test
+    public void deactivate_SetsIsActiveToFalse() {
+        user.activate();
+
+        user.deactivate();
+
+        assertFalse(user.isActive());
+    }
+
+    @Test
     public void invalidateTokens_TruncatesToSeconds() {
         // invalidation at 10:00:00.700
         // login at 10:00:00.900 produces a JWT with iat = 10:00:00
@@ -101,5 +205,21 @@ public class UserTest {
         user.invalidateTokens(NOW.plus(1, ChronoUnit.HOURS));
 
         assertFalse(user.acceptsTokenIssuedAt(NOW.plus(30, ChronoUnit.MINUTES)));
+    }
+
+    @Test
+    public void normalizeEmail_TrimsAndLowercases() {
+        assertEquals("mario.rossi@example.com", User.normalizeEmail("  Mario.Rossi@Example.COM "));
+    }
+
+    @Test
+    public void normalizeEmail_Null_ReturnsNull() {
+        assertNull(User.normalizeEmail(null));
+    }
+
+    @Test
+    public void normalizeEmail_Blank_ReturnsNull() {
+        assertNull(User.normalizeEmail(""));
+        assertNull(User.normalizeEmail("   "));
     }
 }

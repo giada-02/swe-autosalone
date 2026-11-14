@@ -12,6 +12,7 @@ import com.autosalone.dtos.responses.OwnerResponse;
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Owner;
+import com.autosalone.models.User;
 import com.autosalone.repositories.AuthTokenRepository;
 import com.autosalone.repositories.OwnerRepository;
 import com.autosalone.repositories.UserRepository;
@@ -91,7 +92,7 @@ public class OwnerService {
             throw new IllegalStateException("Cannot remove the email, the user is active");
         }
 
-        if (request.email() != null && !Objects.equals(request.email(), owner.getEmail())) {
+        if (request.email() != null && !Objects.equals(User.normalizeEmail(request.email()), owner.getEmail())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });

@@ -117,6 +117,28 @@ public class UserRepositoryTest {
     }
 
     @Test
+    public void findByEmail_NormalizeEmail_Success() {
+        em.getTransaction().begin();
+
+        Customer customer = new Customer.CustomerBuilder()
+                .setFirstName("Mario")
+                .setLastName("Rossi")
+                .setEmail("mario.rossi@example.com")
+                .setPhoneNumber("123456789")
+                .setResidenceCity("Firenze")
+                .build();
+        repository.save(customer);
+
+        em.getTransaction().commit();
+        em.clear();
+
+        Optional<User> foundCustomer = repository.findByEmail("  Mario.Rossi@Example.COM ");
+
+        assertTrue(foundCustomer.isPresent(), "Should find the user by email");
+        assertEquals("Mario", foundCustomer.get().getFirstName());
+    }
+
+    @Test
     public void countActiveOwners_Success() {
         em.getTransaction().begin();
 
