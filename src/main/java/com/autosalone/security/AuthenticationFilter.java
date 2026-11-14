@@ -85,14 +85,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             });
 
         } catch (JWTVerificationException | ResourceNotFoundException | IllegalArgumentException e) {
-            abortUnauthorized(requestContext, null);
+            abortUnauthorized(requestContext, "Invalid or expired token");
         }
     }
 
     private void abortUnauthorized(ContainerRequestContext requestContext, String message) {
         requestContext.abortWith(
                 Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(new ApiErrorResponse(401, message == null ? "Invalid or expired token" : message))
+                        .entity(new ApiErrorResponse(401, message))
                         .type(MediaType.APPLICATION_JSON)
                         .build());
     }
