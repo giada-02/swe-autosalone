@@ -24,6 +24,8 @@ import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.AuthToken;
+import com.autosalone.models.Customer;
+import com.autosalone.models.Owner;
 import com.autosalone.models.User;
 import com.autosalone.repositories.UserRepository;
 
@@ -155,15 +157,56 @@ class UserServiceTest {
     }
 
     @Test
-    void deactivateUser_Success() {
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+    void deactivateUser_Customer_Success() {
+        Customer mockCustomer = mock(Customer.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockCustomer));
 
         userService.deactivateUser(userId);
 
-        verify(mockUser).deactivate();
-        verify(mockUser).setPassword(null);
-        verify(mockUser).invalidateTokens(NOW);
-        verify(userRepository).save(mockUser);
+        verify(mockCustomer).deactivate();
+        verify(mockCustomer).invalidateTokens(NOW);
+        verify(userRepository).save(mockCustomer);
+        verify(userRepository, never()).countActiveOwners();
+    }
+
+    @Test
+    void deactivateUser_LastActiveOwner_ThrowsException() {
+        Owner mockOwner = mock(Owner.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockOwner));
+        when(mockOwner.isActive()).thenReturn(true);
+        when(userRepository.countActiveOwners()).thenReturn(1L);
+
+        assertThrows(IllegalStateException.class, () -> userService.deactivateUser(userId));
+
+        verify(mockOwner, never()).deactivate();
+        verify(mockOwner, never()).invalidateTokens(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void deactivateUser_OwnerWithOtherActiveOwners_Success() {
+        Owner mockOwner = mock(Owner.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockOwner));
+        when(mockOwner.isActive()).thenReturn(true);
+        when(userRepository.countActiveOwners()).thenReturn(2L);
+
+        userService.deactivateUser(userId);
+
+        verify(mockOwner).deactivate();
+        verify(userRepository).save(mockOwner);
+    }
+
+    @Test
+    void deactivateUser_InactiveOwner_SkipsLastOwnerCheck() {
+        Owner mockOwner = mock(Owner.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockOwner));
+        when(mockOwner.isActive()).thenReturn(false);
+
+        userService.deactivateUser(userId);
+
+        verify(userRepository, never()).countActiveOwners();
+        verify(mockOwner).deactivate();
+        verify(userRepository).save(mockOwner);
     }
 
     // security

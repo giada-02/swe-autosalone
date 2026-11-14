@@ -17,197 +17,235 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class UserRepositoryTest {
 
-        private EntityManagerFactory emf;
-        private EntityManager em;
-        private UserRepository repository;
+    private EntityManagerFactory emf;
+    private EntityManager em;
+    private UserRepository repository;
 
-        @BeforeEach
-        public void setUp() {
-                emf = Persistence.createEntityManagerFactory("autosalonePU-test");
-                em = emf.createEntityManager();
+    @BeforeEach
+    public void setUp() {
+        emf = Persistence.createEntityManagerFactory("autosalonePU-test");
+        em = emf.createEntityManager();
 
-                repository = new UserRepository();
-                repository.em = this.em;
-        }
+        repository = new UserRepository();
+        repository.em = this.em;
+    }
 
-        @AfterEach
-        public void tearDown() {
-                if (em != null)
-                        em.close();
-                if (emf != null)
-                        emf.close();
-        }
+    @AfterEach
+    public void tearDown() {
+        if (em != null)
+            em.close();
+        if (emf != null)
+            emf.close();
+    }
 
-        @Test
-        public void saveUser_Success() {
-                em.getTransaction().begin();
+    @Test
+    public void saveUser_Success() {
+        em.getTransaction().begin();
 
-                Owner owner = new Owner.OwnerBuilder()
-                                .setFirstName("Sofia")
-                                .setLastName("Rossi")
-                                .setEmail("sofia.r@example.com")
-                                .setPhoneNumber("333444")
-                                .build();
-                repository.save(owner);
+        Owner owner = new Owner.OwnerBuilder()
+                .setFirstName("Sofia")
+                .setLastName("Rossi")
+                .setEmail("sofia.r@example.com")
+                .setPhoneNumber("333444")
+                .build();
+        repository.save(owner);
 
-                Customer customer = new Customer.CustomerBuilder()
-                                .setFirstName("Mario")
-                                .setLastName("Rossi")
-                                .setEmail("mario@example.com")
-                                .setPhoneNumber("123456789")
-                                .setResidenceCity("Firenze")
-                                .build();
-                repository.save(customer);
+        Customer customer = new Customer.CustomerBuilder()
+                .setFirstName("Mario")
+                .setLastName("Rossi")
+                .setEmail("mario@example.com")
+                .setPhoneNumber("123456789")
+                .setResidenceCity("Firenze")
+                .build();
+        repository.save(customer);
 
-                em.getTransaction().commit();
-                assertNotNull(owner.getId());
-                assertNotNull(customer.getId());
+        em.getTransaction().commit();
+        assertNotNull(owner.getId());
+        assertNotNull(customer.getId());
 
-                em.clear();
+        em.clear();
 
-                Optional<User> foundOwner = repository.findById(owner.getId());
-                assertTrue(foundOwner.isPresent());
-                assertEquals("Sofia", foundOwner.get().getFirstName());
-                Optional<User> foundCustomer = repository.findById(customer.getId());
-                assertTrue(foundCustomer.isPresent());
-                assertEquals("Mario", foundCustomer.get().getFirstName());
-        }
+        Optional<User> foundOwner = repository.findById(owner.getId());
+        assertTrue(foundOwner.isPresent());
+        assertEquals("Sofia", foundOwner.get().getFirstName());
+        Optional<User> foundCustomer = repository.findById(customer.getId());
+        assertTrue(foundCustomer.isPresent());
+        assertEquals("Mario", foundCustomer.get().getFirstName());
+    }
 
-        @Test
-        public void findById_NotFound() {
-                Optional<User> found = repository.findById(UUID.randomUUID());
-                assertTrue(found.isEmpty(), "Should be empty, the ID does not exist");
-        }
+    @Test
+    public void findById_NotFound() {
+        Optional<User> found = repository.findById(UUID.randomUUID());
+        assertTrue(found.isEmpty(), "Should be empty, the ID does not exist");
+    }
 
-        @Test
-        public void findByEmail_SuccessAndNotFound() {
-                em.getTransaction().begin();
+    @Test
+    public void findByEmail_SuccessAndNotFound() {
+        em.getTransaction().begin();
 
-                Owner owner = new Owner.OwnerBuilder()
-                                .setFirstName("Anna")
-                                .setLastName("Neri")
-                                .setEmail("anna.neri@example.com")
-                                .setPhoneNumber("333444")
-                                .build();
-                repository.save(owner);
+        Owner owner = new Owner.OwnerBuilder()
+                .setFirstName("Anna")
+                .setLastName("Neri")
+                .setEmail("anna.neri@example.com")
+                .setPhoneNumber("333444")
+                .build();
+        repository.save(owner);
 
-                Customer customer = new Customer.CustomerBuilder()
-                                .setFirstName("Mario")
-                                .setLastName("Rossi")
-                                .setEmail("mario@example.com")
-                                .setPhoneNumber("123456789")
-                                .setResidenceCity("Firenze")
-                                .build();
-                repository.save(customer);
+        Customer customer = new Customer.CustomerBuilder()
+                .setFirstName("Mario")
+                .setLastName("Rossi")
+                .setEmail("mario@example.com")
+                .setPhoneNumber("123456789")
+                .setResidenceCity("Firenze")
+                .build();
+        repository.save(customer);
 
-                em.getTransaction().commit();
-                em.clear();
+        em.getTransaction().commit();
+        em.clear();
 
-                // found
-                Optional<User> foundOwner = repository.findByEmail("anna.neri@example.com");
-                assertTrue(foundOwner.isPresent(), "Should find the user by email");
-                assertEquals("Anna", foundOwner.get().getFirstName());
-                Optional<User> foundCustomer = repository.findByEmail("mario@example.com");
-                assertTrue(foundCustomer.isPresent(), "Should find the user by email");
-                assertEquals("Mario", foundCustomer.get().getFirstName());
+        // found
+        Optional<User> foundOwner = repository.findByEmail("anna.neri@example.com");
+        assertTrue(foundOwner.isPresent(), "Should find the user by email");
+        assertEquals("Anna", foundOwner.get().getFirstName());
+        Optional<User> foundCustomer = repository.findByEmail("mario@example.com");
+        assertTrue(foundCustomer.isPresent(), "Should find the user by email");
+        assertEquals("Mario", foundCustomer.get().getFirstName());
 
-                // not found
-                Optional<User> notFound = repository.findByEmail("non.esiste@example.com");
-                assertTrue(notFound.isEmpty(), "Should return empty Optional for non-existent email");
-        }
+        // not found
+        Optional<User> notFound = repository.findByEmail("non.esiste@example.com");
+        assertTrue(notFound.isEmpty(), "Should return empty Optional for non-existent email");
+    }
 
-        @Test
-        public void saveUser_UpdateMerge_Success() {
-                em.getTransaction().begin();
-                Owner owner = new Owner.OwnerBuilder()
-                                .setFirstName("Alice")
-                                .setLastName("Rossi")
-                                .setEmail("alice.r@example.com")
-                                .setPhoneNumber("333444")
-                                .build();
-                repository.save(owner);
+    @Test
+    public void countActiveOwners_Success() {
+        em.getTransaction().begin();
 
-                Customer customer = new Customer.CustomerBuilder()
-                                .setFirstName("Mario")
-                                .setLastName("Rossi")
-                                .setEmail("mario@example.com")
-                                .setPhoneNumber("123456789")
-                                .setResidenceCity("Firenze")
-                                .build();
-                repository.save(customer);
-                em.getTransaction().commit();
+        Owner activeOwner = new Owner.OwnerBuilder()
+                .setFirstName("Anna")
+                .setLastName("Neri")
+                .setEmail("anna.neri@example.com")
+                .setPhoneNumber("333444")
+                .setIsActive(true)
+                .build();
+        repository.save(activeOwner);
 
-                UUID ownerId = owner.getId();
-                UUID customerId = customer.getId();
+        Owner inactiveOwner = new Owner.OwnerBuilder()
+                .setFirstName("Ilaria")
+                .setLastName("Bianchi")
+                .setEmail("ilaria.bianchi@example.com")
+                .setPhoneNumber("333555")
+                .build();
+        repository.save(inactiveOwner);
 
-                em.clear();
-                em.getTransaction().begin();
+        Customer activeCustomer = new Customer.CustomerBuilder()
+                .setFirstName("Mario")
+                .setLastName("Rossi")
+                .setEmail("mario.rossi@example.com")
+                .setPhoneNumber("123456789")
+                .setResidenceCity("Firenze")
+                .setIsActive(true)
+                .build();
+        repository.save(activeCustomer);
 
-                User ownerToUpdate = repository.findById(ownerId).get();
-                ownerToUpdate.setPhoneNumber("999999");
-                User customerToUpdate = repository.findById(customerId).get();
-                customerToUpdate.setPhoneNumber("111111");
+        em.getTransaction().commit();
+        em.clear();
 
-                repository.save(ownerToUpdate); // em.merge()
-                repository.save(customerToUpdate);
-                em.getTransaction().commit();
-                em.clear();
+        Long activeOwnersCount = repository.countActiveOwners();
+        assertEquals(1L, activeOwnersCount);
+    }
 
-                User updatedOwner = repository.findById(ownerId).get();
-                assertEquals("999999", updatedOwner.getPhoneNumber(), "Phone number should be updated");
-                User updatedCustomer = repository.findById(customerId).get();
-                assertEquals("111111", updatedCustomer.getPhoneNumber(), "Phone number should be updated");
-        }
+    @Test
+    public void saveUser_UpdateMerge_Success() {
+        em.getTransaction().begin();
+        Owner owner = new Owner.OwnerBuilder()
+                .setFirstName("Alice")
+                .setLastName("Rossi")
+                .setEmail("alice.r@example.com")
+                .setPhoneNumber("333444")
+                .build();
+        repository.save(owner);
 
-        @Test
-        public void deleteUser_AttachedEntity_Success() {
-                em.getTransaction().begin();
-                Owner user = new Owner.OwnerBuilder()
-                                .setFirstName("Alice")
-                                .setLastName("Rossi")
-                                .setEmail("alice.r@example.com")
-                                .setPhoneNumber("333444")
-                                .build();
-                repository.save(user);
+        Customer customer = new Customer.CustomerBuilder()
+                .setFirstName("Mario")
+                .setLastName("Rossi")
+                .setEmail("mario@example.com")
+                .setPhoneNumber("123456789")
+                .setResidenceCity("Firenze")
+                .build();
+        repository.save(customer);
+        em.getTransaction().commit();
 
-                repository.delete(user); // em.remove(user)
-                em.getTransaction().commit();
-                em.clear();
+        UUID ownerId = owner.getId();
+        UUID customerId = customer.getId();
 
-                Optional<User> deletedUser = repository.findById(user.getId());
-                assertTrue(deletedUser.isEmpty(), "Should be empty, the user has been eliminated");
-        }
+        em.clear();
+        em.getTransaction().begin();
 
-        @Test
-        public void deleteUser_DetachedEntity_Success() {
-                em.getTransaction().begin();
-                Customer user = new Customer.CustomerBuilder()
-                                .setFirstName("Mario")
-                                .setLastName("Rossi")
-                                .setEmail("mario@example.com")
-                                .setPhoneNumber("123456789")
-                                .setResidenceCity("Firenze")
-                                .build();
+        User ownerToUpdate = repository.findById(ownerId).get();
+        ownerToUpdate.setPhoneNumber("999999");
+        User customerToUpdate = repository.findById(customerId).get();
+        customerToUpdate.setPhoneNumber("111111");
 
-                repository.save(user);
-                em.getTransaction().commit();
+        repository.save(ownerToUpdate); // em.merge()
+        repository.save(customerToUpdate);
+        em.getTransaction().commit();
+        em.clear();
 
-                UUID userId = user.getId();
-                assertNotNull(userId);
+        User updatedOwner = repository.findById(ownerId).get();
+        assertEquals("999999", updatedOwner.getPhoneNumber(), "Phone number should be updated");
+        User updatedCustomer = repository.findById(customerId).get();
+        assertEquals("111111", updatedCustomer.getPhoneNumber(), "Phone number should be updated");
+    }
 
-                em.clear();
-                em.getTransaction().begin();
+    @Test
+    public void deleteUser_AttachedEntity_Success() {
+        em.getTransaction().begin();
+        Owner user = new Owner.OwnerBuilder()
+                .setFirstName("Alice")
+                .setLastName("Rossi")
+                .setEmail("alice.r@example.com")
+                .setPhoneNumber("333444")
+                .build();
+        repository.save(user);
 
-                User userToDelete = repository.findById(userId)
-                                .orElseThrow(() -> new IllegalStateException("User not found"));
+        repository.delete(user); // em.remove(user)
+        em.getTransaction().commit();
+        em.clear();
 
-                em.clear();
-                repository.delete(userToDelete); // em.remove(em.merge(user))
+        Optional<User> deletedUser = repository.findById(user.getId());
+        assertTrue(deletedUser.isEmpty(), "Should be empty, the user has been eliminated");
+    }
 
-                em.getTransaction().commit();
-                em.clear();
+    @Test
+    public void deleteUser_DetachedEntity_Success() {
+        em.getTransaction().begin();
+        Customer user = new Customer.CustomerBuilder()
+                .setFirstName("Mario")
+                .setLastName("Rossi")
+                .setEmail("mario@example.com")
+                .setPhoneNumber("123456789")
+                .setResidenceCity("Firenze")
+                .build();
 
-                Optional<User> deletedUser = repository.findById(userId);
-                assertTrue(deletedUser.isEmpty(), "Should be empty, the user has been eliminated");
-        }
+        repository.save(user);
+        em.getTransaction().commit();
+
+        UUID userId = user.getId();
+        assertNotNull(userId);
+
+        em.clear();
+        em.getTransaction().begin();
+
+        User userToDelete = repository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        em.clear();
+        repository.delete(userToDelete); // em.remove(em.merge(user))
+
+        em.getTransaction().commit();
+        em.clear();
+
+        Optional<User> deletedUser = repository.findById(userId);
+        assertTrue(deletedUser.isEmpty(), "Should be empty, the user has been eliminated");
+    }
 }

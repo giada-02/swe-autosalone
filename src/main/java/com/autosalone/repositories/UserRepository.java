@@ -27,6 +27,10 @@ public class UserRepository {
                 .findFirst();
     }
 
+    public Long countActiveOwners() {
+        return em.createQuery("SELECT COUNT(o) FROM Owner o WHERE o.isActive = true", Long.class).getSingleResult();
+    }
+
     public User save(User user) {
         if (user.getId() == null) {
             em.persist(user);

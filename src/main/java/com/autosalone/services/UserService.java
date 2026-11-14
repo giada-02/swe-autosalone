@@ -9,6 +9,7 @@ import com.autosalone.exceptions.ForbiddenException;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.exceptions.UnauthorizedException;
 import com.autosalone.models.AuthToken;
+import com.autosalone.models.Owner;
 import com.autosalone.models.User;
 import com.autosalone.repositories.UserRepository;
 
@@ -80,11 +81,13 @@ public class UserService {
 
     @Transactional
     public void deactivateUser(UUID userId) {
-        Instant now = Instant.now(clock);
         User user = getUserById(userId);
+        if (user instanceof Owner && user.isActive() && userRepository.countActiveOwners() <= 1) {
+            throw new IllegalStateException("Cannot deactivate the last active owner");
+        }
         user.deactivate();
         user.setPassword(null);
-        user.invalidateTokens(now);
+        user.invalidateTokens(Instant.now(clock));
 
         userRepository.save(user);
     }
