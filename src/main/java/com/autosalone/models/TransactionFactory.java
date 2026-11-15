@@ -22,9 +22,7 @@ public class TransactionFactory {
     public static Transaction createVehicleExpense(Vehicle vehicle, String description, BigDecimal amount,
             LocalDate date) {
         String reason = String.format("Spesa - %s %s", vehicle.getBrand(), vehicle.getModel());
-        if (description != null)
-            reason = reason + ": " + Utils.sanitizeText(description);
-        return new Transaction(reason, amount, date, TransactionType.OUT, vehicle);
+        return new Transaction(getFormattedReason(reason, description), amount, date, TransactionType.OUT, vehicle);
     }
 
     public static Transaction createContractDeposit(Contract contract, BigDecimal amount, LocalDate date) {
@@ -39,9 +37,7 @@ public class TransactionFactory {
         String reason = String.format("Pagamento Contratto %s %s - %s %s", contract.getCustomer().getFirstName(),
                 contract.getCustomer().getLastName(), contract.getVehicle().getBrand(),
                 contract.getVehicle().getModel());
-        if (description != null)
-            reason = reason + ": " + Utils.sanitizeText(description);
-        return new Transaction(reason, amount, date, TransactionType.IN, contract);
+        return new Transaction(getFormattedReason(reason, description), amount, date, TransactionType.IN, contract);
     }
 
     public static Transaction createContractRefund(Contract contract, String description, BigDecimal amount,
@@ -49,9 +45,7 @@ public class TransactionFactory {
         String reason = String.format("Rimborso Contratto %s %s - %s %s", contract.getCustomer().getFirstName(),
                 contract.getCustomer().getLastName(), contract.getVehicle().getBrand(),
                 contract.getVehicle().getModel());
-        if (description != null)
-            reason = reason + ": " + Utils.sanitizeText(description);
-        return new Transaction(reason, amount, date, TransactionType.OUT, contract);
+        return new Transaction(getFormattedReason(reason, description), amount, date, TransactionType.OUT, contract);
     }
 
     public static Transaction createGeneralExpense(String reason, BigDecimal amount, LocalDate date) {
@@ -62,4 +56,10 @@ public class TransactionFactory {
         return new Transaction(reason, amount, date, TransactionType.IN);
     }
 
+    private static String getFormattedReason(String reason, String description) {
+        String cleanDescription = Utils.sanitizeText(description);
+        if (cleanDescription != null)
+            return reason + ": " + cleanDescription;
+        return reason;
+    }
 }
