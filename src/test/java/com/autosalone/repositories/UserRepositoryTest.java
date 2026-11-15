@@ -172,7 +172,7 @@ public class UserRepositoryTest {
         em.getTransaction().commit();
         em.clear();
 
-        Long activeOwnersCount = repository.countActiveOwners();
+        long activeOwnersCount = repository.countActiveOwners();
         assertEquals(1l, activeOwnersCount);
     }
 

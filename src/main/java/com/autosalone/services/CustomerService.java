@@ -3,7 +3,6 @@ package com.autosalone.services;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.dtos.requests.CustomerRequest;
@@ -12,7 +11,6 @@ import com.autosalone.dtos.responses.CustomerResponse;
 import com.autosalone.enums.TokenType;
 import com.autosalone.exceptions.ResourceNotFoundException;
 import com.autosalone.models.Customer;
-import com.autosalone.models.User;
 import com.autosalone.repositories.AuthTokenRepository;
 import com.autosalone.repositories.CustomerRepository;
 import com.autosalone.repositories.UserRepository;
@@ -98,7 +96,7 @@ public class CustomerService {
             throw new IllegalStateException("Cannot remove the email, the user is active");
         }
 
-        if (request.email() != null && !Objects.equals(User.normalizeEmail(request.email()), customer.getEmail())) {
+        if (customer.hasSameEmail(request.email())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });

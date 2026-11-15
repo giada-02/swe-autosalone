@@ -81,6 +81,11 @@ public abstract class PurchasableItem extends AuditableEntity {
         this.isArchived = true;
     }
 
+    public boolean hasSameDetails(String name, String description) {
+        return Objects.equals(this.name, Utils.sanitizeText(name))
+                && Objects.equals(this.description, Utils.sanitizeText(description));
+    }
+
     // validation and normalization
     private static String requireName(String name) {
         if (name == null || name.isBlank())

@@ -126,7 +126,7 @@ public class QuotationRepository {
     }
 
     public boolean existsIssuedQuotationForVehicle(UUID vehicleId) {
-        Long issuedQuotationCount = em.createQuery(
+        long issuedQuotationCount = em.createQuery(
                 "SELECT COUNT(q) FROM Quotation q WHERE q.vehicle.id = :vehicleId AND q.status = :issued", Long.class)
                 .setParameter("vehicleId", vehicleId)
                 .setParameter("issued", QuotationStatus.ISSUED).getSingleResult();

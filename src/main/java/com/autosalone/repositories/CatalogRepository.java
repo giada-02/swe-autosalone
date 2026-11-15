@@ -53,12 +53,12 @@ public class CatalogRepository {
     }
 
     public boolean isItemInUse(UUID itemId) {
-        Long documentCount = em.createQuery(
+        long documentCount = em.createQuery(
                 "SELECT COUNT(d) FROM SalesDocument d JOIN d.items i WHERE i.item.id = :itemId", Long.class)
                 .setParameter("itemId", itemId)
                 .getSingleResult();
 
-        Long packageCount = em.createQuery(
+        long packageCount = em.createQuery(
                 "SELECT COUNT(p) FROM AccessoryPackage p JOIN p.items i WHERE i.id = :itemId", Long.class)
                 .setParameter("itemId", itemId)
                 .getSingleResult();

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -157,6 +158,10 @@ public abstract class User extends AuditableEntity {
         protected abstract B self();
 
         protected abstract T build();
+    }
+
+    public boolean hasSameEmail(String email) {
+        return normalizeEmail(email) != null && Objects.equals(this.email, normalizeEmail(email));
     }
 
     // validation and normalization

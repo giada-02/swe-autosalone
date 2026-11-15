@@ -2,7 +2,6 @@ package com.autosalone.services;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -68,14 +67,10 @@ public class CatalogService {
             throw new ResourceNotFoundException("This id does not belong to an accessory: " + accessoryId);
         }
 
-        if (catalogRepository.isItemInUse(accessoryId)) {
-            boolean isNameChanged = !Objects.equals(accessory.getName(), request.name());
-            boolean isDescriptionChanged = !Objects.equals(accessory.getDescription(), request.description());
-
-            if (isNameChanged || isDescriptionChanged) {
-                throw new IllegalStateException(
-                        "Cannot change the name or description of an accessory in use. You can only update its base price.");
-            }
+        if (catalogRepository.isItemInUse(accessoryId)
+                && !accessory.hasSameDetails(request.name(), request.description())) {
+            throw new IllegalStateException(
+                    "Cannot change the name or description of an accessory in use. You can only update its base price.");
         }
 
         accessory.setName(request.name());
