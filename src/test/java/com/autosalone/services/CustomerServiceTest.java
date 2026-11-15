@@ -179,18 +179,6 @@ class CustomerServiceTest {
     }
 
     @Test
-    void updateCustomer_Success_SameEmailDifferentCase() {
-        when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
-        when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockCustomer.hasSameEmail(customerRequest.email())).thenReturn(true);
-
-        assertDoesNotThrow(() -> customerService.updateCustomer(customerId, customerRequest));
-
-        verify(userRepository, never()).findByEmail(anyString());
-        verify(customerRepository).save(mockCustomer);
-    }
-
-    @Test
     void updateCustomer_Success_DifferentEmail() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
         when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());

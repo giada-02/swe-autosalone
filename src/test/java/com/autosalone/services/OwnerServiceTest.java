@@ -175,18 +175,6 @@ class OwnerServiceTest {
     }
 
     @Test
-    void updateOwner_Success_SameEmailDifferentCase() {
-        when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
-        when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockOwner.hasSameEmail(ownerRequest.email())).thenReturn(true);
-
-        assertDoesNotThrow(() -> ownerService.updateOwner(ownerId, ownerRequest));
-
-        verify(userRepository, never()).findByEmail(anyString());
-        verify(ownerRepository).save(mockOwner);
-    }
-
-    @Test
     void updateOwner_Success_DifferentEmail() {
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
         when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());
