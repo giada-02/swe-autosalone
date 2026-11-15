@@ -21,7 +21,7 @@ Le **scadenze**, impostate dai proprietari, possono avere una cadenza ricorrente
 ---
 
 ## 🛠️ Tecnologie Principali
-- **Core:** Java 21, Jakarta EE 10
+- **Core:** Java 21, Jakarta EE 11
 - **Database & ORM:** PostgreSQL, Hibernate / JPA
 - **API & Architettura:** JAX-RS (RESTful APIs), CDI
 - **Sicurezza:** JWT (JSON Web Tokens), BCrypt
