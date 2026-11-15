@@ -90,7 +90,7 @@ public class OwnerService {
             throw new IllegalStateException("Cannot remove the email, the user is active");
         }
 
-        if (owner.hasSameEmail(request.email())) {
+        if (request.email() != null && !owner.hasSameEmail(request.email())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });

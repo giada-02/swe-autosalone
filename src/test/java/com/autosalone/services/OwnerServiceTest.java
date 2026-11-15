@@ -163,7 +163,7 @@ class OwnerServiceTest {
     void updateOwner_Success_SameEmail() {
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
         when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockOwner.getEmail()).thenReturn(ownerRequest.email());
+        when(mockOwner.hasSameEmail(ownerRequest.email())).thenReturn(true);
 
         assertDoesNotThrow(() -> ownerService.updateOwner(ownerId, ownerRequest));
 
@@ -176,15 +176,11 @@ class OwnerServiceTest {
 
     @Test
     void updateOwner_Success_SameEmailDifferentCase() {
-        OwnerRequest request = new OwnerRequest(
-                "Mario", "Rossi", "3331234567",
-                "Mario.Rossi@Example.COM");
-
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
         when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockOwner.getEmail()).thenReturn("mario.rossi@example.com");
+        when(mockOwner.hasSameEmail(ownerRequest.email())).thenReturn(true);
 
-        assertDoesNotThrow(() -> ownerService.updateOwner(ownerId, request));
+        assertDoesNotThrow(() -> ownerService.updateOwner(ownerId, ownerRequest));
 
         verify(userRepository, never()).findByEmail(anyString());
         verify(ownerRepository).save(mockOwner);
@@ -210,7 +206,7 @@ class OwnerServiceTest {
     void updateOwner_FailsIfDifferentEmailAlreadyInUse() {
         when(ownerRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
         when(authTokenRepository.findByUserAndType(mockOwner, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockOwner.getEmail()).thenReturn("vecchia.email@example.com");
+        when(mockOwner.hasSameEmail(ownerRequest.email())).thenReturn(false);
 
         Owner anotherOwner = mock(Owner.class);
         when(userRepository.findByEmail(ownerRequest.email())).thenReturn(Optional.of(anotherOwner));
@@ -218,7 +214,6 @@ class OwnerServiceTest {
         assertThrows(IllegalStateException.class, () -> {
             ownerService.updateOwner(ownerId, ownerRequest);
         });
-
         verify(ownerRepository, never()).save(any());
     }
 

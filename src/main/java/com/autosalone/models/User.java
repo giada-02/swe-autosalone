@@ -161,7 +161,7 @@ public abstract class User extends AuditableEntity {
     }
 
     public boolean hasSameEmail(String email) {
-        return normalizeEmail(email) != null && Objects.equals(this.email, normalizeEmail(email));
+        return Objects.equals(this.email, normalizeEmail(email));
     }
 
     // validation and normalization

@@ -96,7 +96,7 @@ public class CustomerService {
             throw new IllegalStateException("Cannot remove the email, the user is active");
         }
 
-        if (customer.hasSameEmail(request.email())) {
+        if (request.email() != null && !customer.hasSameEmail(request.email())) {
             userRepository.findByEmail(request.email()).ifPresent(existing -> {
                 throw new IllegalStateException("This email is already in use");
             });

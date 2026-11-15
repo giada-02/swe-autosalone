@@ -167,7 +167,7 @@ class CustomerServiceTest {
     void updateCustomer_Success_SameEmail() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
         when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockCustomer.getEmail()).thenReturn(customerRequest.email());
+        when(mockCustomer.hasSameEmail(customerRequest.email())).thenReturn(true);
 
         assertDoesNotThrow(() -> customerService.updateCustomer(customerId, customerRequest));
 
@@ -180,16 +180,11 @@ class CustomerServiceTest {
 
     @Test
     void updateCustomer_Success_SameEmailDifferentCase() {
-        CustomerRequest request = new CustomerRequest(
-                "Mario", "Rossi", "3331234567",
-                "Mario.Rossi@Example.COM",
-                "Roma", "00100", "RSSMRA80A01H501Z", null);
-
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
         when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockCustomer.getEmail()).thenReturn("mario.rossi@example.com");
+        when(mockCustomer.hasSameEmail(customerRequest.email())).thenReturn(true);
 
-        assertDoesNotThrow(() -> customerService.updateCustomer(customerId, request));
+        assertDoesNotThrow(() -> customerService.updateCustomer(customerId, customerRequest));
 
         verify(userRepository, never()).findByEmail(anyString());
         verify(customerRepository).save(mockCustomer);
@@ -215,7 +210,7 @@ class CustomerServiceTest {
     void updateCustomer_FailsIfDifferentEmailAlreadyInUse() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(mockCustomer));
         when(authTokenRepository.findByUserAndType(mockCustomer, TokenType.REGISTRATION)).thenReturn(Optional.empty());
-        when(mockCustomer.getEmail()).thenReturn("vecchia.email@example.com");
+        when(mockCustomer.hasSameEmail(customerRequest.email())).thenReturn(false);
 
         Customer anotherCustomer = mock(Customer.class);
         when(userRepository.findByEmail(customerRequest.email())).thenReturn(Optional.of(anotherCustomer));
@@ -223,7 +218,6 @@ class CustomerServiceTest {
         assertThrows(IllegalStateException.class, () -> {
             customerService.updateCustomer(customerId, customerRequest);
         });
-
         verify(customerRepository, never()).save(any());
     }
 
