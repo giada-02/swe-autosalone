@@ -3,7 +3,6 @@ package com.autosalone.models;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
-import java.util.Objects;
 
 import com.autosalone.enums.ExpirationPolicy;
 import com.autosalone.enums.QuotationStatus;
@@ -127,7 +126,8 @@ public class Quotation extends SalesDocument {
 
     public void updateExpiration(ExpirationPolicy expirationPolicy, LocalDate expirationDate) {
         validateIsEditable();
-        Objects.requireNonNull(expirationPolicy, "Expiration policy is required");
+        if (expirationPolicy == null)
+            throw new IllegalArgumentException("Expiration policy is required");
         this.expirationDate = expirationPolicy.calculateExpirationDate(this.getDate(), expirationDate);
         this.expirationPolicy = expirationPolicy;
     }

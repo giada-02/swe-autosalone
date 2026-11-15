@@ -361,44 +361,37 @@ public abstract class SalesDocument extends AuditableEntity {
 
     // validation and normalization
     private static void requireDate(LocalDate date) {
-        if (date == null) {
+        if (date == null)
             throw new IllegalArgumentException("Date is required");
-        }
     }
 
     private static Vehicle requireVehicle(Vehicle vehicle) {
-        if (vehicle == null) {
+        if (vehicle == null)
             throw new IllegalArgumentException("Vehicle is required");
-        }
         return vehicle;
     }
 
     private static Customer requireCustomer(Customer customer) {
-        if (customer == null) {
+        if (customer == null)
             throw new IllegalArgumentException("Customer is required");
-        }
         return customer;
     }
 
     private static void requireItem(AppliedItem item, String message) {
-        if (item == null) {
+        if (item == null)
             throw new IllegalArgumentException(message);
-        }
     }
 
     private static String normalizeNotes(String notes) {
-        if (notes == null || notes.isBlank()) {
+        if (notes == null || notes.isBlank())
             return null;
-        }
         return notes.trim();
     }
 
     private static void validateVehicleSellingPriceSnapshot(BigDecimal vehicleSellingPriceSnapshot) {
-        if (vehicleSellingPriceSnapshot == null) {
+        if (vehicleSellingPriceSnapshot == null)
             throw new IllegalArgumentException("The vehicle selling price is required");
-        }
-        if (vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0) {
+        if (vehicleSellingPriceSnapshot.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("The vehicle selling price cannot negative");
-        }
     }
 }

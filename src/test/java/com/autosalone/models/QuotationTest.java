@@ -58,6 +58,7 @@ public class QuotationTest {
         assertAll(
                 () -> assertNotNull(quote),
                 () -> assertEquals(QuotationStatus.DRAFT, quote.getStatus(TODAY)),
+                () -> assertFalse(quote.isVisibleToCustomer()),
                 () -> assertFalse(quote.isArchived()),
                 () -> assertEquals(TODAY, quote.getDate()),
                 () -> assertNull(quote.getExpirationDate()),
@@ -316,7 +317,7 @@ public class QuotationTest {
     @Test
     public void updateExpiration_ToNullExpirationPolicy_ThrowsException() {
         Quotation quote = getDefaultQuotation();
-        assertThrows(NullPointerException.class, () -> quote.updateExpiration(null, TODAY),
+        assertThrows(IllegalArgumentException.class, () -> quote.updateExpiration(null, TODAY),
                 "Expiration policy is required to update the expiration");
     }
 
@@ -729,7 +730,7 @@ public class QuotationTest {
                 new Accessory("Alloy Rims", "Sport", new BigDecimal("1000.00")));
         quote.addItem(accessoryItem);
 
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             quote.setAppliedItemPrice(accessoryItem, null);
         });
     }

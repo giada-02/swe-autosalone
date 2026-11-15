@@ -81,16 +81,16 @@ public abstract class PurchasableItem extends AuditableEntity {
         this.isArchived = true;
     }
 
+    // validation and normalization
+    private static String requireName(String name) {
+        if (name == null || name.isBlank())
+            throw new IllegalArgumentException("Name is required");
+        return name.trim();
+    }
+
+    // state validation
     public void validateIsNotArchived() {
         if (this.isArchived)
             throw new IllegalStateException("No changes can be made to an archived purchasable item");
-    }
-
-    // validation and normalization
-    private static String requireName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Name is required");
-        }
-        return name.trim();
     }
 }

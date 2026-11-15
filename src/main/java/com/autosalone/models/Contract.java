@@ -272,18 +272,15 @@ public class Contract extends SalesDocument {
 
     // validation and normalization
     private static String requireCancelationReason(String reason) {
-        if (reason == null || reason.isBlank()) {
+        if (reason == null || reason.isBlank())
             throw new IllegalArgumentException("A cancelation reason must be provided");
-        }
         return reason.trim();
     }
 
     private void validateEstimatedHandoverDate(LocalDate estimatedHandoverDate) {
-        if (estimatedHandoverDate == null) {
+        if (estimatedHandoverDate == null)
             throw new IllegalArgumentException("Estimated handover date is required");
-        }
-        if (estimatedHandoverDate.isBefore(this.getDate())) {
+        if (estimatedHandoverDate.isBefore(this.getDate()))
             throw new IllegalArgumentException("The estimated handover date cannot be before the contract date");
-        }
     }
 }

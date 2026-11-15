@@ -189,8 +189,7 @@ public class VehicleService {
     @Transactional
     public ExpenseResponse addExpense(UUID vehicleId, String description, BigDecimal amount, LocalDate date) {
         Vehicle vehicle = getVehicleById(vehicleId);
-        String sanitizedDescription = Utils.sanitizeText(description);
-        Transaction expense = TransactionFactory.createVehicleExpense(vehicle, sanitizedDescription, amount, date);
+        Transaction expense = TransactionFactory.createVehicleExpense(vehicle, description, amount, date);
         vehicle.addExpense(expense);
 
         transactionRepository.save(expense);

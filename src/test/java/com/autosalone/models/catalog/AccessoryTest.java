@@ -17,7 +17,7 @@ public class AccessoryTest {
 
     @Test
     public void constructor_WithNullBasePrice_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> new Accessory("Nome", "Descrizione", null));
+        assertThrows(IllegalArgumentException.class, () -> new Accessory("Nome", "Descrizione", null));
     }
 
     @Test
@@ -44,7 +44,7 @@ public class AccessoryTest {
     public void setBasePrice_ToNull_ThrowsException() {
         Accessory accessory = new Accessory("Nome", "Descrizione", new BigDecimal("50.00"));
 
-        assertThrows(NullPointerException.class, () -> accessory.setBasePrice(null));
+        assertThrows(IllegalArgumentException.class, () -> accessory.setBasePrice(null));
     }
 
     @Test

@@ -6,16 +6,27 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
 
 public class AccessoryPackageTest {
 
     @Test
+    public void constructor_WithItems_CreatesAccessoryPackageWithItems() {
+        ArrayList<PurchasableItem> items = new ArrayList<>();
+        items.add(new Accessory("Accessorio", "Descrizione", new BigDecimal("50.00")));
+        items.add(new AccessoryPackage("Pacchetto Interno", null, null));
+
+        AccessoryPackage pack = new AccessoryPackage("Pacchetto", "Descrizione", items);
+        assertEquals(2, pack.getItems().size());
+    }
+
+    @Test
     public void archive_Success_ItemsInsideShouldNotBeArchived() {
         AccessoryPackage pack = new AccessoryPackage("Pacchetto", "Descrizione");
         Accessory accessory = new Accessory("Accessorio", "Descrizione", new BigDecimal("50.00"));
-        Accessory innerPack = new Accessory("Pacchetto Interno", null, new BigDecimal("50.00"));
+        AccessoryPackage innerPack = new AccessoryPackage("Pacchetto Interno", null);
         pack.addItem(accessory);
         pack.addItem(innerPack);
 
@@ -23,6 +34,12 @@ public class AccessoryPackageTest {
         assertTrue(pack.isArchived());
         assertFalse(accessory.isArchived());
         assertFalse(innerPack.isArchived());
+    }
+
+    @Test
+    public void addItem_Null_ThrowsException() {
+        AccessoryPackage pack = new AccessoryPackage("Pacchetto", "Descrizione");
+        assertThrows(IllegalArgumentException.class, () -> pack.addItem(null));
     }
 
     @Test
@@ -57,6 +74,12 @@ public class AccessoryPackageTest {
 
         assertThrows(IllegalStateException.class, () -> pack.addItem(accessory));
         assertTrue(pack.getItems().size() == 0);
+    }
+
+    @Test
+    public void removeItem_Null_ThrowsException() {
+        AccessoryPackage pack = new AccessoryPackage("Pacchetto", "Descrizione");
+        assertThrows(IllegalArgumentException.class, () -> pack.removeItem(null));
     }
 
     @Test

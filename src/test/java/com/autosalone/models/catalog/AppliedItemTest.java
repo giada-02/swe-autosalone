@@ -26,7 +26,7 @@ public class AppliedItemTest {
 
         AppliedItem appliedItem = assertDoesNotThrow(() -> new AppliedItem(accessory));
         assertEquals(0, appliedItem.getAppliedPrice().compareTo(accessory.getPrice()));
-        assertTrue(accessory == appliedItem.getItem());
+        assertEquals(accessory, appliedItem.getItem());
     }
 
     @Test
@@ -53,7 +53,7 @@ public class AppliedItemTest {
     }
 
     @Test
-    public void copyConstructor_WithGetOriginalPrice_FromArchivedItem_Success() {
+    public void copyConstructor_WithGetCurrentItemBasePrice_FromArchivedItem_Success() {
         Accessory accessory = new Accessory("Name", null, new BigDecimal("50.00"));
         AppliedItem accessoryItem = new AppliedItem(accessory);
 
@@ -79,7 +79,7 @@ public class AppliedItemTest {
     }
 
     @Test
-    public void copyConstructor_WithGetOriginalPrice_Success() {
+    public void copyConstructor_WithGetCurrentItemBasePrice_Success() {
         Accessory accessory = new Accessory("Name", null, new BigDecimal("50.00"));
         AppliedItem accessoryItem = new AppliedItem(accessory);
 
@@ -98,7 +98,9 @@ public class AppliedItemTest {
         Accessory accessory = new Accessory("Name", null, new BigDecimal("50.00"));
         AppliedItem appliedItem = new AppliedItem(accessory);
 
-        assertThrows(NullPointerException.class, () -> appliedItem.setAppliedPrice(null));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> appliedItem.setAppliedPrice(null));
+        assertEquals("Applied price is required", exception.getMessage());
     }
 
     @Test
@@ -118,5 +120,4 @@ public class AppliedItemTest {
         assertEquals(0, appliedItem.getAppliedPrice().compareTo(new BigDecimal("40.00")));
         assertEquals(0, accessory.getPrice().compareTo(new BigDecimal("50.00")));
     }
-
 }

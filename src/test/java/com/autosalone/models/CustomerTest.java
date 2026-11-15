@@ -42,7 +42,7 @@ public class CustomerTest {
     }
 
     @Test
-    public void setResidenceCity_Null_SetsNull() {
+    public void setResidenceCity_ToNull_SetsNull() {
         customer.setResidenceCity("Roma");
 
         customer.setResidenceCity(null);
@@ -67,7 +67,7 @@ public class CustomerTest {
     }
 
     @Test
-    public void setZipCode_Null_SetsNull() {
+    public void setZipCode_ToNull_SetsNull() {
         customer.setZipCode("00100");
 
         customer.setZipCode(null);
@@ -92,7 +92,7 @@ public class CustomerTest {
     }
 
     @Test
-    public void setFiscalCode_Null_SetsNull() {
+    public void setFiscalCode_ToNull_SetsNull() {
         customer.setFiscalCode("VRDLGU85E15H501R");
 
         customer.setFiscalCode(null);
@@ -117,7 +117,7 @@ public class CustomerTest {
     }
 
     @Test
-    public void setVatNumber_Null_SetsNull() {
+    public void setVatNumber_ToNull_SetsNull() {
         customer.setVatNumber("2472198357");
 
         customer.setVatNumber(null);

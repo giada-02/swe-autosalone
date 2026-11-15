@@ -2,7 +2,6 @@ package com.autosalone.models.catalog;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.util.Objects;
 
 import com.autosalone.models.catalog.visitors.PurchasableItemVisitor;
 
@@ -18,10 +17,7 @@ public class Accessory extends PurchasableItem {
 
     public Accessory(String name, String description, BigDecimal basePrice) {
         super(name, description);
-        Objects.requireNonNull(basePrice, "Base price is required");
-        validateBasePriceValue(basePrice);
-
-        this.basePrice = basePrice;
+        this.basePrice = validateBasePrice(basePrice);
     }
 
     @Override
@@ -35,19 +31,20 @@ public class Accessory extends PurchasableItem {
     }
 
     public void setBasePrice(BigDecimal basePrice) {
-        Objects.requireNonNull(basePrice, "Base price is required");
+        validateBasePrice(basePrice);
         if (this.basePrice != null && this.basePrice.compareTo(basePrice) == 0)
             return;
-
         validateIsNotArchived();
-        validateBasePriceValue(basePrice);
 
         this.basePrice = basePrice;
     }
 
-    private void validateBasePriceValue(BigDecimal basePrice) {
-        if (basePrice.compareTo(BigDecimal.ZERO) < 0) {
+    // validation
+    private static BigDecimal validateBasePrice(BigDecimal basePrice) {
+        if (basePrice == null)
+            throw new IllegalArgumentException("Base price is required");
+        if (basePrice.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("Base price cannot be negative");
-        }
+        return basePrice;
     }
 }

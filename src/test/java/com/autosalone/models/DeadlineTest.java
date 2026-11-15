@@ -39,9 +39,48 @@ public class DeadlineTest {
     }
 
     @Test
+    public void constructor_WithoutReason_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Deadline(defaultCar, null, TODAY, null, false));
+        assertEquals("Reason is required", exception.getMessage());
+    }
+
+    @Test
+    public void constructor_WithoutDueDate_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Deadline(defaultCar, "Tagliando", null, null, false));
+        assertEquals("Due date is required", exception.getMessage());
+    }
+
+    @Test
+    public void constructor_WithoutVehicle_ThrowsException() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Deadline(null, "Tagliando", TODAY, null, false));
+        assertEquals("A deadline must be linked to a vehicle", exception.getMessage());
+    }
+
+    @Test
+    public void constructor_WithValidData_AssignsAndNormalizesData() {
+        Deadline deadline = new Deadline(defaultCar, "  Tagliando ", TODAY, Period.ofYears(1), true);
+
+        assertAll(
+                () -> assertEquals(defaultCar, deadline.getVehicle()),
+                () -> assertEquals("Tagliando", deadline.getReason()),
+                () -> assertEquals(TODAY, deadline.getDueDate()),
+                () -> assertEquals(Period.ofYears(1), deadline.getRecurrence()),
+                () -> assertTrue(deadline.isRecalculatedFromCompletion()));
+    }
+
+    @Test
     public void isExpired_IncompleteEventWithDueDateInThePast_ReturnsTrue() {
         Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
         assertTrue(deadline.isExpired(TODAY));
+    }
+
+    @Test
+    public void isExpired_IncompleteEventWithDueDateInTheFuture_ReturnsFalse() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", TODAY.plusDays(1), null, false);
+        assertFalse(deadline.isExpired(TODAY));
     }
 
     @Test
@@ -52,18 +91,74 @@ public class DeadlineTest {
     }
 
     @Test
-    public void setters_IncompleteEvent_Success() {
+    public void setReason_Blank_IncompleteEvent_ThrowsException() {
         Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> deadline.setReason(" "));
+        assertEquals("Reason is required", exception.getMessage());
+        assertEquals("Riparazione freni", deadline.getReason());
+    }
 
-        assertAll(
-                () -> assertDoesNotThrow(() -> deadline.setReason("Tagliando")),
-                () -> assertEquals("Tagliando", deadline.getReason()),
-                () -> assertDoesNotThrow(() -> deadline.setDueDate(TODAY)),
-                () -> assertEquals(TODAY, deadline.getDueDate()),
-                () -> assertDoesNotThrow(() -> deadline.setRecurrence(Period.ofYears(1))),
-                () -> assertEquals(Period.ofYears(1), deadline.getRecurrence()),
-                () -> assertDoesNotThrow(() -> deadline.setRecalculateFromCompletion(true)),
-                () -> assertTrue(deadline.isRecalculatedFromCompletion()));
+    @Test
+    public void setReason_ToNull_IncompleteEvent_ThrowsException() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> deadline.setReason(null));
+        assertEquals("Reason is required", exception.getMessage());
+        assertEquals("Riparazione freni", deadline.getReason());
+    }
+
+    @Test
+    public void setReason_IncompleteEvent_NormalizesValue() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        deadline.setReason(" Tagliando  ");
+        assertEquals("Tagliando", deadline.getReason());
+    }
+
+    @Test
+    public void setDueDate_ToNull_IncompleteEvent_ThrowsException() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> deadline.setDueDate(null));
+        assertEquals("Due date is required", exception.getMessage());
+        assertEquals(yesterday, deadline.getDueDate());
+    }
+
+    @Test
+    public void setDueDate_IncompleteEvent_Success() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        deadline.setDueDate(TODAY);
+        assertEquals(TODAY, deadline.getDueDate());
+    }
+
+    @Test
+    public void setRecurrence_IncompleteEvent_Success() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        deadline.setRecurrence(Period.ofYears(1));
+        assertEquals(Period.ofYears(1), deadline.getRecurrence());
+    }
+
+    @Test
+    public void setRecurrence_ToNull_WithRecalculateFromCompletion_IncompleteEvent_SetsRecalculateFromCompletionToFalse() {
+        Deadline deadline = new Deadline(defaultCar, "Tagliando", yesterday, Period.ofYears(1), true);
+        deadline.setRecurrence(null);
+        assertNull(deadline.getRecurrence());
+        assertFalse(deadline.isRecalculatedFromCompletion());
+    }
+
+    @Test
+    public void setRecalculateFromCompletion_ToTrue_IncompleteEvent_Success() {
+        Deadline deadline = new Deadline(defaultCar, "Tagliando", yesterday, Period.ofYears(1), false);
+        deadline.setRecalculateFromCompletion(true);
+        assertTrue(deadline.isRecalculatedFromCompletion());
+    }
+
+    @Test
+    public void setRecalculateFromCompletion_ToTrue_WithNullRecurrence_IncompleteEvent_ThrowsException() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        assertThrows(IllegalArgumentException.class, () -> deadline.setRecalculateFromCompletion(true));
+        assertNull(deadline.getRecurrence());
+        assertFalse(deadline.isRecalculatedFromCompletion());
     }
 
     @Test
@@ -76,31 +171,6 @@ public class DeadlineTest {
                 () -> assertThrows(IllegalStateException.class, () -> deadline.setDueDate(TODAY)),
                 () -> assertThrows(IllegalStateException.class, () -> deadline.setRecurrence(Period.ofYears(1))),
                 () -> assertThrows(IllegalStateException.class, () -> deadline.setRecalculateFromCompletion(true)));
-    }
-
-    @Test
-    public void setRecurrence_ToNull_WithRecalculateFromCompletion_SetsRecalculateFromCompletionToFalse() {
-        Deadline deadline = new Deadline(defaultCar, "Tagliando", yesterday, Period.ofYears(1), true);
-        assertNotNull(deadline.getRecurrence());
-        assertTrue(deadline.isRecalculatedFromCompletion());
-
-        deadline.setRecurrence(null);
-
-        assertNull(deadline.getRecurrence());
-        assertFalse(deadline.isRecalculatedFromCompletion());
-
-    }
-
-    @Test
-    public void setRecalculateFromCompletion_ToTrue_WithNullRecurrence_ThrowsException() {
-        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
-        assertNull(deadline.getRecurrence());
-        assertFalse(deadline.isRecalculatedFromCompletion());
-
-        assertThrows(IllegalArgumentException.class, () -> deadline.setRecalculateFromCompletion(true));
-        assertNull(deadline.getRecurrence());
-        assertFalse(deadline.isRecalculatedFromCompletion());
-
     }
 
     @Test
@@ -152,6 +222,39 @@ public class DeadlineTest {
         assertThrows(IllegalStateException.class, () -> {
             deadline.complete(TODAY, null);
         }, "Cannot complete a completed deadline event");
+    }
+
+    @Test
+    public void complete_WithoutActualCompletionDate_ThrowsException() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione", TODAY, null, false);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            deadline.complete(null, "Fatto");
+        });
+    }
+
+    @Test
+    public void complete_WithBlankNotes_SetsNullNotes() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione", TODAY, null, false);
+
+        deadline.complete(TODAY, "  ");
+        assertNull(deadline.getNotes());
+    }
+
+    @Test
+    public void complete_WithNullNotes_SetsNullNotes() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione", TODAY, null, false);
+
+        deadline.complete(TODAY, null);
+        assertNull(deadline.getNotes());
+    }
+
+    @Test
+    public void complete_WithNotes_NormalizesValue() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione", TODAY, null, false);
+
+        deadline.complete(TODAY, " Fatto  ");
+        assertEquals("Fatto", deadline.getNotes());
     }
 
     @Test

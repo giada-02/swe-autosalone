@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import com.autosalone.models.catalog.visitors.PurchasableItemVisitor;
 
@@ -52,7 +51,7 @@ public class AccessoryPackage extends PurchasableItem {
 
     public void addItem(PurchasableItem item) {
         validateIsNotArchived();
-        Objects.requireNonNull(item, "Item is required");
+        requireItem(item);
 
         validateAddSelf(item);
         item.validateIsNotArchived();
@@ -62,13 +61,20 @@ public class AccessoryPackage extends PurchasableItem {
 
     public void removeItem(PurchasableItem item) {
         validateIsNotArchived();
-        Objects.requireNonNull(item, "Item is required");
+        requireItem(item);
 
         this.items.remove(item);
     }
 
+    // validation
+    private static void requireItem(PurchasableItem item) {
+        if (item == null)
+            throw new IllegalArgumentException("Item is required");
+    }
+
     private void validateAddSelf(PurchasableItem item) {
-        if (this == item)
+        if (item.equals(this))
             throw new IllegalArgumentException("Cannot add the package inside itself");
     }
+
 }

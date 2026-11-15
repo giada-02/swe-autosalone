@@ -3,7 +3,6 @@ package com.autosalone.models;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Objects;
 import java.util.UUID;
 
 import com.autosalone.enums.TransactionType;
@@ -41,18 +40,10 @@ public class Transaction extends AuditableEntity {
     }
 
     Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type) {
-        Objects.requireNonNull(reason, "Reason is required");
-        Objects.requireNonNull(amount, "Amount is required");
-        Objects.requireNonNull(date, "Date is required");
-        Objects.requireNonNull(type, "Type is required");
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("The amount of the transaction must be positive");
-        }
-
-        this.reason = reason;
-        this.amount = amount;
-        this.date = date;
-        this.type = type;
+        this.reason = requireReason(reason);
+        this.amount = validateAmount(amount);
+        this.date = requireDate(date);
+        this.type = requireType(type);
     }
 
     Transaction(String reason, BigDecimal amount, LocalDate date, TransactionType type, Vehicle vehicle) {
@@ -92,5 +83,32 @@ public class Transaction extends AuditableEntity {
 
     public Contract getContract() {
         return contract;
+    }
+
+    // validation and normalization
+    private static String requireReason(String reason) {
+        if (reason == null || reason.isBlank())
+            throw new IllegalArgumentException("Reason is required");
+        return reason.trim();
+    }
+
+    private static BigDecimal validateAmount(BigDecimal amount) {
+        if (amount == null)
+            throw new IllegalArgumentException("Amount is required");
+        if (amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("The amount of the transaction must be positive");
+        return amount;
+    }
+
+    private static LocalDate requireDate(LocalDate date) {
+        if (date == null)
+            throw new IllegalArgumentException("Date is required");
+        return date;
+    }
+
+    private static TransactionType requireType(TransactionType type) {
+        if (type == null)
+            throw new IllegalArgumentException("Type is required");
+        return type;
     }
 }

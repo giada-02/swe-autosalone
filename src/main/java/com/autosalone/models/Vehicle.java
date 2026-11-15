@@ -360,7 +360,8 @@ public class Vehicle extends AuditableEntity {
      * revisione.
      */
     public Deadline generateInspectionFromLastDate(LocalDate lastInspection) {
-        Objects.requireNonNull(lastInspection, "The last actual inspection date is required");
+        if (lastInspection == null)
+            throw new IllegalArgumentException("The last actual inspection date is required");
 
         LocalDate nextInspectionDate = lastInspection
                 .plusYears(2)
@@ -441,40 +442,34 @@ public class Vehicle extends AuditableEntity {
 
     // validation and normalization
     private static String requireText(String field, String message) {
-        if (field == null || field.isBlank()) {
+        if (field == null || field.isBlank())
             throw new IllegalArgumentException(message);
-        }
         return field.trim();
     }
 
     private static VehicleCondition validateCondition(VehicleCondition condition) {
-        if (condition == null) {
+        if (condition == null)
             throw new IllegalArgumentException("Condition is required");
-        }
         return condition;
     }
 
     private static BigDecimal validateSellingPrice(BigDecimal sellingPrice) {
-        if (sellingPrice == null) {
+        if (sellingPrice == null)
             throw new IllegalArgumentException("Selling price is required");
-        }
-        if (sellingPrice.compareTo(BigDecimal.ZERO) < 0) {
+        if (sellingPrice.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("Selling price cannot be negative");
-        }
         return sellingPrice;
     }
 
     private static Double validateKilometers(Double kilometers) {
-        if (kilometers != null && kilometers < 0) {
+        if (kilometers != null && kilometers < 0)
             throw new IllegalArgumentException("Kilometers cannot be negative");
-        }
         return kilometers;
     }
 
     private static String normalizeLicensePlate(String licensePlate) {
-        if (licensePlate == null || licensePlate.isBlank()) {
+        if (licensePlate == null || licensePlate.isBlank())
             return null;
-        }
         return licensePlate.replaceAll("[\\s\\-]", "").toUpperCase(Locale.ROOT);
     }
 }

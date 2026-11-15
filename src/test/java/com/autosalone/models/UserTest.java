@@ -93,7 +93,7 @@ public class UserTest {
     }
 
     @Test
-    public void setFirstName_Null_ThrowsException() {
+    public void setFirstName_ToNull_ThrowsException() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> user.setFirstName(null));
         assertEquals("First name is required", exception.getMessage());
@@ -114,7 +114,7 @@ public class UserTest {
     }
 
     @Test
-    public void setLastName_Null_ThrowsException() {
+    public void setLastName_ToNull_ThrowsException() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> user.setLastName(null));
         assertEquals("Last name is required", exception.getMessage());
         assertEquals("Verdi", user.getLastName());
@@ -135,7 +135,7 @@ public class UserTest {
     }
 
     @Test
-    public void setPhoneNumber_Null_ThrowsException() {
+    public void setPhoneNumber_ToNull_ThrowsException() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> user.setPhoneNumber(null));
         assertEquals("Phone number is required", exception.getMessage());
@@ -156,7 +156,7 @@ public class UserTest {
     }
 
     @Test
-    public void setEmail_Null_SetsNull() {
+    public void setEmail_ToNull_SetsNull() {
         user.setEmail("mario.rossi@example.com");
 
         user.setEmail(null);

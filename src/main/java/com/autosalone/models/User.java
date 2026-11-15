@@ -161,23 +161,20 @@ public abstract class User extends AuditableEntity {
 
     // validation and normalization
     private static String requireName(String name, String message) {
-        if (name == null || name.isBlank()) {
+        if (name == null || name.isBlank())
             throw new IllegalArgumentException(message);
-        }
         return normalizeName(name);
     }
 
     private static String requirePhoneNumber(String phoneNumber) {
-        if (phoneNumber == null || phoneNumber.isBlank()) {
+        if (phoneNumber == null || phoneNumber.isBlank())
             throw new IllegalArgumentException("Phone number is required");
-        }
         return normalizePhoneNumber(phoneNumber);
     }
 
     public static String normalizeEmail(String email) {
-        if (email == null || email.isBlank()) {
+        if (email == null || email.isBlank())
             return null;
-        }
         return email.trim().toLowerCase(Locale.ROOT);
     }
 

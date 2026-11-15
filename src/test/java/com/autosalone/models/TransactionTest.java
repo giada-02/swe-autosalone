@@ -15,29 +15,36 @@ public class TransactionTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 9, 15);
 
     @Test
+    public void constructor_BlankReason_ThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Transaction("  ", new BigDecimal("100.00"), TODAY, TransactionType.OUT);
+        });
+    }
+
+    @Test
     public void constructor_NullReason_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             new Transaction(null, new BigDecimal("100.00"), TODAY, TransactionType.OUT);
         });
     }
 
     @Test
     public void constructor_NullAmount_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             new Transaction("Guadagno", null, TODAY, TransactionType.IN);
         });
     }
 
     @Test
     public void constructor_NullDate_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             new Transaction("Guadagno", new BigDecimal("100.00"), null, TransactionType.IN);
         });
     }
 
     @Test
     public void constructor_NullType_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             new Transaction("Spesa", new BigDecimal("100.00"), TODAY, null);
         });
     }
@@ -58,7 +65,7 @@ public class TransactionTest {
 
     @Test
     public void constructor_ValidData_CreatesTransaction() {
-        Transaction transaction = new Transaction("Spesa", new BigDecimal("500.00"), TODAY, TransactionType.OUT);
+        Transaction transaction = new Transaction(" Spesa  ", new BigDecimal("500.00"), TODAY, TransactionType.OUT);
 
         assertEquals("Spesa", transaction.getReason());
         assertEquals(0, transaction.getAmount().compareTo(new BigDecimal("500.00")));

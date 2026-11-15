@@ -2,7 +2,6 @@ package com.autosalone.models.catalog;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.util.Objects;
 
 import com.autosalone.models.catalog.visitors.ActiveItemValidatorVisitor;
 
@@ -48,15 +47,19 @@ public class AppliedItem {
     }
 
     public void setAppliedPrice(BigDecimal appliedPrice) {
-        Objects.requireNonNull(appliedPrice, "Applied price is required");
+        validateAppliedPrice(appliedPrice);
         if (this.appliedPrice != null && this.appliedPrice.compareTo(appliedPrice) == 0)
             return;
+        this.appliedPrice = appliedPrice;
+    }
 
+    private static void validateAppliedPrice(BigDecimal appliedPrice) {
+        if (appliedPrice == null) {
+            throw new IllegalArgumentException("Applied price is required");
+        }
         if (appliedPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Applied price cannot be negative");
         }
-
-        this.appliedPrice = appliedPrice;
     }
 
     @Override

@@ -113,9 +113,8 @@ public class Customer extends User {
 
     // normalization
     private static String normalizeFiscalCode(String fiscalCode) {
-        if (fiscalCode == null || fiscalCode.isBlank()) {
+        if (fiscalCode == null || fiscalCode.isBlank())
             return null;
-        }
         return fiscalCode.trim().toUpperCase(Locale.ROOT);
     }
 }

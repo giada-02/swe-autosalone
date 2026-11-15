@@ -57,7 +57,7 @@ public class Deadline extends AuditableEntity {
     Deadline(Vehicle vehicle, String reason, LocalDate dueDate, Period recurrence, boolean recalculateFromCompletion) {
         validateRecalculateCompletionWithoutRecurrence(recalculateFromCompletion, recurrence);
         this.reason = requireReason(reason);
-        this.dueDate = requireDueDate(dueDate);
+        this.dueDate = requireDate(dueDate, "Due date is required");
         this.recurrence = recurrence;
         this.recalculateFromCompletion = recalculateFromCompletion;
         this.vehicle = requireVehicle(vehicle);
@@ -106,15 +106,15 @@ public class Deadline extends AuditableEntity {
 
     // setters
     public void setReason(String reason) {
-        requireReason(reason);
-        if (Objects.equals(this.reason, reason))
+        String normalizedReason = requireReason(reason);
+        if (Objects.equals(this.reason, normalizedReason))
             return;
         validateNotCompleted();
-        this.reason = reason;
+        this.reason = normalizedReason;
     }
 
     public void setDueDate(LocalDate dueDate) {
-        requireDueDate(dueDate);
+        requireDate(dueDate, "Due date is required");
         if (Objects.equals(this.dueDate, dueDate))
             return;
         validateNotCompleted();
@@ -146,6 +146,7 @@ public class Deadline extends AuditableEntity {
     public Deadline complete(LocalDate actualCompletionDate, String notes) {
         if (this.isCompleted)
             throw new IllegalStateException("This deadline is already completed");
+        requireDate(actualCompletionDate, "Actual completion date is required");
 
         this.isCompleted = true;
         this.completionDate = actualCompletionDate;
@@ -171,45 +172,41 @@ public class Deadline extends AuditableEntity {
         return new Deadline(this.vehicle, this.reason, nextDueDate, this.recurrence, this.recalculateFromCompletion);
     }
 
-    private void validateNotCompleted() {
-        if (this.isCompleted)
-            throw new IllegalStateException("Cannot edit a completed deadline");
-    }
-
     // validation and normalization
     private static String requireReason(String reason) {
-        if (reason == null || reason.isBlank()) {
+        if (reason == null || reason.isBlank())
             throw new IllegalArgumentException("Reason is required");
-        }
         return reason.trim();
     }
 
-    private static LocalDate requireDueDate(LocalDate dueDate) {
-        if (dueDate == null) {
-            throw new IllegalArgumentException("Due date is required");
-        }
-        return dueDate;
+    private static LocalDate requireDate(LocalDate date, String message) {
+        if (date == null)
+            throw new IllegalArgumentException(message);
+        return date;
     }
 
     private static Vehicle requireVehicle(Vehicle vehicle) {
-        if (vehicle == null) {
+        if (vehicle == null)
             throw new IllegalArgumentException("A deadline must be linked to a vehicle");
-        }
         return vehicle;
     }
 
     private static String normalizeNotes(String notes) {
-        if (notes == null || notes.isBlank()) {
+        if (notes == null || notes.isBlank())
             return null;
-        }
         return notes.trim();
     }
 
     private static void validateRecalculateCompletionWithoutRecurrence(boolean recalculateFromCompletion,
             Period recurrence) {
-        if (recalculateFromCompletion && recurrence == null) {
+        if (recalculateFromCompletion && recurrence == null)
             throw new IllegalArgumentException("Cannot recalculate from completion if there is no recurrence");
-        }
+    }
+
+    // state validation
+    private void validateNotCompleted() {
+        if (this.isCompleted)
+            throw new IllegalStateException("Cannot edit a completed deadline");
     }
 
 }
