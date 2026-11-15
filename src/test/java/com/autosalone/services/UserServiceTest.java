@@ -174,7 +174,7 @@ class UserServiceTest {
         Owner mockOwner = mock(Owner.class);
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockOwner));
         when(mockOwner.isActive()).thenReturn(true);
-        when(userRepository.countActiveOwners()).thenReturn(1L);
+        when(userRepository.countActiveOwners()).thenReturn(1l);
 
         assertThrows(IllegalStateException.class, () -> userService.deactivateUser(userId));
 
@@ -188,7 +188,7 @@ class UserServiceTest {
         Owner mockOwner = mock(Owner.class);
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockOwner));
         when(mockOwner.isActive()).thenReturn(true);
-        when(userRepository.countActiveOwners()).thenReturn(2L);
+        when(userRepository.countActiveOwners()).thenReturn(2l);
 
         userService.deactivateUser(userId);
 

@@ -73,7 +73,7 @@ public class AccessoryPackage extends PurchasableItem {
     }
 
     private void validateAddSelf(PurchasableItem item) {
-        if (item.equals(this))
+        if (item == this)
             throw new IllegalArgumentException("Cannot add the package inside itself");
     }
 

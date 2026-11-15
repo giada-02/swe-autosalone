@@ -79,11 +79,14 @@ public abstract class SalesDocument extends AuditableEntity {
     };
 
     protected SalesDocument(Vehicle vehicle, Customer customer, LocalDate today) {
+        requireDate(today);
+        requireCustomer(customer);
+        requireVehicle(vehicle);
         vehicle.validateVehicleStatusForDocument("Cannot create sales document");
 
         this.date = today;
-        this.vehicle = requireVehicle(vehicle);
-        this.customer = requireCustomer(customer);
+        this.vehicle = vehicle;
+        this.customer = customer;
         this.additionalFees = BigDecimal.ZERO;
         assignDiscount(new NoDiscountStrategy());
         this.isArchived = false;
@@ -365,16 +368,14 @@ public abstract class SalesDocument extends AuditableEntity {
             throw new IllegalArgumentException("Date is required");
     }
 
-    private static Vehicle requireVehicle(Vehicle vehicle) {
+    private static void requireVehicle(Vehicle vehicle) {
         if (vehicle == null)
             throw new IllegalArgumentException("Vehicle is required");
-        return vehicle;
     }
 
-    private static Customer requireCustomer(Customer customer) {
+    private static void requireCustomer(Customer customer) {
         if (customer == null)
             throw new IllegalArgumentException("Customer is required");
-        return customer;
     }
 
     private static void requireItem(AppliedItem item, String message) {

@@ -27,8 +27,8 @@ public class UserRepository {
                 .findFirst();
     }
 
-    public Long countActiveOwners() {
-        return em.createQuery("SELECT COUNT(o) FROM Owner o WHERE o.isActive = true", Long.class).getSingleResult();
+    public long countActiveOwners() {
+        return em.createQuery("SELECT COUNT(o) FROM Owner o WHERE o.isActive = true", long.class).getSingleResult();
     }
 
     public User save(User user) {

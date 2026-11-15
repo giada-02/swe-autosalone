@@ -417,15 +417,16 @@ public class VehicleTest {
     @Test
     public void withdraw_WithoutWithdrawalReason_ThrowsException() {
         Vehicle car = getNewCar();
-
         assertThrows(IllegalArgumentException.class, () -> car.withdraw(null));
+        assertEquals(VehicleStatus.AVAILABLE, car.getStatus());
+        assertTrue(car.isInShowroom());
     }
 
     @Test
     public void setStatus_ToWithdrawn_ThrowsException() {
         Vehicle car = getNewCar();
-
         assertThrows(IllegalArgumentException.class, () -> car.setStatus(VehicleStatus.WITHDRAWN));
+        assertEquals(VehicleStatus.AVAILABLE, car.getStatus());
     }
 
     @Test

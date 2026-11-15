@@ -173,7 +173,7 @@ public class UserRepositoryTest {
         em.clear();
 
         Long activeOwnersCount = repository.countActiveOwners();
-        assertEquals(1L, activeOwnersCount);
+        assertEquals(1l, activeOwnersCount);
     }
 
     @Test

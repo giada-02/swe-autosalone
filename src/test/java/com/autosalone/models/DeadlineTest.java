@@ -174,6 +174,19 @@ public class DeadlineTest {
     }
 
     @Test
+    public void setters_CompletedEvent_SameValues_DoesNotThrowException() {
+        Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
+        deadline.complete(TODAY, "Sostituite pastiglie");
+
+        assertDoesNotThrow(() -> {
+            deadline.setReason("  Riparazione freni ");
+            deadline.setDueDate(yesterday);
+            deadline.setRecurrence(null);
+            deadline.setRecalculateFromCompletion(false);
+        });
+    }
+
+    @Test
     public void complete_SingleEvent_ReturnsNull() {
         // scadenza singola, non si ripete
         Deadline deadline = new Deadline(defaultCar, "Riparazione freni", yesterday, null, false);
@@ -231,6 +244,7 @@ public class DeadlineTest {
         assertThrows(IllegalArgumentException.class, () -> {
             deadline.complete(null, "Fatto");
         });
+        assertFalse(deadline.isCompleted());
     }
 
     @Test
