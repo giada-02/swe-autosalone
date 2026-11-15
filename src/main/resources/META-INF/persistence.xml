@@ -21,7 +21,6 @@
         <class>com.autosalone.models.catalog.PurchasableItem</class>
         <class>com.autosalone.models.catalog.Accessory</class>
         <class>com.autosalone.models.catalog.AccessoryPackage</class>
-        <class>com.autosalone.models.catalog.AuditableEntity</class>
         <class>com.autosalone.models.AuthToken</class>
 
         <properties>
@@ -29,8 +28,8 @@
             
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
             
-            <property name="hibernate.show_sql" value="true"/>
-            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="false"/>
         </properties>
     </persistence-unit>
 </persistence>
