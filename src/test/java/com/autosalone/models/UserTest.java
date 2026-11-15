@@ -208,6 +208,23 @@ public class UserTest {
     }
 
     @Test
+    public void hasSameEmail_SameEmails_ReturnsTrue() {
+        user.setEmail("luigi.verdi@example.com");
+        assertTrue(user.hasSameEmail("  Luigi.Verdi@Example.COM "));
+    }
+
+    @Test
+    public void hasSameEmail_DifferentEmails_ReturnsFalse() {
+        user.setEmail("luigi.verdi@example.com");
+        assertFalse(user.hasSameEmail("mario.rossi@example.com"));
+    }
+
+    @Test
+    public void hasSameEmail_NullEmails_ReturnsTrue() {
+        assertTrue(user.hasSameEmail(null));
+    }
+
+    @Test
     public void normalizeEmail_TrimsAndLowercases() {
         assertEquals("mario.rossi@example.com", User.normalizeEmail("  Mario.Rossi@Example.COM "));
     }
