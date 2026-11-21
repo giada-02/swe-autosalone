@@ -171,7 +171,7 @@ class ContractControllerTest {
     }
 
     @Test
-    void getContractById_AsCustomer_Returns403WhenNotOwned() {
+    void getContractById_AsCustomer_ThrowsForbiddenExceptionWhenNotOwned() {
         UUID anotherCustomerId = UUID.randomUUID();
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
         when(securityContext.getUserPrincipal()).thenReturn(principal);
@@ -192,7 +192,7 @@ class ContractControllerTest {
     }
 
     @Test
-    void getContractById_AsCustomer_Returns403WhenStatusDraft() {
+    void getContractById_AsCustomer_ThrowsForbiddenExceptionWhenStatusDraft() {
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
         when(securityContext.getUserPrincipal()).thenReturn(principal);
         when(principal.getName()).thenReturn(customerId.toString());

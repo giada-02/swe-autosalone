@@ -164,7 +164,7 @@ class QuotationControllerTest {
     }
 
     @Test
-    void getQuotationById_AsCustomer_Returns403WhenNotOwned() {
+    void getQuotationById_AsCustomer_ThrowsForbiddenExceptionWhenNotOwned() {
         UUID anotherCustomerId = UUID.randomUUID();
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
         when(securityContext.getUserPrincipal()).thenReturn(principal);
@@ -185,7 +185,7 @@ class QuotationControllerTest {
     }
 
     @Test
-    void getQuotationById_AsCustomer_Returns403WhenStatusDraft() {
+    void getQuotationById_AsCustomer_ThrowsForbiddenExceptionWhenStatusDraft() {
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
         when(securityContext.getUserPrincipal()).thenReturn(principal);
         when(principal.getName()).thenReturn(customerId.toString());

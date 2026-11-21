@@ -164,7 +164,7 @@ class VehicleControllerTest {
     }
 
     @Test
-    void getVehicleById_AsCustomer_Returns403WhenNotOwned() {
+    void getVehicleById_AsCustomer_ThrowsForbiddenExceptionWhenNotOwned() {
         UUID customerId = UUID.randomUUID();
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(true);
         when(securityContext.getUserPrincipal()).thenReturn(principal);
@@ -312,7 +312,7 @@ class VehicleControllerTest {
     }
 
     @Test
-    void getDeadlines_AsCustomer_Returns403WhenNotOwned() {
+    void getDeadlines_AsCustomer_ThrowsForbiddenExceptionWhenNotOwned() {
         UUID customerId = UUID.randomUUID();
         when(securityContext.getUserPrincipal()).thenReturn(principal);
         when(principal.getName()).thenReturn(customerId.toString());

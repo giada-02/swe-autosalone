@@ -120,7 +120,7 @@ class DeadlineControllerTest {
     }
 
     @Test
-    void completeDeadline_AsOwner_Returns403WhenOwnedBySoldVehicle() {
+    void completeDeadline_AsOwner_ThrowsForbiddenExceptionWhenOwnedBySoldVehicle() {
         Deadline mockDeadline = mock(Deadline.class);
         Vehicle mockVehicle = mock(Vehicle.class);
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
@@ -136,7 +136,7 @@ class DeadlineControllerTest {
     }
 
     @Test
-    void completeDeadline_AsOwner_Returns403WhenOwnedByWithdrawnVehicle() {
+    void completeDeadline_AsOwner_ThrowsForbiddenExceptionWhenOwnedByWithdrawnVehicle() {
         Deadline mockDeadline = mock(Deadline.class);
         Vehicle mockVehicle = mock(Vehicle.class);
         when(securityContext.isUserInRole("CUSTOMER")).thenReturn(false);
@@ -173,7 +173,7 @@ class DeadlineControllerTest {
     }
 
     @Test
-    void completeDeadline_AsCustomer_Returns403WhenVehicleIsNotOwnedByCustomer() {
+    void completeDeadline_AsCustomer_ThrowsForbiddenExceptionWhenVehicleIsNotOwnedByCustomer() {
         UUID customerId = UUID.randomUUID();
         UUID vehicleId = UUID.randomUUID();
         Deadline mockDeadline = mock(Deadline.class);
