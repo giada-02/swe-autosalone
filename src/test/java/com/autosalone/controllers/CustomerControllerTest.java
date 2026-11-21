@@ -77,7 +77,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    void getCustomerById_AsCustomer_Returns403WhenAccessingAnotherProfile() {
+    void getCustomerById_AsCustomer_ThrowsForbiddenExceptionWhenAccessingAnotherProfile() {
         UUID anotherCustomerId = UUID.randomUUID();
 
         when(securityContext.getUserPrincipal()).thenReturn(principal);

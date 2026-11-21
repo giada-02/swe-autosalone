@@ -71,7 +71,7 @@ class UserControllerTest {
     }
 
     @Test
-    void updatePassword_Returns403WhenAccessingAnotherProfile() {
+    void updatePassword_ThrowsForbiddenExceptionWhenAccessingAnotherProfile() {
         UUID anotherCustomerId = UUID.randomUUID();
         when(securityContext.getUserPrincipal()).thenReturn(principal);
         when(principal.getName()).thenReturn(userId.toString());
