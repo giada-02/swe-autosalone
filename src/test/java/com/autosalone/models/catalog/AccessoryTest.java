@@ -89,7 +89,7 @@ public class AccessoryTest {
     }
 
     @Test
-    public void hasSameDetails_SameNameSameDesciption_ReturnsTrue() {
+    public void hasSameDetails_SameNameSameDescription_ReturnsTrue() {
         assertTrue(accessory.hasSameDetails("  Nome ", " Descrizione  "));
     }
 
@@ -104,8 +104,9 @@ public class AccessoryTest {
     }
 
     @Test
-    public void hasSameDetails_SameNameNullDescriptions_ReturnsTrue() {
+    public void hasSameDetails_SameNameNullDescription_ReturnsTrue() {
         accessory.setDescription(null);
+        assertTrue(accessory.hasSameDetails("Nome", ""));
         assertTrue(accessory.hasSameDetails("Nome", null));
     }
 }
